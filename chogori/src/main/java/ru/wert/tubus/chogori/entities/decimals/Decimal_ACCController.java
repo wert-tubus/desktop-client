@@ -33,9 +33,6 @@ public class Decimal_ACCController extends FormView_ACCController<Decimal> {
     private TextField tfInitialNumber;
 
     @FXML
-    private TextField tfLastNumber;
-
-    @FXML
     private StackPane spIndicator;
 
     @FXML
@@ -101,7 +98,7 @@ public class Decimal_ACCController extends FormView_ACCController<Decimal> {
                 tfName.getText().trim(),
                 taDescription.getText(),
                 parseInteger(tfInitialNumber.getText()),
-                parseInteger(tfLastNumber.getText())
+                parseInteger(tfInitialNumber.getText())
         );
     }
 
@@ -124,7 +121,6 @@ public class Decimal_ACCController extends FormView_ACCController<Decimal> {
         tfName.setText(oldDecimal.getName());
         taDescription.setText(oldDecimal.getDescription());
         tfInitialNumber.setText(oldDecimal.getInitialNumber() != null ? oldDecimal.getInitialNumber().toString() : "");
-        tfLastNumber.setText(oldDecimal.getLastNumber() != null ? oldDecimal.getLastNumber().toString() : "");
     }
 
     /**
@@ -137,7 +133,6 @@ public class Decimal_ACCController extends FormView_ACCController<Decimal> {
         oldDecimal.setName(tfName.getText().trim());
         oldDecimal.setDescription(taDescription.getText());
         oldDecimal.setInitialNumber(parseInteger(tfInitialNumber.getText()));
-        oldDecimal.setLastNumber(parseInteger(tfLastNumber.getText()));
     }
 
     /**
@@ -148,7 +143,6 @@ public class Decimal_ACCController extends FormView_ACCController<Decimal> {
         tfName.setText("");
         taDescription.setText("");
         tfInitialNumber.setText("");
-        tfLastNumber.setText("");
     }
 
     /**
@@ -164,13 +158,8 @@ public class Decimal_ACCController extends FormView_ACCController<Decimal> {
 
         // Проверяем, что если указаны начальный и конечный номера, то начальный не больше конечного
         Integer initial = parseInteger(tfInitialNumber.getText());
-        Integer last = parseInteger(tfLastNumber.getText());
 
-        if (initial != null && last != null && initial > last) {
-            return false;
-        }
-
-        return true;
+        return initial == null;
     }
 
     /**

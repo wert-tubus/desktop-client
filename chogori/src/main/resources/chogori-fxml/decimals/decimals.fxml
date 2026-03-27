@@ -11,7 +11,7 @@
             <children>
                 <HBox fx:id="patchHeader" alignment="CENTER_LEFT">
                     <children>
-                        <Label prefHeight="28.0" text="ДЕСЯТИЧНЫЕ КЛАССИФИКАТОРЫ">
+                        <Label prefHeight="28.0" text="ДЕЦИМАЛЬНЫЙ КЛАССИФИКАТОР">
                             <HBox.margin>
                                 <Insets left="10.0" />
                             </HBox.margin>
