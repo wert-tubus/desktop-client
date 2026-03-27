@@ -361,19 +361,6 @@ public class AppMenuController {
         }
     }
 
-    /**
-     * -- РЕГИСТРАТОР
-     */
-    private void openRegistrar(ActionEvent actionEvent) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/registrar/registrar.fxml"));
-            Parent parent = loader.load();
-
-            new WindowDecoration("Регистратор", parent, true, WF_MAIN_STAGE, true);
-        } catch (IOException ex) {
-            ex.printStackTrace();
-        }
-    }
 
     /**
      * -- КАРТОТЕКА
@@ -396,6 +383,20 @@ public class AppMenuController {
     }
 
 
+    /**
+     * -- РЕГИСТРАТОР
+     */
+    private void openRegistrar(ActionEvent actionEvent) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/registrar/registrar.fxml"));
+            Parent parent = loader.load();
+
+            new WindowDecoration("Регистратор", parent, true, WF_MAIN_STAGE, true);
+        } catch (IOException ex) {
+            ex.printStackTrace();
+        }
+    }
+
 
     //######################   МАТЕРИАЛЫ   ##########################
 
@@ -415,9 +416,14 @@ public class AppMenuController {
         MenuItem prefixesItem = new MenuItem("Префиксы");
         prefixesItem.setOnAction(this::openPrefixes);
 
+        MenuItem decimalsItem = new MenuItem("Децимальный классификатор");
+        decimalsItem.setOnAction(this::openDecimals);
+
         materialsMenu.getItems().addAll(catalogOfMaterialsItem, densitiesItem);
         materialsMenu.getItems().add(new SeparatorMenuItem());
         materialsMenu.getItems().add(prefixesItem);
+        materialsMenu.getItems().add(decimalsItem);
+
 
         return materialsMenu;
     }
@@ -463,6 +469,22 @@ public class AppMenuController {
             Parent parent = loader.load();
             parent.getStylesheets().add(this.getClass().getResource("/chogori-css/details-dark.css").toString());
             String tabName = "Префиксы";
+            String tabId = tabName;
+            CH_TAB_PANE.createNewTab(tabId, tabName, parent, true,  loader.getController());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * -- ПРЕФИКСЫ
+     */
+    private void openDecimals(ActionEvent actionEvent) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/decimals/decimals.fxml"));
+            Parent parent = loader.load();
+            parent.getStylesheets().add(this.getClass().getResource("/chogori-css/details-dark.css").toString());
+            String tabName = "Децимальный классификатор";
             String tabId = tabName;
             CH_TAB_PANE.createNewTab(tabId, tabName, parent, true,  loader.getController());
         } catch (IOException e) {

@@ -40,6 +40,7 @@ public class BLlinks {
     public static DraftService draftService;
     public static PassportService passportService;
     public static FilesService filesService;
+    public static DecimalService decimalService;
 
 
 }

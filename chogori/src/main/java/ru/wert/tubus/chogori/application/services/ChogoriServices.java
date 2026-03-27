@@ -58,6 +58,7 @@ public class ChogoriServices {
     public static AnyPartQuickService CH_QUICK_ANY_PARTS;
     public static PassportQuickService CH_QUICK_PASSPORTS;
     public static MaterialQuickService CH_QUICK_MATERIALS;
+    public static DecimalService CH_DECIMALS;
 
     public static void initServices(){
 
@@ -92,6 +93,7 @@ public class ChogoriServices {
         ChogoriServices.CH_VERSIONS_DESKTOP = VersionDesktopService.getInstance();
         ChogoriServices.CH_VERSIONS_ANDROID = VersionAndroidService.getInstance();
         ChogoriServices.CH_VERSIONS_SERVER = VersionServerService.getInstance();
+        ChogoriServices.CH_DECIMALS = DecimalService.getInstance();
     }
 
     public static void initQuickServicesWithCache() {
