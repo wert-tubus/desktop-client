@@ -328,11 +328,16 @@ public class AppMenuController {
         MenuItem draftsItem = new MenuItem("Чертежи");
         draftsItem.setOnAction(this::openDrafts);
 
+        MenuItem registrarItem = new MenuItem("Регистратор");
+        registrarItem.setOnAction(this::openRegistrar);
+
         MenuItem changeHistoryItem = new MenuItem("История изменений");
         changeHistoryItem.setOnAction(this::openChangeHistory);
 
         draftsMenu.getItems().add(draftsCabinetItem);
         draftsMenu.getItems().add(draftsItem);
+        draftsMenu.getItems().add(new SeparatorMenuItem());
+        draftsMenu.getItems().add(registrarItem);
         draftsMenu.getItems().add(new SeparatorMenuItem());
         draftsMenu.getItems().add(changeHistoryItem);
 
@@ -353,6 +358,20 @@ public class AppMenuController {
             CH_TAB_PANE.createNewTab(tabId, tabName, parent, true,  loader.getController());
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * -- РЕГИСТРАТОР
+     */
+    private void openRegistrar(ActionEvent actionEvent) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/registrar/registrar.fxml"));
+            Parent parent = loader.load();
+
+            new WindowDecoration("Регистратор", parent, true, WF_MAIN_STAGE, true);
+        } catch (IOException ex) {
+            ex.printStackTrace();
         }
     }
 

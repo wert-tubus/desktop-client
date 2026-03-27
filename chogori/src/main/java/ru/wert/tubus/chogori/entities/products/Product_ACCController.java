@@ -199,7 +199,8 @@ public class Product_ACCController extends FormView_ACCController<Product> {
         Prefix prefix = bxPrefix.getValue();
         String number = tfNumber.getText();
         String name = tfName.getText();
+        String note = "";
 
-        return new Passport(prefix, number, name, new ArrayList<>());
+        return new Passport(prefix, number, name, note, new ArrayList<>());
     }
 }

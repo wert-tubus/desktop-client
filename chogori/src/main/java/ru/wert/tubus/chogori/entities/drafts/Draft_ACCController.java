@@ -1163,7 +1163,9 @@ public class Draft_ACCController extends FormView_ACCController<Draft> {
 
         Passport newPassport = new Passport(bxPrefix.getValue(),
                 txtNumber.getText().trim(),
-                txtName.getText().trim(), new ArrayList<>());
+                txtName.getText().trim(),
+                newDraft.getFolder().getName(),
+                new ArrayList<>());
         newDraft.setPassport(newPassport);
         newDraft.setFolder(bxFolder.getValue());
         newDraft.setInitialDraftName(lblFileName.getText());
@@ -1255,6 +1257,7 @@ public class Draft_ACCController extends FormView_ACCController<Draft> {
                         bxPrefix.getValue(),
                         txtNumber.getText().trim(),
                         txtName.getText(),
+                        oldItem.getFolder().getName(),
                         new ArrayList<>())
                 );
             } else {
