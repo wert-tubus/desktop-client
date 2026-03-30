@@ -8,13 +8,15 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 
+import static ru.wert.tubus.winform.statics.WinformStatic.TEST_VERSION;
+
 @Slf4j
 public class SocketConnectionManager {
 
     // Адрес сервера, полученный из настроек приложения
     private static final String SERVER_ADDRESS = AppProperties.getInstance().getIpAddress();
     // Порт, на котором работает сервер
-    private static final int PORT = 8081;
+    private static final int PORT = TEST_VERSION ? 9081 : 8081;
     // Таймаут для установления соединения с сервером (в миллисекундах)
     private static final int CONNECT_TIMEOUT_MS = 5000;
     // Таймаут для чтения данных из сокета (в миллисекундах)
