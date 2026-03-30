@@ -9,8 +9,10 @@ import javafx.scene.Parent;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import ru.wert.tubus.chogori.application.services.ChogoriServices;
+import ru.wert.tubus.client.entity.models.Decimal;
 import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.client.entity.models.Prefix;
+import ru.wert.tubus.client.interfaces.UpdatableTabController;
 import ru.wert.tubus.winform.window_decoration.WindowDecoration;
 
 import java.io.IOException;
@@ -24,7 +26,7 @@ import java.util.stream.Collectors;
 import static ru.wert.tubus.winform.statics.WinformStatic.WF_MAIN_STAGE;
 
 
-public class RegistrarController implements Initializable {
+public class RegistrarController implements Initializable, UpdatableTabController {
 
     @FXML
     private Tab tpPIK;
@@ -42,21 +44,17 @@ public class RegistrarController implements Initializable {
     private ListView<Passport> lvListOFNumbers;
 
     @FXML
-    private HBox hbButtons;
+    private Button btnAddDecimalGroup;
 
     @FXML
-    private Button btnGetPIKNumber;
-
-    @FXML
-    private Button btnGetDraftNumber;
-
-    @FXML
-    private Button btnSaveAllNumbers;
-
+    private ListView<Decimal> lvDecimalGroups;
+    
     private ObservableList<Passport> allPassportsList;
     private ObservableList<Passport> pikPassportsList;
     private ObservableList<Passport> draftPassportsList;
     private ObservableList<Passport> selectedPassportsList;
+
+    private ObservableList<Decimal> allDecimalGroupsList;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -74,11 +72,52 @@ public class RegistrarController implements Initializable {
         fillPIKListView();
         fillDraftsListView();
 
+        //Загружаем список децимальных групп
+        loadDecimalGroups();
+        fillAllDecimalGroups();
+
         // Настраиваем обработчики кнопок
-        setupButtonHandlers();
+        setupBtnAddDecimalGroup();
 
         // Настраиваем обработчики выбора в списках
         setupSelectionHandlers();
+    }
+
+
+    /**
+     * Загружаем список децимальных групп
+     */
+    private void loadDecimalGroups() {
+        try {
+            allDecimalGroupsList = FXCollections.observableArrayList(
+                    ChogoriServices.CH_DECIMALS.findAll()
+            );
+        } catch (Exception e) {
+            showError("Ошибка загрузки данных", "Не удалось загрузить децимальные группы: " + e.getMessage());
+            allDecimalGroupsList = FXCollections.observableArrayList();
+        }
+    }
+
+    private void fillAllDecimalGroups() {
+        lvDecimalGroups.setItems(allDecimalGroupsList);
+        setupListViewDecimalGroups(lvDecimalGroups);
+    }
+
+    private void setupListViewDecimalGroups(ListView<Decimal> listView) {
+        listView.setCellFactory(lv -> new ListCell<Decimal>() {
+            @Override
+            protected void updateItem(Decimal item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                } else {
+                    setText(item.getName());
+                }
+            }
+        });
+    }
+
+    private void setupBtnAddDecimalGroup() {
     }
 
     private void setupListViewDisplay(ListView<Passport> listView) {
@@ -146,12 +185,6 @@ public class RegistrarController implements Initializable {
         draftPassportsList = FXCollections.observableArrayList(draftPassports);
         lvDrafts.setItems(draftPassportsList);
         setupListViewDisplay(lvDrafts);
-    }
-
-    private void setupButtonHandlers() {
-        btnGetPIKNumber.setOnAction(event -> getPIKNumber());
-        btnGetDraftNumber.setOnAction(event -> getDraftNumber());
-        btnSaveAllNumbers.setOnAction(event -> saveAllNumbers());
     }
 
     private void setupSelectionHandlers() {
@@ -328,5 +361,10 @@ public class RegistrarController implements Initializable {
         alert.setHeaderText(null);
         alert.setContentText(message);
         alert.showAndWait();
+    }
+
+    @Override
+    public void updateTab() {
+
     }
 }

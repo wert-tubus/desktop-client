@@ -383,6 +383,20 @@ public class AppMenuController {
     }
 
 
+//    /**
+//     * -- РЕГИСТРАТОР
+//     */
+//    private void openRegistrar(ActionEvent actionEvent) {
+//        try {
+//            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/registrar/registrar.fxml"));
+//            Parent parent = loader.load();
+//
+//            new WindowDecoration("Регистратор", parent, true, WF_MAIN_STAGE, true);
+//        } catch (IOException ex) {
+//            ex.printStackTrace();
+//        }
+//    }
+
     /**
      * -- РЕГИСТРАТОР
      */
@@ -390,10 +404,12 @@ public class AppMenuController {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/registrar/registrar.fxml"));
             Parent parent = loader.load();
-
-            new WindowDecoration("Регистратор", parent, true, WF_MAIN_STAGE, true);
-        } catch (IOException ex) {
-            ex.printStackTrace();
+            parent.getStylesheets().add(this.getClass().getResource("/chogori-css/details-dark.css").toString());
+            String tabName = "Журнал регистрации";
+            String tabId = tabName;
+            CH_TAB_PANE.createNewTab(tabId, tabName, parent, true,  loader.getController());
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
