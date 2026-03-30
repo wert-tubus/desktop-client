@@ -89,7 +89,7 @@ public class Decimal_Columns {
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    setText(item.toString());
+                    setText(String.format("%03d", item));
                     setStyle("-fx-alignment: CENTER;");
                 }
             }
@@ -104,7 +104,7 @@ public class Decimal_Columns {
      * @return TableColumn<Decimal, Integer>
      */
     public static TableColumn<Decimal, Integer> createTcLastNumber() {
-        TableColumn<Decimal, Integer> tcLastNumber = new TableColumn<>("Конечный\nномер");
+        TableColumn<Decimal, Integer> tcLastNumber = new TableColumn<>("Последний\nномер");
         tcLastNumber.setCellValueFactory(new PropertyValueFactory<>("lastNumber"));
         tcLastNumber.setStyle("-fx-alignment: CENTER;");
         tcLastNumber.setPrefWidth(120);
@@ -119,7 +119,7 @@ public class Decimal_Columns {
                 if (empty || item == null) {
                     setText(null);
                 } else {
-                    setText(item.toString());
+                    setText(String.format("%03d", item));
                     setStyle("-fx-alignment: CENTER;");
                 }
             }
@@ -128,19 +128,4 @@ public class Decimal_Columns {
         return tcLastNumber;
     }
 
-    /**
-     * Создает колонку "Диапазон" для отображения полного диапазона в формате "начальный - конечный"
-     * @return TableColumn<Decimal, String>
-     */
-    public static TableColumn<Decimal, String> createTcRange() {
-        TableColumn<Decimal, String> tcRange = new TableColumn<>("Диапазон");
-        tcRange.setCellValueFactory(cellData -> {
-            Decimal decimal = cellData.getValue();
-            String range = decimal.getRangeString();
-            return new javafx.beans.property.SimpleStringProperty(range);
-        });
-        tcRange.setStyle("-fx-alignment: CENTER;");
-        tcRange.setPrefWidth(150);
-        return tcRange;
-    }
 }

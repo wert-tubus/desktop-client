@@ -12,6 +12,7 @@ import ru.wert.tubus.chogori.common.interfaces.IFormView;
 import ru.wert.tubus.chogori.statics.AppStatic;
 import ru.wert.tubus.client.entity.models.Decimal;
 import ru.wert.tubus.winform.enums.EOperation;
+import ru.wert.tubus.winform.warnings.Warning1;
 
 import java.util.ArrayList;
 
@@ -38,6 +39,10 @@ public class Decimal_ACCController extends FormView_ACCController<Decimal> {
     @FXML
     private Button btnOk;
 
+    //Диапазон изменяемого децимального номера
+    private Integer initialNumberOfOldItem;
+    private Integer lastNumberOfOldItem;
+
     /**
      * Обработчик нажатия кнопки "Отмена"
      * @param event событие нажатия
@@ -58,11 +63,27 @@ public class Decimal_ACCController extends FormView_ACCController<Decimal> {
 
     /**
      * Инициализация контроллера
-     * Создает индикатор загрузки
+     * Создает индикатор загрузки и добавляет слушатель форматирования
      */
     @FXML
     void initialize() {
         AppStatic.createSpIndicator(spIndicator);
+
+        // Добавляем слушатель для автоматического форматирования поля tfInitialNumber
+        tfInitialNumber.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null && !newValue.isEmpty()) {
+                // Удаляем все нецифровые символы
+                String digits = newValue.replaceAll("\\D", "");
+                // Ограничиваем длину 3 цифрами
+                if (digits.length() > 3) {
+                    digits = digits.substring(0, 3);
+                }
+                // Обновляем текст, если он изменился
+                if (!digits.equals(newValue)) {
+                    tfInitialNumber.setText(digits);
+                }
+            }
+        });
     }
 
     /**
@@ -94,11 +115,14 @@ public class Decimal_ACCController extends FormView_ACCController<Decimal> {
      */
     @Override
     public Decimal getNewItem() {
+        // Парсим число из строки формата ХХХ
+        Integer initialNumber = parseInteger(tfInitialNumber.getText().trim());
+
         return new Decimal(
                 tfName.getText().trim(),
                 taDescription.getText(),
-                parseInteger(tfInitialNumber.getText()),
-                parseInteger(tfInitialNumber.getText())
+                initialNumber,
+                initialNumber  // currentNumber = initialNumber при создании
         );
     }
 
@@ -117,10 +141,19 @@ public class Decimal_ACCController extends FormView_ACCController<Decimal> {
      */
     @Override
     public void fillFieldsOnTheForm(Decimal oldItem) {
-        Decimal oldDecimal = (Decimal) oldItem;
-        tfName.setText(oldDecimal.getName());
-        taDescription.setText(oldDecimal.getDescription());
-        tfInitialNumber.setText(oldDecimal.getInitialNumber() != null ? oldDecimal.getInitialNumber().toString() : "");
+        initialNumberOfOldItem = oldItem.getInitialNumber();
+        lastNumberOfOldItem = oldItem.getLastNumber();
+
+        tfName.setText(oldItem.getName());
+        taDescription.setText(oldItem.getDescription());
+
+        // Преобразуем Integer в строку формата ХХХ (с ведущими нулями)
+        if (oldItem.getInitialNumber() != null) {
+            tfInitialNumber.setText(String.format("%03d", oldItem.getInitialNumber()));
+        } else {
+            tfInitialNumber.setText("");
+        }
+
     }
 
     /**
@@ -129,10 +162,10 @@ public class Decimal_ACCController extends FormView_ACCController<Decimal> {
      */
     @Override
     public void changeOldItemFields(Decimal oldItem) {
-        Decimal oldDecimal = (Decimal) oldItem;
-        oldDecimal.setName(tfName.getText().trim());
-        oldDecimal.setDescription(taDescription.getText());
-        oldDecimal.setInitialNumber(parseInteger(tfInitialNumber.getText()));
+        oldItem.setName(tfName.getText().trim());
+        oldItem.setDescription(taDescription.getText());
+        if(lastNumberOfOldItem == null)
+            oldItem.setInitialNumber(parseInteger(tfInitialNumber.getText()));
     }
 
     /**
@@ -151,15 +184,31 @@ public class Decimal_ACCController extends FormView_ACCController<Decimal> {
      */
     @Override
     public boolean enteredDataCorrect() {
-        // Проверяем, что имя не пустое
-        if (tfName.getText().trim().isEmpty()) {
+        // Проверяем, что имя не пустое и соответствует маске XXXXXX (6 цифр)
+        String name = tfName.getText().trim();
+        if (name.isEmpty() || !name.matches("\\d{6}")) {
+            Warning1.create("Внимание!",
+                    "Децимальный номер отсутствует или\nне соответствует маске ХХХХХХ (6 цифр)",
+                    "Введите корректный децимальный номер");
             return false;
         }
 
-        // Проверяем, что если указаны начальный и конечный номера, то начальный не больше конечного
-        Integer initial = parseInteger(tfInitialNumber.getText());
+        // Проверяем начальное значение: не пустое, является числом и соответствует маске ХХХ (3 цифры)
+        String initialNumberText = tfInitialNumber.getText().trim();
+        if (initialNumberText.isEmpty() || !initialNumberText.matches("\\d{3}")) {
+            Warning1.create("Внимание!",
+                    "Начальное значение отсутствует или\nне соответствует маске ХХХ (3 цифры)",
+                    "Введите корректное начальное значение");
+            return false;
+        }
 
-        return initial == null;
+        // Проверяем, что число корректно парсится
+        Integer initialNumber = parseInteger(initialNumberText);
+        if (initialNumber == null) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
