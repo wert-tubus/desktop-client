@@ -1,6 +1,8 @@
 package ru.wert.tubus.chogori.entities.decimals;
 
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
@@ -39,6 +41,8 @@ public class Decimal_ACCController extends FormView_ACCController<Decimal> {
     @FXML
     private Button btnOk;
 
+    public static String SCETCH = "Эскиз";
+
     //Диапазон изменяемого децимального номера
     private Integer initialNumberOfOldItem;
     private Integer lastNumberOfOldItem;
@@ -68,6 +72,21 @@ public class Decimal_ACCController extends FormView_ACCController<Decimal> {
     @FXML
     void initialize() {
         AppStatic.createSpIndicator(spIndicator);
+
+        tfName.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null && !newValue.isEmpty()) {
+                // Удаляем все нецифровые символы
+                String digits = newValue.replaceAll("\\D", "");
+                // Ограничиваем длину 6 цифрами
+                if (digits.length() > 6) {
+                    digits = digits.substring(0, 6);
+                }
+                // Обновляем текст, если он изменился
+                if (!digits.equals(newValue)) {
+                    tfName.setText(digits);
+                }
+            }
+        });
 
         // Добавляем слушатель для автоматического форматирования поля tfInitialNumber
         tfInitialNumber.textProperty().addListener((observable, oldValue, newValue) -> {
@@ -106,6 +125,7 @@ public class Decimal_ACCController extends FormView_ACCController<Decimal> {
     public ArrayList<String> getNotNullFields() {
         ArrayList<String> notNullFields = new ArrayList<>();
         notNullFields.add(tfName.getText());
+        notNullFields.add(tfInitialNumber.getText());
         return notNullFields;
     }
 
@@ -132,6 +152,9 @@ public class Decimal_ACCController extends FormView_ACCController<Decimal> {
      */
     @Override
     public Decimal getOldItem() {
+        Decimal celected = formView.getAllSelectedItems().get(0);
+        if(celected.getName().equals(SCETCH))
+            return null;
         return formView.getAllSelectedItems().get(0);
     }
 
@@ -141,6 +164,22 @@ public class Decimal_ACCController extends FormView_ACCController<Decimal> {
      */
     @Override
     public void fillFieldsOnTheForm(Decimal oldItem) {
+        if(oldItem == null) {
+            Warning1.create("Внимание!",
+                    "Эскиз не подлежит изменению!",
+                    "Закройте окно.");
+
+            // Закрываем окно через Platform.runLater, чтобы предупреждение успело отобразиться
+            Platform.runLater(() -> {
+                // Получаем сцену через любой элемент формы и закрываем окно
+                if (tfName.getScene() != null) {
+                    tfName.getScene().getWindow().hide();
+                }
+            });
+
+            return;
+        }
+
         initialNumberOfOldItem = oldItem.getInitialNumber();
         lastNumberOfOldItem = oldItem.getLastNumber();
 
@@ -162,6 +201,7 @@ public class Decimal_ACCController extends FormView_ACCController<Decimal> {
      */
     @Override
     public void changeOldItemFields(Decimal oldItem) {
+        if(oldItem == null) return;
         oldItem.setName(tfName.getText().trim());
         oldItem.setDescription(taDescription.getText());
         if(lastNumberOfOldItem == null)
@@ -199,6 +239,15 @@ public class Decimal_ACCController extends FormView_ACCController<Decimal> {
             Warning1.create("Внимание!",
                     "Начальное значение отсутствует или\nне соответствует маске ХХХ (3 цифры)",
                     "Введите корректное начальное значение");
+            return false;
+        }
+
+        // Проверяем, что описание не превышает 250 символов
+        String description = taDescription.getText();
+        if (description.length() > 250) {
+            Warning1.create("Внимание!",
+                    "Описание превышает допустимую длину в 250 символов",
+                    "Текущая длина: " + description.length() + " символов. Сократите описание");
             return false;
         }
 

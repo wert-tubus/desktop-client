@@ -26,6 +26,8 @@ import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_SETT
 import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_USERS;
 import static ru.wert.tubus.chogori.setteings.ChogoriSettings.*;
 import static ru.wert.tubus.chogori.statics.UtilStaticNodes.CH_DECORATION_ROOT_PANEL;
+import static ru.wert.tubus.winform.statics.WinformStatic.TEST_VERSION;
+import static ru.wert.tubus.winform.statics.WinformStatic.USE_CHAT_SERVER;
 import static ru.wert.tubus.winform.warnings.WarningMessages.*;
 
 
@@ -78,7 +80,8 @@ public class LoginController {
             }
 
             CH_CURRENT_USER = user;
-            startSocketServerWithChats();
+            if(USE_CHAT_SERVER)
+                startSocketServerWithChats();
 
             loadApplicationSettings();
             showTabPaneWindow();
