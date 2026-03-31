@@ -1,4 +1,4 @@
-package ru.wert.tubus.chogori.registerBook;
+package ru.wert.tubus.chogori.registrationBook;
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -15,7 +15,7 @@ import java.util.ResourceBundle;
 
 import static ru.wert.tubus.chogori.setteings.ChogoriSettings.CH_CURRENT_USER;
 
-public class RegistrеrFormController implements Initializable {
+public class RegistrationFormController implements Initializable {
 
     @FXML
     private TextField tfNumber;

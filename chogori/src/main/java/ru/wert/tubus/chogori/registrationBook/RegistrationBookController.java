@@ -1,4 +1,4 @@
-package ru.wert.tubus.chogori.registerBook;
+package ru.wert.tubus.chogori.registrationBook;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
 import static ru.wert.tubus.winform.statics.WinformStatic.WF_MAIN_STAGE;
 
 
-public class RegistrеrBookController implements Initializable, UpdatableTabController {
+public class RegistrationBookController implements Initializable, UpdatableTabController {
 
     @FXML
     private Tab tpPIK;
@@ -233,10 +233,10 @@ public class RegistrеrBookController implements Initializable, UpdatableTabCont
      */
     private void openCreateDialog(String passportType, String windowTitle) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/registrerBook/registerForm.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/registrationBook/registrationForm.fxml"));
             Parent parent = loader.load();
 
-            RegistrеrFormController controller = loader.getController();
+            RegistrationFormController controller = loader.getController();
 
             // Создаем модальное окно
             new WindowDecoration(windowTitle, parent, true, WF_MAIN_STAGE, false);

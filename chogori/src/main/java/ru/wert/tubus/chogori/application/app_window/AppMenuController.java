@@ -328,19 +328,17 @@ public class AppMenuController {
         MenuItem draftsItem = new MenuItem("Чертежи");
         draftsItem.setOnAction(this::openDrafts);
 
-        MenuItem registrarItem = new MenuItem("Регистратор");
-        registrarItem.setOnAction(this::openRegistrar);
-
         MenuItem changeHistoryItem = new MenuItem("История изменений");
         changeHistoryItem.setOnAction(this::openChangeHistory);
+
+        MenuItem registrarItem = new MenuItem("Журнал регистрации");
+        registrarItem.setOnAction(this::openRegistrationBook);
 
         draftsMenu.getItems().add(draftsCabinetItem);
         draftsMenu.getItems().add(draftsItem);
         draftsMenu.getItems().add(new SeparatorMenuItem());
-        draftsMenu.getItems().add(registrarItem);
-        draftsMenu.getItems().add(new SeparatorMenuItem());
         draftsMenu.getItems().add(changeHistoryItem);
-
+        draftsMenu.getItems().add(registrarItem);
 
         return draftsMenu;
     }
@@ -388,7 +386,7 @@ public class AppMenuController {
 //     */
 //    private void openRegistrar(ActionEvent actionEvent) {
 //        try {
-//            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/registrar/registrerBook.fxml"));
+//            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/registrar/registrationBook.fxml"));
 //            Parent parent = loader.load();
 //
 //            new WindowDecoration("Регистратор", parent, true, WF_MAIN_STAGE, true);
@@ -398,11 +396,11 @@ public class AppMenuController {
 //    }
 
     /**
-     * -- РЕГИСТРАТОР
+     * -- ЖУРНАЛ РЕГИСТРАЦИИ
      */
-    private void openRegistrar(ActionEvent actionEvent) {
+    private void openRegistrationBook(ActionEvent actionEvent) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/registrerBook/registrerBook.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/registrationBook/registrationBook.fxml"));
             Parent parent = loader.load();
             parent.getStylesheets().add(this.getClass().getResource("/chogori-css/details-dark.css").toString());
             String tabName = "Журнал регистрации";
@@ -493,7 +491,7 @@ public class AppMenuController {
     }
 
     /**
-     * -- ПРЕФИКСЫ
+     * -- ДЕЦИМАЛЬНЫЙ КЛАССИФИКАТОР
      */
     private void openDecimals(ActionEvent actionEvent) {
         try {
