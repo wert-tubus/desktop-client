@@ -51,7 +51,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1165,6 +1167,8 @@ public class Draft_ACCController extends FormView_ACCController<Draft> {
                 txtNumber.getText().trim(),
                 txtName.getText().trim(),
                 newDraft.getFolder().getName(),
+                CH_CURRENT_USER.getName(),
+                LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM.yy")),
                 new ArrayList<>());
         newDraft.setPassport(newPassport);
         newDraft.setFolder(bxFolder.getValue());
@@ -1258,6 +1262,8 @@ public class Draft_ACCController extends FormView_ACCController<Draft> {
                         txtNumber.getText().trim(),
                         txtName.getText(),
                         oldItem.getFolder().getName(),
+                        CH_CURRENT_USER.getName(),
+                        LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM.yy")),
                         new ArrayList<>())
                 );
             } else {

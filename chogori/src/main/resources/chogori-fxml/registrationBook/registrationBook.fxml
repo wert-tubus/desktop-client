@@ -10,37 +10,33 @@
 
 <AnchorPane prefHeight="600.0" prefWidth="800.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.wert.tubus.chogori.registrationBook.RegistrationBookController">
    <children>
-      <SplitPane dividerPositions="0.29797979797979796" layoutX="117.0" layoutY="73.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-        <items>
-          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
+      <VBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <children>
+            <HBox fx:id="patchHeader" alignment="CENTER_LEFT">
                <children>
-                  <TabPane tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                    <tabs>
-                      <Tab fx:id="tpPIK" text="ПИК">
-                           <content>
-                              <ListView fx:id="lvPIK" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" />
-                           </content>
-                        </Tab>
-                      <Tab fx:id="tpDrafts" text="Эскизы">
-                           <content>
-                              <ListView fx:id="lvDrafts" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" />
-                           </content>
-                        </Tab>
-                    </tabs>
-                  </TabPane>
+                  <Label prefHeight="28.0" text="ЖУРНАЛ РЕГИСТРАЦИИ">
+                     <HBox.margin>
+                        <Insets left="10.0" />
+                     </HBox.margin>
+                     <VBox.margin>
+                        <Insets bottom="10.0" top="5.0" />
+                     </VBox.margin>
+                  </Label>
+                  <HBox fx:id="controlButtons" alignment="CENTER_RIGHT" spacing="5.0" HBox.hgrow="ALWAYS">
+                     <padding>
+                        <Insets bottom="3.0" top="3.0" />
+                     </padding>
+                     <HBox.margin>
+                        <Insets />
+                     </HBox.margin>
+                  </HBox>
                </children>
-            </AnchorPane>
-            <HBox alignment="TOP_RIGHT">
+               <padding>
+                  <Insets right="10.0" />
+               </padding>
+            </HBox>
+            <HBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
                <children>
-                <AnchorPane maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS">
-                     <children>
-                        <VBox alignment="TOP_CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                           <children>
-                              <ListView fx:id="lvListOFNumbers" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS" />
-                           </children>
-                        </VBox>
-                     </children>
-                  </AnchorPane>
                   <AnchorPane prefHeight="200.0" prefWidth="200.0">
                      <children>
                         <VBox alignment="TOP_CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -52,9 +48,40 @@
                         </VBox>
                      </children>
                   </AnchorPane>
+                  <SplitPane dividerPositions="0.7" HBox.hgrow="ALWAYS">
+                     <items>
+                      <AnchorPane maxWidth="1.7976931348623157E308">
+                           <children>
+                              <VBox alignment="TOP_CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                 <children>
+                                    <ListView fx:id="lvListOFNumbers" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS" />
+                                 </children>
+                              </VBox>
+                           </children>
+                        </AnchorPane>
+                      <AnchorPane>
+                           <children>
+                              <TabPane minWidth="200.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                <tabs>
+                                  <Tab fx:id="tpPIK" text="ПИК">
+                                       <content>
+                                          <ListView fx:id="lvPIK" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" />
+                                       </content>
+                                    </Tab>
+                                  <Tab fx:id="tpSketches" text="Эскизы">
+                                       <content>
+                                          <ListView fx:id="lvSketches" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" />
+                                       </content>
+                                    </Tab>
+                                </tabs>
+                              </TabPane>
+                           </children>
+                        </AnchorPane>
+                     </items>
+                  </SplitPane>
                </children>
             </HBox>
-        </items>
-      </SplitPane>
+         </children>
+      </VBox>
    </children>
 </AnchorPane>

@@ -18,8 +18,10 @@ public class Passport extends _BaseEntity implements Item  {
 
     private Prefix prefix;
     private String number;
-    private String name;
+    private String name; // Изделие
     private String note;
+    private String userName;
+    private String date;
 
     transient private List<Long> draftIds = new ArrayList<>(0);
 

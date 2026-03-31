@@ -18,7 +18,11 @@ import ru.wert.tubus.chogori.application.services.ChogoriServices;
 import ru.wert.tubus.client.entity.models.*;
 import ru.wert.tubus.winform.enums.EOperation;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+
+import static ru.wert.tubus.chogori.setteings.ChogoriSettings.CH_CURRENT_USER;
 
 @Slf4j
 public class Product_ACCController extends FormView_ACCController<Product> {
@@ -200,7 +204,9 @@ public class Product_ACCController extends FormView_ACCController<Product> {
         String number = tfNumber.getText();
         String name = tfName.getText();
         String note = "";
+        String userName = CH_CURRENT_USER.getName();
+        String date = LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM.yy"));
 
-        return new Passport(prefix, number, name, note, new ArrayList<>());
+        return new Passport(prefix, number, name, note, userName, date, new ArrayList<>());
     }
 }

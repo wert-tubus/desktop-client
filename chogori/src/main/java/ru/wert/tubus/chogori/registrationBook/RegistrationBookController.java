@@ -7,6 +7,9 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
+import javafx.stage.Modality;
+import javafx.stage.Stage;
+import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.application.services.ChogoriServices;
 import ru.wert.tubus.client.entity.models.Decimal;
 import ru.wert.tubus.client.entity.models.Passport;
@@ -16,28 +19,20 @@ import ru.wert.tubus.winform.window_decoration.WindowDecoration;
 
 import java.io.IOException;
 import java.net.URL;
-import java.util.Comparator;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static ru.wert.tubus.winform.statics.WinformStatic.WF_MAIN_STAGE;
 
-
+@Slf4j
 public class RegistrationBookController implements Initializable, UpdatableTabController {
-
-    @FXML
-    private Tab tpPIK;
-
-    @FXML
-    private Tab tpDrafts;
 
     @FXML
     private ListView<Passport> lvPIK;
 
     @FXML
-    private ListView<Passport> lvDrafts;
+    private ListView<Passport> lvSketches;
 
     @FXML
     private ListView<Passport> lvListOFNumbers;
@@ -47,10 +42,10 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
 
     @FXML
     private ListView<Decimal> lvDecimalGroups;
-    
+
     private ObservableList<Passport> allPassportsList;
     private ObservableList<Passport> pikPassportsList;
-    private ObservableList<Passport> draftPassportsList;
+    private ObservableList<Passport> sketchPassportsList;
     private ObservableList<Passport> selectedPassportsList;
 
     private ObservableList<Decimal> allDecimalGroupsList;
@@ -69,9 +64,9 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
 
         // Заполняем списки
         fillPIKListView();
-        fillDraftsListView();
+        fillSketchesListView();
 
-        //Загружаем список децимальных групп
+        // Загружаем список децимальных групп
         loadDecimalGroups();
         fillAllDecimalGroups();
 
@@ -80,11 +75,13 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
 
         // Настраиваем обработчики выбора в списках
         setupSelectionHandlers();
+
+        // Настраиваем обработчик двойного клика для списка децимальных групп
+        setupDecimalGroupsDoubleClickHandler();
     }
 
-
     /**
-     * Загружаем список децимальных групп
+     * Загружаем список децимальных групп из базы данных
      */
     private void loadDecimalGroups() {
         try {
@@ -97,11 +94,17 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
         }
     }
 
+    /**
+     * Заполняет ListView децимальных групп
+     */
     private void fillAllDecimalGroups() {
         lvDecimalGroups.setItems(allDecimalGroupsList);
         setupListViewDecimalGroups(lvDecimalGroups);
     }
 
+    /**
+     * Настраивает отображение элементов в списке децимальных групп
+     */
     private void setupListViewDecimalGroups(ListView<Decimal> listView) {
         listView.setCellFactory(lv -> new ListCell<Decimal>() {
             @Override
@@ -116,9 +119,38 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
         });
     }
 
-    private void setupBtnAddDecimalGroup() {
+    /**
+     * Настройка обработчика двойного клика для списка децимальных групп
+     * При двойном клике проверяем название группы:
+     * - если "Эскиз" - создаем эскизный паспорт
+     * - иначе - создаем паспорт ПИК
+     */
+    private void setupDecimalGroupsDoubleClickHandler() {
+        lvDecimalGroups.setOnMouseClicked(event -> {
+            if (event.getClickCount() == 2) {
+                Decimal selectedDecimal = lvDecimalGroups.getSelectionModel().getSelectedItem();
+                if (selectedDecimal != null) {
+                    String decimalName = selectedDecimal.getName();
+                    if ("Эскиз".equals(decimalName)) {
+                        getSketchNumber(selectedDecimal);
+                    } else {
+                        getPIKNumber(selectedDecimal);
+                    }
+                }
+            }
+        });
     }
 
+    /**
+     * Настройка кнопки добавления децимальной группы
+     */
+    private void setupBtnAddDecimalGroup() {
+        // TODO: Реализовать добавление новой децимальной группы
+    }
+
+    /**
+     * Настраивает отображение элементов в ListView для паспортов
+     */
     private void setupListViewDisplay(ListView<Passport> listView) {
         listView.setCellFactory(lv -> new ListCell<Passport>() {
             @Override
@@ -133,6 +165,9 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
         });
     }
 
+    /**
+     * Загружает все паспорта из базы данных
+     */
     private void loadAllPassports() {
         try {
             allPassportsList = FXCollections.observableArrayList(
@@ -144,8 +179,11 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
         }
     }
 
+    /**
+     * Заполняет список паспортов ПИК
+     * Фильтрует паспорта с префиксом "ПИК" и номером по маске "######.###"
+     */
     private void fillPIKListView() {
-        // Фильтруем паспорта с префиксом "ПИК" и номером по маске "######.###"
         Pattern pikPattern = Pattern.compile("\\d{6}\\.\\d{3}");
 
         List<Passport> pikPassports = allPassportsList.stream()
@@ -165,39 +203,46 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
         setupListViewDisplay(lvPIK);
     }
 
-    private void fillDraftsListView() {
-        // Фильтруем паспорта с префиксом "-" или null и номером по маске "Э#####"
-        Pattern draftPattern = Pattern.compile("Э\\d{5}");
+    /**
+     * Заполняет список эскизных паспортов
+     * Фильтрует паспорта с префиксом "-" или null и номером по маске "Э#####"
+     */
+    private void fillSketchesListView() {
+        Pattern sketchPattern = Pattern.compile("Э\\d{5}");
 
-        List<Passport> draftPassports = allPassportsList.stream()
+        List<Passport> sketchPassports = allPassportsList.stream()
                 .filter(passport -> {
                     Prefix prefix = passport.getPrefix();
                     String number = passport.getNumber();
                     boolean prefixCondition = prefix == null || "-".equals(prefix.getName());
                     return prefixCondition
                             && number != null
-                            && draftPattern.matcher(number).matches();
+                            && sketchPattern.matcher(number).matches();
                 })
                 .sorted(Comparator.comparing(Passport::getNumber))
                 .collect(Collectors.toList());
 
-        draftPassportsList = FXCollections.observableArrayList(draftPassports);
-        lvDrafts.setItems(draftPassportsList);
-        setupListViewDisplay(lvDrafts);
+        sketchPassportsList = FXCollections.observableArrayList(sketchPassports);
+        lvSketches.setItems(sketchPassportsList);
+        setupListViewDisplay(lvSketches);
     }
 
+    /**
+     * Настраивает обработчики выбора в списках
+     * Обеспечивает возможность выбора только одного элемента
+     */
     private void setupSelectionHandlers() {
         // Обработчик выбора в списке ПИК
         lvPIK.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> {
                     if (newValue != null) {
-                        lvDrafts.getSelectionModel().clearSelection();
+                        lvSketches.getSelectionModel().clearSelection();
                     }
                 }
         );
 
         // Обработчик выбора в списке эскизов
-        lvDrafts.getSelectionModel().selectedItemProperty().addListener(
+        lvSketches.getSelectionModel().selectedItemProperty().addListener(
                 (observable, oldValue, newValue) -> {
                     if (newValue != null) {
                         lvPIK.getSelectionModel().clearSelection();
@@ -207,22 +252,227 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
     }
 
     /**
-     * Получить номер ПИК - создаем новый паспорт ПИК
+     * Получить следующий доступный номер для паспорта ПИК
+     *
+     * @param decimal децимальная группа
+     * @return следующий доступный номер в формате "XXXXXX.XXX"
      */
-    private void getPIKNumber() {
+    private String getNextPIKNumber(Decimal decimal) {
         try {
-            openCreateDialog("PIK", "Создание паспорта ПИК");
+            // Получаем текущий lastNumber из базы данных (на случай параллельной работы)
+            Decimal freshDecimal = ChogoriServices.CH_DECIMALS.findById(decimal.getId());
+            if (freshDecimal == null) {
+                throw new RuntimeException("Децимальная группа не найдена");
+            }
+
+            int currentLastNumber = freshDecimal.getLastNumber();
+            int initialNumber = freshDecimal.getInitialNumber();
+
+            // Проверяем, есть ли свободные номера в диапазоне
+            Integer freeNumber = findFreePIKNumber(freshDecimal, initialNumber, currentLastNumber);
+
+            if (freeNumber != null) {
+                // Возвращаем свободный номер
+                return formatPIKNumber(freshDecimal.getName(), freeNumber);
+            } else {
+                // Свободных номеров нет, используем lastNumber + 1
+                int newNumber = currentLastNumber + 1;
+                String formattedNumber = formatPIKNumber(freshDecimal.getName(), newNumber);
+
+                // Обновляем lastNumber в базе данных
+                freshDecimal.setLastNumber(newNumber);
+                boolean updated = ChogoriServices.CH_DECIMALS.update(freshDecimal);
+
+                if (!updated) {
+                    throw new RuntimeException("Не удалось обновить lastNumber в базе данных");
+                }
+
+                return formattedNumber;
+            }
+        } catch (Exception e) {
+            log.error("Ошибка при получении следующего номера ПИК", e);
+            throw new RuntimeException("Не удалось получить следующий номер: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Поиск свободного номера в диапазоне ПИК
+     *
+     * @param decimal децимальная группа
+     * @param start   начальное значение диапазона
+     * @param end     конечное значение диапазона
+     * @return первый свободный номер или null, если все номера заняты
+     */
+    private Integer findFreePIKNumber(Decimal decimal, int start, int end) {
+        try {
+            // Получаем все существующие паспорта с префиксом "ПИК" и децимальной характеристикой
+            List<Passport> existingPassports = allPassportsList.stream()
+                    .filter(p -> p.getPrefix() != null
+                            && "ПИК".equals(p.getPrefix().getName())
+                            && p.getNumber() != null
+                            && p.getNumber().startsWith(decimal.getName() + "."))
+                    .collect(Collectors.toList());
+
+            // Извлекаем все занятые порядковые номера
+            Set<Integer> usedNumbers = new HashSet<>();
+            for (Passport passport : existingPassports) {
+                String number = passport.getNumber();
+                String[] parts = number.split("\\.");
+                if (parts.length == 2) {
+                    try {
+                        usedNumbers.add(Integer.parseInt(parts[1]));
+                    } catch (NumberFormatException e) {
+                        log.warn("Неверный формат номера: {}", number);
+                    }
+                }
+            }
+
+            // Ищем первый свободный номер в диапазоне
+            for (int i = start; i <= end; i++) {
+                if (!usedNumbers.contains(i)) {
+                    return i;
+                }
+            }
+
+            return null;
+        } catch (Exception e) {
+            log.error("Ошибка при поиске свободного номера", e);
+            return null;
+        }
+    }
+
+    /**
+     * Форматирование номера ПИК
+     *
+     * @param decimalName децимальная характеристика (6 цифр)
+     * @param number      порядковый номер (3 цифры)
+     * @return отформатированный номер в виде "XXXXXX.XXX"
+     */
+    private String formatPIKNumber(String decimalName, int number) {
+        return String.format("%s.%03d", decimalName, number);
+    }
+
+    /**
+     * Получить следующий доступный номер для эскизного паспорта
+     *
+     * @param decimal децимальная группа (Эскиз)
+     * @return следующий доступный номер в формате "ЭXXXXX"
+     */
+    private String getNextSketchNumber(Decimal decimal) {
+        try {
+            // Получаем текущий lastNumber из базы данных (на случай параллельной работы)
+            Decimal freshDecimal = ChogoriServices.CH_DECIMALS.findById(decimal.getId());
+            if (freshDecimal == null) {
+                throw new RuntimeException("Децимальная группа не найдена");
+            }
+
+            int currentLastNumber = freshDecimal.getLastNumber();
+            int initialNumber = freshDecimal.getInitialNumber();
+
+            // Проверяем, есть ли свободные номера в диапазоне
+            Integer freeNumber = findFreeSketchNumber(freshDecimal, initialNumber, currentLastNumber);
+
+            if (freeNumber != null) {
+                // Возвращаем свободный номер
+                return formatSketchNumber(freeNumber);
+            } else {
+                // Свободных номеров нет, используем lastNumber + 1
+                int newNumber = currentLastNumber + 1;
+                String formattedNumber = formatSketchNumber(newNumber);
+
+                // Обновляем lastNumber в базе данных
+                freshDecimal.setLastNumber(newNumber);
+                boolean updated = ChogoriServices.CH_DECIMALS.update(freshDecimal);
+
+                if (!updated) {
+                    throw new RuntimeException("Не удалось обновить lastNumber в базе данных");
+                }
+
+                return formattedNumber;
+            }
+        } catch (Exception e) {
+            log.error("Ошибка при получении следующего номера эскиза", e);
+            throw new RuntimeException("Не удалось получить следующий номер: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Поиск свободного номера в диапазоне эскизов
+     *
+     * @param decimal децимальная группа
+     * @param start   начальное значение диапазона
+     * @param end     конечное значение диапазона
+     * @return первый свободный номер или null, если все номера заняты
+     */
+    private Integer findFreeSketchNumber(Decimal decimal, int start, int end) {
+        try {
+            // Получаем все существующие паспорта с префиксом "-" (эскизы)
+            List<Passport> existingPassports = allPassportsList.stream()
+                    .filter(p -> (p.getPrefix() == null || "-".equals(p.getPrefix().getName()))
+                            && p.getNumber() != null
+                            && p.getNumber().startsWith("Э"))
+                    .collect(Collectors.toList());
+
+            // Извлекаем все занятые порядковые номера
+            Set<Integer> usedNumbers = new HashSet<>();
+            for (Passport passport : existingPassports) {
+                String number = passport.getNumber();
+                if (number.length() > 1) {
+                    try {
+                        usedNumbers.add(Integer.parseInt(number.substring(1)));
+                    } catch (NumberFormatException e) {
+                        log.warn("Неверный формат номера: {}", number);
+                    }
+                }
+            }
+
+            // Ищем первый свободный номер в диапазоне
+            for (int i = start; i <= end; i++) {
+                if (!usedNumbers.contains(i)) {
+                    return i;
+                }
+            }
+
+            return null;
+        } catch (Exception e) {
+            log.error("Ошибка при поиске свободного номера", e);
+            return null;
+        }
+    }
+
+    /**
+     * Форматирование номера эскиза
+     *
+     * @param number порядковый номер (5 цифр)
+     * @return отформатированный номер в виде "ЭXXXXX"
+     */
+    private String formatSketchNumber(int number) {
+        return String.format("Э%05d", number);
+    }
+
+    /**
+     * Создать новый паспорт ПИК
+     *
+     * @param decimal децимальная группа
+     */
+    private void getPIKNumber(Decimal decimal) {
+        try {
+            String nextNumber = getNextPIKNumber(decimal);
+            openCreateDialog("PIK", "Регистрация номера", nextNumber, decimal);
         } catch (Exception e) {
             showError("Ошибка", "Не удалось создать паспорт ПИК: " + e.getMessage());
         }
     }
 
     /**
-     * Получить эскизный номер - создаем новый эскизный паспорт
+     * Создать новый эскизный паспорт
+     *
+     * @param decimal децимальная группа
      */
-    private void getDraftNumber() {
+    private void getSketchNumber(Decimal decimal) {
         try {
-            openCreateDialog("DRAFT", "Создание эскизного паспорта");
+            String nextNumber = getNextSketchNumber(decimal);
+            openCreateDialog("SKETCH", "Регистрация номера", nextNumber, decimal);
         } catch (Exception e) {
             showError("Ошибка", "Не удалось создать эскизный паспорт: " + e.getMessage());
         }
@@ -230,22 +480,41 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
 
     /**
      * Открыть диалог создания нового паспорта
+     *
+     * @param passportType тип паспорта ("PIK" или "SKETCH")
+     * @param windowTitle  заголовок окна
+     * @param number       предварительно сформированный номер
+     * @param decimal      децимальная группа
      */
-    private void openCreateDialog(String passportType, String windowTitle) {
+    private void openCreateDialog(String passportType, String windowTitle, String number, Decimal decimal) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/registrationBook/registrationForm.fxml"));
             Parent parent = loader.load();
 
             RegistrationFormController controller = loader.getController();
 
-            // Создаем модальное окно
-            new WindowDecoration(windowTitle, parent, true, WF_MAIN_STAGE, false);
+            controller.setData(passportType, number, decimal);
 
-            // Обрабатываем результат
-            if (controller.isAccepted()) {
-                Passport newPassport = controller.getNewPassport();
-                addToSelectedList(newPassport);
-            }
+            WindowDecoration dialog = new WindowDecoration(windowTitle, parent, false, WF_MAIN_STAGE, true);
+            Stage stage = dialog.getWindow();
+
+            stage.setOnCloseRequest(e->{
+                // Обрабатываем результат после закрытия окна
+                if (controller.isAccepted()) {
+                    Passport savedPassport = controller.getSavedPassport();
+                    if (savedPassport != null) {
+                        addToSelectedList(savedPassport);
+                        // Обновляем локальный список паспортов
+                        allPassportsList.add(savedPassport);
+                        // Обновляем списки ПИК и эскизов
+                        refreshPassportLists();
+                    }
+                } else if (controller.isCancelled() && controller.isNumberReserved()) {
+                    // Если пользователь отменил и номер был зарезервирован, выполняем декремент
+                    rollbackLastNumber(decimal, controller.getReservedNumber());
+
+                }
+            });
 
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -254,7 +523,37 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
     }
 
     /**
+     * Обновляет списки паспортов после добавления нового
+     */
+    private void refreshPassportLists() {
+        fillPIKListView();
+        fillSketchesListView();
+    }
+
+    /**
+     * Откат lastNumber при отмене или ошибке
+     *
+     * @param decimal        децимальная группа
+     * @param reservedNumber зарезервированный номер
+     */
+    private void rollbackLastNumber(Decimal decimal, int reservedNumber) {
+        try {
+            Decimal freshDecimal = ChogoriServices.CH_DECIMALS.findById(decimal.getId());
+            if (freshDecimal != null && freshDecimal.getLastNumber() == reservedNumber) {
+                freshDecimal.setLastNumber(reservedNumber - 1);
+                ChogoriServices.CH_DECIMALS.update(freshDecimal);
+                log.info("Выполнен откат lastNumber для decimal {} с {} на {}",
+                        decimal.getName(), reservedNumber, reservedNumber - 1);
+            }
+        } catch (Exception e) {
+            log.error("Ошибка при откате lastNumber", e);
+        }
+    }
+
+    /**
      * Добавить паспорт в список выбранных
+     *
+     * @param passport добавляемый паспорт
      */
     private void addToSelectedList(Passport passport) {
         // Проверяем, нет ли уже такого паспорта в списке
@@ -270,63 +569,6 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
         } else {
             showWarning("Дубликат", "Этот паспорт уже добавлен в список");
         }
-    }
-
-    /**
-     * Сохранить все номера
-     */
-    private void saveAllNumbers() {
-        try {
-            if (selectedPassportsList.isEmpty()) {
-                showWarning("Нет данных", "Список паспортов пуст. Добавьте паспорта перед сохранением.");
-                return;
-            }
-
-            // TODO: Здесь будет логика получения реальных номеров
-            // Для каждого паспорта в списке нужно получить реальный номер
-            for (Passport passport : selectedPassportsList) {
-                if ("ПИК".equals(passport.getPrefix().getName())) {
-                    // Получаем реальный номер ПИК
-                    String realNumber = getRealPIKNumber();
-                    passport.setNumber(realNumber);
-                } else {
-                    // Получаем реальный эскизный номер
-                    String realNumber = getRealDraftNumber();
-                    passport.setNumber(realNumber);
-                }
-            }
-
-            // TODO: Сохраняем паспорта в базу данных
-            // for (Passport passport : selectedPassportsList) {
-            //     ChogoriServices.CH_QUICK_PASSPORTS.save(passport);
-            // }
-
-            showInfo("Сохранение", "Все номера успешно получены и сохранены (" + selectedPassportsList.size() + " паспортов)");
-
-            // Очищаем список после сохранения
-            selectedPassportsList.clear();
-
-        } catch (Exception e) {
-            showError("Ошибка сохранения", "Не удалось сохранить номера: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Получить реальный номер ПИК
-     * TODO: Реализовать логику получения номера
-     */
-    private String getRealPIKNumber() {
-        // Здесь будет логика получения номера ПИК
-        return "123456.789"; // Временный номер
-    }
-
-    /**
-     * Получить реальный эскизный номер
-     * TODO: Реализовать логику получения номера
-     */
-    private String getRealDraftNumber() {
-        // Здесь будет логика получения эскизного номера
-        return "Э12345"; // Временный номер
     }
 
     /**
@@ -364,6 +606,10 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
 
     @Override
     public void updateTab() {
-
+        // Обновление данных при переключении на вкладку
+        loadAllPassports();
+        refreshPassportLists();
+        loadDecimalGroups();
+        fillAllDecimalGroups();
     }
 }
