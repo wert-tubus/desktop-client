@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.text.*?>
+
+<AnchorPane prefHeight="321.0" prefWidth="366.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.wert.tubus.chogori.registerBook.RegistrеrFormController">
+    <children>
+        <VBox spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
+            <children>
+            <VBox>
+               <children>
+                        <Label text="Децимальный номер:">
+                     <VBox.margin>
+                        <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                     </VBox.margin></Label>
+                        <TextField fx:id="tfNumber" editable="false" />
+               </children>
+            </VBox>
+            <VBox>
+               <children>
+
+                        <Label text="Наименование:">
+                     <VBox.margin>
+                        <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                     </VBox.margin></Label>
+                        <TextField fx:id="tfName" promptText="Введите наименование" />
+               </children>
+            </VBox>
+            <VBox>
+               <children>
+
+                        <Label text="Изделие:">
+                     <VBox.margin>
+                        <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                     </VBox.margin></Label>
+                        <TextArea fx:id="taProduct" prefHeight="80.0" promptText="Введите информацию об изделии" />
+               </children>
+            </VBox>
+            <HBox spacing="10.0">
+               <children>
+                  <VBox maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS">
+                     <children>
+      
+                              <Label text="Разработчик:">
+                           <VBox.margin>
+                              <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                           </VBox.margin>
+                        </Label>
+                              <TextField fx:id="tfDeveloper" editable="false" />
+                     </children>
+                  </VBox>
+                  <VBox>
+                     <children>
+      
+                              <Label text="Дата:">
+                           <VBox.margin>
+                              <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
+                           </VBox.margin>
+                        </Label>
+                              <TextField fx:id="tfDate" editable="false" maxWidth="-Infinity" minWidth="-Infinity" prefWidth="100.0" />
+                     </children>
+                  </VBox>
+               </children>
+            </HBox>
+
+                <Separator />
+
+                <HBox alignment="CENTER_RIGHT" spacing="10.0">
+                    <children>
+                        <Button fx:id="btnCancel" mnemonicParsing="false" text="Отмена" />
+                        <Button fx:id="btnAccept" defaultButton="true" mnemonicParsing="false" text="Зарегистрировать" />
+                    </children>
+                </HBox>
+            </children>
+        </VBox>
+    </children>
+</AnchorPane>

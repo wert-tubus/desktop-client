@@ -388,7 +388,7 @@ public class AppMenuController {
 //     */
 //    private void openRegistrar(ActionEvent actionEvent) {
 //        try {
-//            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/registrar/registrar.fxml"));
+//            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/registrar/registrerBook.fxml"));
 //            Parent parent = loader.load();
 //
 //            new WindowDecoration("Регистратор", parent, true, WF_MAIN_STAGE, true);
@@ -402,7 +402,7 @@ public class AppMenuController {
      */
     private void openRegistrar(ActionEvent actionEvent) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/registrar/registrar.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/registrerBook/registrerBook.fxml"));
             Parent parent = loader.load();
             parent.getStylesheets().add(this.getClass().getResource("/chogori-css/details-dark.css").toString());
             String tabName = "Журнал регистрации";

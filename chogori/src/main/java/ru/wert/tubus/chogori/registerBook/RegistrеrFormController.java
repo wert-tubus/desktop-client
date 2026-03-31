@@ -1,4 +1,4 @@
-package ru.wert.tubus.chogori.registration;
+package ru.wert.tubus.chogori.registerBook;
 
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -7,7 +7,6 @@ import javafx.stage.Stage;
 import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.client.entity.models.Prefix;
 import ru.wert.tubus.client.entity.models.User;
-import ru.wert.tubus.chogori.application.services.ChogoriServices;
 
 import java.net.URL;
 import java.time.LocalDate;
@@ -16,7 +15,7 @@ import java.util.ResourceBundle;
 
 import static ru.wert.tubus.chogori.setteings.ChogoriSettings.CH_CURRENT_USER;
 
-public class RegistrarDraftController implements Initializable {
+public class RegistrеrFormController implements Initializable {
 
     @FXML
     private TextField tfNumber;
