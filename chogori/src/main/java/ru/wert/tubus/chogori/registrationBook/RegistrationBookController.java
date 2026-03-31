@@ -1,5 +1,6 @@
 package ru.wert.tubus.chogori.registrationBook;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -7,7 +8,6 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
-import javafx.stage.Modality;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.application.services.ChogoriServices;
@@ -91,6 +91,20 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
         } catch (Exception e) {
             showError("Ошибка загрузки данных", "Не удалось загрузить децимальные группы: " + e.getMessage());
             allDecimalGroupsList = FXCollections.observableArrayList();
+        }
+    }
+
+    /**
+     * Обновляет список децимальных групп из базы данных
+     */
+    private void refreshDecimalGroups() {
+        try {
+            List<Decimal> freshDecimals = ChogoriServices.CH_DECIMALS.findAll();
+            allDecimalGroupsList.clear();
+            allDecimalGroupsList.addAll(freshDecimals);
+            log.debug("Список децимальных групп обновлен");
+        } catch (Exception e) {
+            log.error("Ошибка при обновлении списка децимальных групп", e);
         }
     }
 
@@ -259,7 +273,7 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
      */
     private String getNextPIKNumber(Decimal decimal) {
         try {
-            // Получаем текущий lastNumber из базы данных (на случай параллельной работы)
+            // Получаем актуальный decimal из базы данных (на случай параллельной работы)
             Decimal freshDecimal = ChogoriServices.CH_DECIMALS.findById(decimal.getId());
             if (freshDecimal == null) {
                 throw new RuntimeException("Децимальная группа не найдена");
@@ -286,6 +300,9 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
                 if (!updated) {
                     throw new RuntimeException("Не удалось обновить lastNumber в базе данных");
                 }
+
+                // Обновляем локальный список децимальных групп
+                refreshDecimalGroups();
 
                 return formattedNumber;
             }
@@ -360,7 +377,7 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
      */
     private String getNextSketchNumber(Decimal decimal) {
         try {
-            // Получаем текущий lastNumber из базы данных (на случай параллельной работы)
+            // Получаем актуальный decimal из базы данных (на случай параллельной работы)
             Decimal freshDecimal = ChogoriServices.CH_DECIMALS.findById(decimal.getId());
             if (freshDecimal == null) {
                 throw new RuntimeException("Децимальная группа не найдена");
@@ -387,6 +404,9 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
                 if (!updated) {
                     throw new RuntimeException("Не удалось обновить lastNumber в базе данных");
                 }
+
+                // Обновляем локальный список децимальных групп
+                refreshDecimalGroups();
 
                 return formattedNumber;
             }
@@ -487,38 +507,28 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
      * @param decimal      децимальная группа
      */
     private void openCreateDialog(String passportType, String windowTitle, String number, Decimal decimal) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/registrationBook/registrationForm.fxml"));
-            Parent parent = loader.load();
+        // Используем статический метод для показа диалога
+        RegistrationFormController.Result result = RegistrationFormController.showDialog(
+                passportType, windowTitle, number, decimal);
 
-            RegistrationFormController controller = loader.getController();
-
-            controller.setData(passportType, number, decimal);
-
-            WindowDecoration dialog = new WindowDecoration(windowTitle, parent, false, WF_MAIN_STAGE, true);
-            Stage stage = dialog.getWindow();
-
-            stage.setOnCloseRequest(e->{
-                // Обрабатываем результат после закрытия окна
-                if (controller.isAccepted()) {
-                    Passport savedPassport = controller.getSavedPassport();
-                    if (savedPassport != null) {
-                        addToSelectedList(savedPassport);
-                        // Обновляем локальный список паспортов
-                        allPassportsList.add(savedPassport);
-                        // Обновляем списки ПИК и эскизов
-                        refreshPassportLists();
-                    }
-                } else if (controller.isCancelled() && controller.isNumberReserved()) {
-                    // Если пользователь отменил и номер был зарезервирован, выполняем декремент
-                    rollbackLastNumber(decimal, controller.getReservedNumber());
-
-                }
-            });
-
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            showError("Ошибка", "Не удалось открыть форму создания паспорта: " + ex.getMessage());
+        // Обрабатываем результат
+        if (result.isAccepted()) {
+            Passport savedPassport = result.getSavedPassport();
+            if (savedPassport != null) {
+                addToSelectedList(savedPassport);
+                // Обновляем локальный список паспортов
+                allPassportsList.add(savedPassport);
+                // Обновляем списки ПИК и эскизов
+                refreshPassportLists();
+                // Обновляем список децимальных групп (на случай изменения lastNumber)
+                refreshDecimalGroups();
+                showInfo("Успешно", "Паспорт успешно зарегистрирован");
+            }
+        } else if (result.isCancelled() && result.isNumberReserved()) {
+            // Если пользователь отменил и номер был зарезервирован, выполняем декремент
+            rollbackLastNumber(decimal, result.getReservedNumber());
+            // Обновляем список децимальных групп после отката
+            refreshDecimalGroups();
         }
     }
 
@@ -607,9 +617,11 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
     @Override
     public void updateTab() {
         // Обновление данных при переключении на вкладку
-        loadAllPassports();
-        refreshPassportLists();
-        loadDecimalGroups();
-        fillAllDecimalGroups();
+        Platform.runLater(()->{
+            loadAllPassports();
+            refreshPassportLists();
+            loadDecimalGroups();
+            fillAllDecimalGroups();
+        });
     }
 }

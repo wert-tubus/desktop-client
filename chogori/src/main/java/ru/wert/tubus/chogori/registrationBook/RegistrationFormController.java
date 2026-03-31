@@ -1,22 +1,30 @@
 package ru.wert.tubus.chogori.registrationBook;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
+import javafx.scene.Parent;
 import javafx.scene.control.*;
+import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.application.services.ChogoriServices;
 import ru.wert.tubus.client.entity.models.Decimal;
 import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.client.entity.models.Prefix;
 import ru.wert.tubus.winform.warnings.Warning1;
+import ru.wert.tubus.winform.window_decoration.WindowDecoration;
 
+import java.io.IOException;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ResourceBundle;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static java.lang.String.format;
 import static ru.wert.tubus.chogori.setteings.ChogoriSettings.CH_CURRENT_USER;
+import static ru.wert.tubus.winform.statics.WinformStatic.WF_MAIN_STAGE;
 import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
 import static ru.wert.tubus.winform.warnings.WarningMessages.$SERVER_IS_NOT_AVAILABLE_MAYBE;
 
@@ -65,6 +73,62 @@ public class RegistrationFormController implements Initializable {
         setupButtonHandlers();
         setupValidation();
         loadPrefixes(); // Загружаем префиксы из базы
+    }
+
+    /**
+     * Статический метод для показа диалога и получения результата
+     */
+    public static Result showDialog(String passportType, String windowTitle, String number, Decimal decimal) {
+        try {
+            FXMLLoader loader = new FXMLLoader(RegistrationFormController.class.getResource("/chogori-fxml/registrationBook/registrationForm.fxml"));
+            Parent parent = loader.load();
+
+            RegistrationFormController controller = loader.getController();
+
+            // Устанавливаем данные
+            controller.setData(passportType, number, decimal);
+
+            // Создаем окно с ожиданием
+            WindowDecoration dialog = new WindowDecoration(windowTitle, parent, false, WF_MAIN_STAGE, true);
+            Stage stage = dialog.getWindow();
+
+            // Ждем закрытия окна
+            stage.showAndWait();
+
+            // Возвращаем результат
+            return new Result(controller.isAccepted(), controller.isCancelled(),
+                    controller.isNumberReserved(), controller.getReservedNumber(),
+                    controller.getSavedPassport());
+
+        } catch (IOException e) {
+            log.error("Ошибка при открытии диалога", e);
+            return new Result(false, false, false, 0, null);
+        }
+    }
+
+    /**
+     * Класс для хранения результата диалога
+     */
+    public static class Result {
+        private final boolean accepted;
+        private final boolean cancelled;
+        private final boolean numberReserved;
+        private final int reservedNumber;
+        private final Passport savedPassport;
+
+        public Result(boolean accepted, boolean cancelled, boolean numberReserved, int reservedNumber, Passport savedPassport) {
+            this.accepted = accepted;
+            this.cancelled = cancelled;
+            this.numberReserved = numberReserved;
+            this.reservedNumber = reservedNumber;
+            this.savedPassport = savedPassport;
+        }
+
+        public boolean isAccepted() { return accepted; }
+        public boolean isCancelled() { return cancelled; }
+        public boolean isNumberReserved() { return numberReserved; }
+        public int getReservedNumber() { return reservedNumber; }
+        public Passport getSavedPassport() { return savedPassport; }
     }
 
     /**
@@ -243,8 +307,6 @@ public class RegistrationFormController implements Initializable {
             // Заполняем данные нового паспорта из полей формы
             newPassport.setName(tfName.getText().trim());
             newPassport.setNote(taProduct.getText().trim());
-            newPassport.setUserName(tfDeveloper.getText());
-            newPassport.setDate(tfDate.getText());
 
             log.info("Сохраняем паспорт: тип={}, номер={}, наименование={}",
                     passportType, newPassport.getNumber(), newPassport.getName());
@@ -277,11 +339,11 @@ public class RegistrationFormController implements Initializable {
                 Warning1.create($ATTENTION,
                         format("Паспорт уже существует в базе данных:\n%s", foundPassport.toUsefulString()),
                         "Повторная регистрация невозможна");
-                log.error("Повторная регистрация пасспорта в базе данных");
+                throw new RuntimeException("Паспорт уже существует в базе данных");
             }
 
             // Закрываем окно
-            closeWindow();
+            Platform.runLater(this::closeWindow);
 
         } catch (Exception e) {
             log.error("Ошибка при сохранении паспорта", e);
@@ -322,7 +384,7 @@ public class RegistrationFormController implements Initializable {
     private void cancel() {
         cancelled = true;
         log.debug("Создание паспорта отменено пользователем");
-        closeWindow();
+        Platform.runLater(this::closeWindow);
     }
 
     /**
