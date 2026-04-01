@@ -1,6 +1,5 @@
 package ru.wert.tubus.chogori.registrationBook;
 
-import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -8,6 +7,7 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.application.services.ChogoriServices;
@@ -15,6 +15,7 @@ import ru.wert.tubus.client.entity.models.Decimal;
 import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.client.entity.models.Prefix;
 import ru.wert.tubus.client.interfaces.UpdatableTabController;
+import ru.wert.tubus.winform.warnings.Warning1;
 import ru.wert.tubus.winform.window_decoration.WindowDecoration;
 
 import java.io.IOException;
@@ -23,7 +24,9 @@ import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static java.lang.String.format;
 import static ru.wert.tubus.winform.statics.WinformStatic.WF_MAIN_STAGE;
+import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
 
 @Slf4j
 public class RegistrationBookController implements Initializable, UpdatableTabController {
@@ -91,20 +94,6 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
         } catch (Exception e) {
             showError("Ошибка загрузки данных", "Не удалось загрузить децимальные группы: " + e.getMessage());
             allDecimalGroupsList = FXCollections.observableArrayList();
-        }
-    }
-
-    /**
-     * Обновляет список децимальных групп из базы данных
-     */
-    private void refreshDecimalGroups() {
-        try {
-            List<Decimal> freshDecimals = ChogoriServices.CH_DECIMALS.findAll();
-            allDecimalGroupsList.clear();
-            allDecimalGroupsList.addAll(freshDecimals);
-            log.debug("Список децимальных групп обновлен");
-        } catch (Exception e) {
-            log.error("Ошибка при обновлении списка децимальных групп", e);
         }
     }
 
@@ -273,7 +262,7 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
      */
     private String getNextPIKNumber(Decimal decimal) {
         try {
-            // Получаем актуальный decimal из базы данных (на случай параллельной работы)
+            // Получаем текущий lastNumber из базы данных (на случай параллельной работы)
             Decimal freshDecimal = ChogoriServices.CH_DECIMALS.findById(decimal.getId());
             if (freshDecimal == null) {
                 throw new RuntimeException("Децимальная группа не найдена");
@@ -300,9 +289,6 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
                 if (!updated) {
                     throw new RuntimeException("Не удалось обновить lastNumber в базе данных");
                 }
-
-                // Обновляем локальный список децимальных групп
-                refreshDecimalGroups();
 
                 return formattedNumber;
             }
@@ -377,7 +363,7 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
      */
     private String getNextSketchNumber(Decimal decimal) {
         try {
-            // Получаем актуальный decimal из базы данных (на случай параллельной работы)
+            // Получаем текущий lastNumber из базы данных (на случай параллельной работы)
             Decimal freshDecimal = ChogoriServices.CH_DECIMALS.findById(decimal.getId());
             if (freshDecimal == null) {
                 throw new RuntimeException("Децимальная группа не найдена");
@@ -404,9 +390,6 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
                 if (!updated) {
                     throw new RuntimeException("Не удалось обновить lastNumber в базе данных");
                 }
-
-                // Обновляем локальный список децимальных групп
-                refreshDecimalGroups();
 
                 return formattedNumber;
             }
@@ -507,28 +490,35 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
      * @param decimal      децимальная группа
      */
     private void openCreateDialog(String passportType, String windowTitle, String number, Decimal decimal) {
-        // Используем статический метод для показа диалога
-        RegistrationFormController.Result result = RegistrationFormController.showDialog(
-                passportType, windowTitle, number, decimal);
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/registrationBook/registrationForm.fxml"));
+            Parent parent = loader.load();
 
-        // Обрабатываем результат
-        if (result.isAccepted()) {
-            Passport savedPassport = result.getSavedPassport();
-            if (savedPassport != null) {
-                addToSelectedList(savedPassport);
-                // Обновляем локальный список паспортов
-                allPassportsList.add(savedPassport);
-                // Обновляем списки ПИК и эскизов
-                refreshPassportLists();
-                // Обновляем список децимальных групп (на случай изменения lastNumber)
-                refreshDecimalGroups();
-                showInfo("Успешно", "Паспорт успешно зарегистрирован");
+            RegistrationFormController controller = loader.getController();
+
+            controller.setData(passportType, number, decimal);
+
+            new WindowDecoration(windowTitle, parent, false, WF_MAIN_STAGE, true);
+
+            // Обрабатываем результат после закрытия окна
+            if (controller.isAccepted()) {
+                Passport savedPassport = controller.getSavedPassport();
+                if (savedPassport != null) {
+                    addToSelectedList(savedPassport);
+                    // Обновляем локальный список паспортов
+                    allPassportsList.add(savedPassport);
+                    // Обновляем списки ПИК и эскизов
+                    refreshPassportLists();
+                }
+            } else if (controller.isCancelled() && controller.isNumberReserved()) {
+                // Если пользователь отменил и номер был зарезервирован, выполняем декремент
+                rollbackLastNumber(decimal, controller.getReservedNumber());
+
             }
-        } else if (result.isCancelled() && result.isNumberReserved()) {
-            // Если пользователь отменил и номер был зарезервирован, выполняем декремент
-            rollbackLastNumber(decimal, result.getReservedNumber());
-            // Обновляем список децимальных групп после отката
-            refreshDecimalGroups();
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            showError("Ошибка", "Не удалось открыть форму создания паспорта: " + ex.getMessage());
         }
     }
 
@@ -575,9 +565,10 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
             selectedPassportsList.add(passport);
             // Сортируем список по номеру
             selectedPassportsList.sort(Comparator.comparing(Passport::getNumber));
-            showInfo("Успешно", "Паспорт добавлен в список");
         } else {
-            showWarning("Дубликат", "Этот паспорт уже добавлен в список");
+            Warning1.create($ATTENTION,
+                    "Этот паспорт уже добавлен в список",
+                    "Дубликаты не допустимы");
         }
     }
 
@@ -592,36 +583,12 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
         alert.showAndWait();
     }
 
-    /**
-     * Показать диалоговое окно с предупреждением
-     */
-    private void showWarning(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
-    /**
-     * Показать диалоговое окно с информацией
-     */
-    private void showInfo(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
     @Override
     public void updateTab() {
         // Обновление данных при переключении на вкладку
-        Platform.runLater(()->{
-            loadAllPassports();
-            refreshPassportLists();
-            loadDecimalGroups();
-            fillAllDecimalGroups();
-        });
+        loadAllPassports();
+        refreshPassportLists();
+        loadDecimalGroups();
+        fillAllDecimalGroups();
     }
 }
