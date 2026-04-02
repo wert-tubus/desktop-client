@@ -6,18 +6,18 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import ru.wert.tubus.chogori.images.BtnImages;
 import ru.wert.tubus.client.entity.models.Draft;
 import ru.wert.tubus.client.entity.models.Passport;
-import ru.wert.tubus.chogori.components.VBoxPassport;
+import ru.wert.tubus.chogori.components.HBoxPassport;
 import ru.wert.tubus.chogori.popups.HintPopup;
 import ru.wert.tubus.chogori.setteings.ChogoriSettings;
 import ru.wert.tubus.winform.enums.EDraftStatus;
 import ru.wert.tubus.winform.enums.EDraftType;
 
 import static ru.wert.tubus.chogori.application.services.ChogoriServices.*;
-import static ru.wert.tubus.chogori.statics.AppStatic.DOWNLOADABLE_DOCKS;
 import static ru.wert.tubus.chogori.statics.AppStatic.EXTENSIONS_DOCKS;
 import static ru.wert.tubus.chogori.statics.Comparators.createLabelComparator;
 import static ru.wert.tubus.winform.statics.WinformStatic.parseLDTtoNormalDate;
@@ -44,13 +44,13 @@ public class Draft_Columns {
     /**
      * ПАССПОРТ - ИДЕНТИФИКАТОР
      */
-    public static TableColumn<Draft, VBox> createTcPassport(){
-        TableColumn<Draft, VBox> tcPassport = new TableColumn<>("Идентификатор");
+    public static TableColumn<Draft, HBox> createTcPassport(){
+        TableColumn<Draft, HBox> tcPassport = new TableColumn<>("Идентификатор");
         //Passport выводится в виде label
         tcPassport.setCellValueFactory(cd -> {
 
             Passport passport = cd.getValue().getPassport();
-            VBoxPassport vBoxPassport = new VBoxPassport(passport, "00");
+            HBoxPassport vBoxPassport = new HBoxPassport(passport, "00");
             return new ReadOnlyObjectWrapper<>(vBoxPassport);
 
         });

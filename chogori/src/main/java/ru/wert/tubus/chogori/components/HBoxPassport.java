@@ -2,6 +2,7 @@ package ru.wert.tubus.chogori.components;
 
 import javafx.scene.control.Label;
 import javafx.scene.input.MouseButton;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.client.entity.models.Prefix;
@@ -9,10 +10,10 @@ import ru.wert.tubus.chogori.popups.CopyPopup;
 
 import static ru.wert.tubus.chogori.setteings.ChogoriSettings.*;
 
-public class VBoxPassport extends VBox {
+public class HBoxPassport extends HBox {
     private final CopyPopup copyPopupControl = new CopyPopup();
 
-    public VBoxPassport(Passport passport, String variant) {
+    public HBoxPassport(Passport passport, String variant) {
         String decNumber = passport.getNumber();
         if(!variant.equals("00")) decNumber += variant;
         Prefix prefix = passport.getPrefix();
@@ -22,7 +23,7 @@ public class VBoxPassport extends VBox {
 
 
 
-        setSpacing(0.0);
+        setSpacing(5.0);
         Label lbDecNumber = new Label(decNumber);
         lbDecNumber.setId("number");
 //        lbDecNumber.setStyle("-fx-text-fill: black; -fx-font-size: 4mm; -fx-font-weight: bold");

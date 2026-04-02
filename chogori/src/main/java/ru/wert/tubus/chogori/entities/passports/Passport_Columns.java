@@ -5,9 +5,9 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.HBox;
 import ru.wert.tubus.client.entity.models.Passport;
-import ru.wert.tubus.chogori.components.VBoxPassport;
+import ru.wert.tubus.chogori.components.HBoxPassport;
 import ru.wert.tubus.chogori.setteings.ChogoriSettings;
 
 import static ru.wert.tubus.chogori.statics.Comparators.createIntegerComparatorForStringColumn;
@@ -32,14 +32,14 @@ public class Passport_Columns {
     /**
      * ПАССПОРТ - ИДЕНТИФИКАТОР
      */
-    public static TableColumn<Passport, VBox> createTcPassport(){
-        TableColumn<Passport, VBox> tcPassport = new TableColumn<>("Идентификатор");
+    public static TableColumn<Passport, HBox> createTcPassport(){
+        TableColumn<Passport, HBox> tcPassport = new TableColumn<>("Идентификатор");
         //Passport выводится в виде label
         tcPassport.setCellValueFactory(cd -> {
 
             Passport passport = cd.getValue();
-            VBoxPassport vBoxPassport = new VBoxPassport(passport, "");
-            return new ReadOnlyObjectWrapper<>(vBoxPassport);
+            HBoxPassport hBoxPassport = new HBoxPassport(passport, "");
+            return new ReadOnlyObjectWrapper<>(hBoxPassport);
 
         });
 

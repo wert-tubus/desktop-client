@@ -2,6 +2,7 @@ package ru.wert.tubus.chogori.entities.passports;
 
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import lombok.Getter;
 import lombok.Setter;
@@ -39,7 +40,7 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
     private Passport_ContextMenu contextMenu;
 
     private TableColumn<Passport, String> tcId;
-    private TableColumn<Passport, VBox> tcPassport; //Колонка Идентификатор
+    private TableColumn<Passport, HBox> tcPassport; //Колонка Идентификатор
     private TableColumn<Passport, Label> tcPassportNumber; //Номер чертежа
     private TableColumn<Passport, Label> tcPassportName; //Наименование чертежа
     private TableColumn<Passport, Label> tcPassportNote; //Изделие, комментарий

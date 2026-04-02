@@ -5,10 +5,11 @@ import javafx.beans.property.ReadOnlyStringWrapper;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import ru.wert.tubus.client.entity.models.Detail;
 import ru.wert.tubus.client.entity.models.Passport;
-import ru.wert.tubus.chogori.components.VBoxPassport;
+import ru.wert.tubus.chogori.components.HBoxPassport;
 
 public class DetailColumns {
 
@@ -35,13 +36,13 @@ public class DetailColumns {
     /**
      * ПАССПОРТ - ИДЕНТИФИКАТОР
      */
-    public static TableColumn<Detail, VBox> createTcPassport(){
-        TableColumn<Detail, VBox> tcPassport = new TableColumn<>("Деталь");
+    public static TableColumn<Detail, HBox> createTcPassport(){
+        TableColumn<Detail, HBox> tcPassport = new TableColumn<>("Деталь");
         //Passport выводится в виде label
         tcPassport.setCellValueFactory(cd -> {
 
             Passport passport = cd.getValue().getPassport();
-            VBoxPassport vBoxPassport = new VBoxPassport(passport, cd.getValue().getVariant());
+            HBoxPassport vBoxPassport = new HBoxPassport(passport, cd.getValue().getVariant());
             return new ReadOnlyObjectWrapper<>(vBoxPassport);
 
         });

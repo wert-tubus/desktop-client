@@ -6,7 +6,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.VBox;
 import ru.wert.tubus.chogori.application.passports.OpenPassportsEditorTask;
 import ru.wert.tubus.chogori.application.passports.PassportsEditorController;
-import ru.wert.tubus.chogori.components.VBoxPassport;
+import ru.wert.tubus.chogori.components.HBoxPassport;
 import ru.wert.tubus.chogori.tabs.AppTab;
 import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.chogori.application.services.ChogoriServices;
@@ -27,7 +27,7 @@ public class PassportCardController {
     public void init(String strId) {
         Passport passport = ChogoriServices.CH_PASSPORTS.findById(Long.valueOf(strId));
         String passportName = passport.getName();
-        VBoxPassport vb = new VBoxPassport(passport, "00");
+        HBoxPassport vb = new HBoxPassport(passport, "00");
         vb.setStyle("-fx-padding: 0 10 0 10;");
         vb.setPrefWidth(CHAT_WIDTH * DialogController.MESSAGE_WIDTH);
         vb.setId("draftInChat");
