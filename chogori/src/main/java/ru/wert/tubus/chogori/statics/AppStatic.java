@@ -449,4 +449,25 @@ public class AppStatic {
         }
     }
 
+    /**
+     * Преобразует строку, делая первый символ заглавным.
+     * Остальные символы строки остаются без изменений.
+     * @param input входная строка для преобразования
+     * @return преобразованная строка с заглавной первой буквой,
+     *         или null если входная строка равна null,
+     *         или пустую строку если входная строка пустая
+     */
+    public static String capitalizeFirstLetter(String input) {
+        // Проверка на null и пустую строку
+        if (input == null || input.isEmpty()) {
+            return input;
+        }
+
+        // Получаем первый символ и преобразуем его в верхний регистр
+        char firstChar = Character.toUpperCase(input.charAt(0));
+
+        // Формируем результат: первый символ в верхнем регистре + остальная часть без изменений
+        return firstChar + input.substring(1);
+    }
+
 }

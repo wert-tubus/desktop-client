@@ -1,3 +1,4 @@
+// RegistrationBookController.java (обновленная версия)
 package ru.wert.tubus.chogori.registrationBook;
 
 import javafx.collections.FXCollections;
@@ -53,14 +54,16 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
 
     private ObservableList<Decimal> allDecimalGroupsList;
 
+    // Контекстные меню для списков
+    private PassportContextMenu pikContextMenu;
+    private PassportContextMenu sketchesContextMenu;
+    private PassportContextMenu selectedContextMenu;
+
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         // Инициализируем список для выбранных паспортов
         selectedPassportsList = FXCollections.observableArrayList();
         lvListOFNumbers.setItems(selectedPassportsList);
-
-        // Настраиваем отображение для lvListOFNumbers
-        setupListViewDisplay(lvListOFNumbers);
 
         // Загружаем все паспорта
         loadAllPassports();
@@ -81,6 +84,102 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
 
         // Настраиваем обработчик двойного клика для списка децимальных групп
         setupDecimalGroupsDoubleClickHandler();
+
+        // Настраиваем контекстные меню для списков паспортов
+        setupContextMenus();
+    }
+
+    /**
+     * Настройка контекстных меню для всех списков паспортов
+     */
+    private void setupContextMenus() {
+        // Убираем старую настройку отображения, так как она будет в контекстном меню
+        // setupListViewDisplay(lvPIK); - убрать эту строку из initialize
+
+        // Контекстное меню для списка ПИК
+        pikContextMenu = new PassportContextMenu(
+                lvPIK,
+                this::editPassport,
+                this::refreshPassportLists,
+                null
+        );
+
+        // Контекстное меню для списка эскизов
+        sketchesContextMenu = new PassportContextMenu(
+                lvSketches,
+                this::editPassport,
+                this::refreshPassportLists,
+                null
+        );
+
+        // Контекстное меню для списка выбранных паспортов
+        selectedContextMenu = new PassportContextMenu(
+                lvListOFNumbers,
+                this::editPassport,
+                this::refreshPassportLists,
+                this::refreshSelectedList
+        );
+
+        // Добавляем обработчик изменения выбора для обновления состояния меню
+        lvPIK.getSelectionModel().selectedItemProperty().addListener(
+                (obs, old, val) -> pikContextMenu.updateMenuState());
+        lvSketches.getSelectionModel().selectedItemProperty().addListener(
+                (obs, old, val) -> sketchesContextMenu.updateMenuState());
+        lvListOFNumbers.getSelectionModel().selectedItemProperty().addListener(
+                (obs, old, val) -> selectedContextMenu.updateMenuState());
+    }
+
+    /**
+     * Обновление списка выбранных паспортов (удаление неактуальных)
+     */
+    private void refreshSelectedList() {
+        // Удаляем из выбранных те паспорта, которых больше нет в allPassportsList
+        Set<Passport> currentPassports = new HashSet<>(allPassportsList);
+        List<Passport> toRemove = selectedPassportsList.stream()
+                .filter(p -> !currentPassports.contains(p))
+                .collect(Collectors.toList());
+        selectedPassportsList.removeAll(toRemove);
+    }
+
+    /**
+     * Редактирование паспорта
+     * @param passport паспорт для редактирования
+     */
+    private void editPassport(Passport passport) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/registrationBook/registrationForm.fxml"));
+            Parent parent = loader.load();
+
+            RegistrationFormController controller = loader.getController();
+            controller.setDataForEdit(passport);
+
+            new WindowDecoration("Редактирование паспорта", parent, false, WF_MAIN_STAGE, true);
+
+            // Обрабатываем результат после закрытия окна
+            if (controller.isAccepted()) {
+                Passport updatedPassport = controller.getSavedPassport();
+                if (updatedPassport != null) {
+                    // Обновляем локальный список паспортов
+                    int index = allPassportsList.indexOf(passport);
+                    if (index >= 0) {
+                        allPassportsList.set(index, updatedPassport);
+                    }
+                    // Обновляем списки
+                    refreshPassportLists();
+
+                    // Обновляем выбранные паспорта
+                    int selectedIndex = selectedPassportsList.indexOf(passport);
+                    if (selectedIndex >= 0) {
+                        selectedPassportsList.set(selectedIndex, updatedPassport);
+                        selectedPassportsList.sort(Comparator.comparing(Passport::getNumber));
+                    }
+                }
+            }
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            showError("Ошибка", "Не удалось открыть форму редактирования паспорта: " + ex.getMessage());
+        }
     }
 
     /**
@@ -151,22 +250,6 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
         // TODO: Реализовать добавление новой децимальной группы
     }
 
-    /**
-     * Настраивает отображение элементов в ListView для паспортов
-     */
-    private void setupListViewDisplay(ListView<Passport> listView) {
-        listView.setCellFactory(lv -> new ListCell<Passport>() {
-            @Override
-            protected void updateItem(Passport item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                } else {
-                    setText(item.toUsefulString());
-                }
-            }
-        });
-    }
 
     /**
      * Загружает все паспорта из базы данных
@@ -203,7 +286,6 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
 
         pikPassportsList = FXCollections.observableArrayList(pikPassports);
         lvPIK.setItems(pikPassportsList);
-        setupListViewDisplay(lvPIK);
     }
 
     /**
@@ -227,7 +309,6 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
 
         sketchPassportsList = FXCollections.observableArrayList(sketchPassports);
         lvSketches.setItems(sketchPassportsList);
-        setupListViewDisplay(lvSketches);
     }
 
     /**
@@ -528,6 +609,7 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
     private void refreshPassportLists() {
         fillPIKListView();
         fillSketchesListView();
+        refreshSelectedList();
     }
 
     /**

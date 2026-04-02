@@ -1,22 +1,32 @@
+// RegistrationFormController.java (добавлен метод setDataForEdit)
 package ru.wert.tubus.chogori.registrationBook;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
+import javafx.scene.layout.StackPane;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.application.services.ChogoriServices;
+import ru.wert.tubus.chogori.common.commands.ItemCommands;
+import ru.wert.tubus.chogori.common.contextMenuACC.FormView_ACCController;
+import ru.wert.tubus.chogori.common.interfaces.IFormView;
 import ru.wert.tubus.client.entity.models.Decimal;
 import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.client.entity.models.Prefix;
+import ru.wert.tubus.winform.enums.EOperation;
 import ru.wert.tubus.winform.warnings.Warning1;
 
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.ResourceBundle;
 
 import static java.lang.String.format;
 import static ru.wert.tubus.chogori.setteings.ChogoriSettings.CH_CURRENT_USER;
+import static ru.wert.tubus.chogori.statics.AppStatic.capitalizeFirstLetter;
+import static ru.wert.tubus.chogori.statics.AppStatic.closeWindow;
 import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
 import static ru.wert.tubus.winform.warnings.WarningMessages.$SERVER_IS_NOT_AVAILABLE_MAYBE;
 
@@ -25,7 +35,7 @@ import static ru.wert.tubus.winform.warnings.WarningMessages.$SERVER_IS_NOT_AVAI
  * Отвечает за создание и сохранение паспортов ПИК и эскизов
  */
 @Slf4j
-public class RegistrationFormController implements Initializable {
+public class RegistrationFormController extends FormView_ACCController<Passport> implements Initializable {
 
     @FXML
     private TextField tfNumber;
@@ -37,7 +47,7 @@ public class RegistrationFormController implements Initializable {
     private TextArea taProduct;
 
     @FXML
-    private TextField tfDeveloper;
+    private TextField tfUser;
 
     @FXML
     private TextField tfDate;
@@ -48,10 +58,12 @@ public class RegistrationFormController implements Initializable {
     @FXML
     private Button btnCancel;
 
+    @FXML
+    private StackPane spIndicator;
+
     private Passport newPassport;           // Новый паспорт до сохранения
     private Passport savedPassport;         // Сохраненный паспорт (после сохранения в БД)
     private boolean accepted = false;       // Флаг подтверждения создания
-    private boolean cancelled = false;      // Флаг отмены
     private String passportType;            // Тип паспорта: "PIK" или "SKETCH"
     private Decimal currentDecimal;         // Текущая децимальная группа
     private int reservedNumber;             // Зарезервированный порядковый номер
@@ -59,6 +71,9 @@ public class RegistrationFormController implements Initializable {
 
     private Prefix pikPrefix;               // Префикс "ПИК" из базы данных
     private Prefix sketchPrefix;            // Префикс "-" из базы данных
+    private boolean cancelled = false;      // Флаг отмены
+    private boolean editMode = false;       // Режим редактирования
+    private Passport editingPassport;       // Редактируемый паспорт
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -92,8 +107,14 @@ public class RegistrationFormController implements Initializable {
      * Настройка обработчиков кнопок
      */
     private void setupButtonHandlers() {
-        btnAccept.setOnAction(event -> accept());
-        btnCancel.setOnAction(event -> cancel());
+        btnAccept.setOnAction(event -> {
+            if (editMode) {
+                okPressedForEdit(event, spIndicator, btnAccept);
+            } else {
+                okPressed(event, spIndicator, btnAccept);
+            }
+        });
+        btnCancel.setOnAction(event -> cancelPressed(event));
     }
 
     /**
@@ -107,6 +128,17 @@ public class RegistrationFormController implements Initializable {
     }
 
     /**
+     * Инициализация окна с заданными параметрами
+     * @param operation тип операции (всегда ADD для регистрации)
+     * @param formView представление формы
+     * @param commands команды для выполнения
+     */
+    @Override
+    public void init(EOperation operation, IFormView<Passport> formView, ItemCommands<Passport> commands) {
+        super.initSuper(operation, formView, commands, ChogoriServices.CH_QUICK_PASSPORTS);
+    }
+
+    /**
      * Установка данных для нового паспорта
      *
      * @param type    тип паспорта ("PIK" или "SKETCH")
@@ -116,6 +148,7 @@ public class RegistrationFormController implements Initializable {
     public void setData(String type, String number, Decimal decimal) {
         this.passportType = type;
         this.currentDecimal = decimal;
+        this.editMode = false;
 
         // Извлекаем порядковый номер из сформированного номера
         extractReservedNumber(type, number);
@@ -130,6 +163,76 @@ public class RegistrationFormController implements Initializable {
         btnAccept.setDisable(tfName.getText() == null || tfName.getText().trim().isEmpty());
 
         log.debug("Данные формы инициализированы: тип={}, номер={}", passportType, number);
+    }
+
+    /**
+     * Установка данных для редактирования существующего паспорта
+     *
+     * @param passport паспорт для редактирования
+     */
+    public void setDataForEdit(Passport passport) {
+        this.editMode = true;
+        this.editingPassport = passport;
+        this.newPassport = passport;
+
+        // Определяем тип паспорта
+        if (passport.getPrefix() != null && "ПИК".equals(passport.getPrefix().getName())) {
+            this.passportType = "PIK";
+        } else {
+            this.passportType = "SKETCH";
+        }
+
+        // Заполняем поля формы данными из паспорта
+        fillFormFieldsForEdit();
+
+        // Устанавливаем начальное состояние кнопки
+        btnAccept.setDisable(tfName.getText() == null || tfName.getText().trim().isEmpty());
+
+        log.debug("Режим редактирования: паспорт {}", passport.toUsefulString());
+    }
+
+    /**
+     * Заполнение полей формы для редактирования
+     */
+    private void fillFormFieldsForEdit() {
+        if (editingPassport == null) return;
+
+        // Заполняем поле номера
+        if (editingPassport.getNumber() != null) {
+            tfNumber.setText(editingPassport.getNumber());
+            tfNumber.setEditable(false); // Номер нельзя менять при редактировании
+        }
+
+        // Заполняем поле наименования
+        if (editingPassport.getName() != null) {
+            tfName.setText(editingPassport.getName());
+        }
+
+        // Заполняем поле изделия
+        if (editingPassport.getNote() != null) {
+            taProduct.setText(editingPassport.getNote());
+        }
+
+        // Заполняем поле разработчика
+        if (editingPassport.getUserName() != null) {
+            tfUser.setText(editingPassport.getUserName());
+        } else if (CH_CURRENT_USER != null && CH_CURRENT_USER.getName() != null) {
+            tfUser.setText(CH_CURRENT_USER.getName());
+        } else {
+            tfUser.setText("Неизвестный разработчик");
+        }
+
+        // Заполняем поле даты
+        if (editingPassport.getDate() != null) {
+            tfDate.setText(editingPassport.getDate());
+        } else {
+            LocalDate currentDate = LocalDate.now();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yy");
+            tfDate.setText(currentDate.format(formatter));
+        }
+
+        log.debug("Поля формы заполнены для редактирования: номер={}, разработчик={}, дата={}",
+                tfNumber.getText(), tfUser.getText(), tfDate.getText());
     }
 
     /**
@@ -216,9 +319,9 @@ public class RegistrationFormController implements Initializable {
 
         // Заполняем поле разработчика текущим пользователем
         if (CH_CURRENT_USER != null && CH_CURRENT_USER.getName() != null) {
-            tfDeveloper.setText(CH_CURRENT_USER.getName());
+            tfUser.setText(CH_CURRENT_USER.getName());
         } else {
-            tfDeveloper.setText("Неизвестный разработчик");
+            tfUser.setText("Неизвестный разработчик");
         }
 
         // Заполняем поле даты текущей датой в формате "dd.MM.yy"
@@ -227,70 +330,322 @@ public class RegistrationFormController implements Initializable {
         tfDate.setText(currentDate.format(formatter));
 
         log.debug("Поля формы заполнены: номер={}, разработчик={}, дата={}",
-                tfNumber.getText(), tfDeveloper.getText(), tfDate.getText());
+                tfNumber.getText(), tfUser.getText(), tfDate.getText());
     }
 
     /**
-     * Принять изменения и сохранить паспорт в базе данных
+     * Возвращает список полей, которые не могут быть пустыми
+     * @return ArrayList<String> список значений обязательных полей
      */
-    private void accept() {
-        try {
-            // Проверяем, что данные инициализированы
-            if (newPassport == null) {
-                throw new RuntimeException("Данные формы не инициализированы");
+    @Override
+    public ArrayList<String> getNotNullFields() {
+        ArrayList<String> notNullFields = new ArrayList<>();
+        notNullFields.add(tfName.getText());
+        return notNullFields;
+    }
+
+    /**
+     * Создает новый объект Passport из данных формы
+     * @return новый Passport
+     */
+    @Override
+    public Passport getNewItem() {
+        // Заполняем данные нового паспорта из полей формы
+        newPassport.setName(capitalizeFirstLetter(tfName.getText().trim()));
+        newPassport.setNote(capitalizeFirstLetter(taProduct.getText().trim()));
+        newPassport.setUserName(tfUser.getText());
+        newPassport.setDate(tfDate.getText());
+
+        return newPassport;
+    }
+
+    /**
+     * Возвращает старый объект для операции изменения
+     * @return старый Passport
+     */
+    @Override
+    public Passport getOldItem() {
+        return editMode ? editingPassport : null;
+    }
+
+    /**
+     * Заполняет поля формы данными из выбранного объекта
+     * @param oldItem объект Passport для редактирования
+     */
+    @Override
+    public void fillFieldsOnTheForm(Passport oldItem) {
+        // Не используется для операции добавления, используется для редактирования
+        if (oldItem != null) {
+            fillFormFieldsForEdit();
+        }
+    }
+
+    /**
+     * Обновляет поля старого объекта данными из формы
+     * @param oldItem объект Passport для обновления
+     */
+    @Override
+    public void changeOldItemFields(Passport oldItem) {
+        if (oldItem != null) {
+            oldItem.setName(capitalizeFirstLetter(tfName.getText().trim()));
+            oldItem.setNote(capitalizeFirstLetter(taProduct.getText().trim()));
+            oldItem.setUserName(tfUser.getText());
+            oldItem.setDate(tfDate.getText());
+        }
+    }
+
+    /**
+     * Очищает форму для создания нового объекта
+     */
+    @Override
+    public void showEmptyForm() {
+        fillFormFields();
+    }
+
+    /**
+     * Проверяет корректность введенных данных
+     * @return true если данные корректны, false в противном случае
+     */
+    @Override
+    public boolean enteredDataCorrect() {
+        // Проверяем, что наименование не пустое
+        String name = tfName.getText().trim();
+        if (name.isEmpty()) {
+            Warning1.create($ATTENTION, "Поле наименования не заполнено!", "Заполните наименование");
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Обработка нажатия OK в режиме редактирования
+     */
+    protected void okPressedForEdit(javafx.event.Event event, StackPane spIndicator, Button btnOk) {
+        if (notNullFieldEmpty()) {
+            Warning1.create($ATTENTION, "Некоторые поля не заполнены!", "Заполните все поля");
+            return;
+        }
+
+        if (enteredDataCorrect()) {
+            Passport updatedPassport = getNewItem();
+            updatedPassport.setId(editingPassport.getId());
+
+            // Запускаем задачу обновления
+            updateTask(event, spIndicator, btnOk, updatedPassport);
+        }
+    }
+
+    /**
+     * Задача обновления паспорта в отдельном потоке
+     */
+    private void updateTask(javafx.event.Event event, StackPane spIndicator, Button btnOk, Passport passportToUpdate) {
+        if (spIndicator != null) {
+            spIndicator.setVisible(true);
+        }
+        if (btnOk != null) {
+            btnOk.setDisable(true);
+        }
+
+        javafx.concurrent.Task<Void> update = new javafx.concurrent.Task<Void>() {
+            @Override
+            protected Void call() throws Exception {
+                log.info("Обновляем паспорт: ID={}, номер={}, наименование={}",
+                        passportToUpdate.getId(), passportToUpdate.getNumber(), passportToUpdate.getName());
+
+                try {
+                    boolean updated = ChogoriServices.CH_QUICK_PASSPORTS.update(passportToUpdate);
+
+                    if (updated) {
+                        log.info("Паспорт успешно обновлен с ID: {}", passportToUpdate.getId());
+                        savedPassport = passportToUpdate;
+                        accepted = true;
+
+                        Platform.runLater(() -> {
+                            if (event != null) {
+                                closeWindow(event);
+                            }
+                        });
+                    } else {
+                        Platform.runLater(() -> {
+                            Warning1.create($ATTENTION,
+                                    format("Не удалось обновить паспорт \n%s", passportToUpdate.toUsefulString()),
+                                    $SERVER_IS_NOT_AVAILABLE_MAYBE);
+                        });
+                        throw new RuntimeException("Не удалось обновить паспорт в базе данных");
+                    }
+                } catch (Exception e) {
+                    log.error("Ошибка при обновлении паспорта", e);
+                    throw e;
+                }
+
+                return null;
             }
 
-            // Заполняем данные нового паспорта из полей формы
-            newPassport.setName(tfName.getText().trim());
-            newPassport.setNote(taProduct.getText().trim());
-            newPassport.setUserName(tfDeveloper.getText());
-            newPassport.setDate(tfDate.getText());
+            @Override
+            protected void succeeded() {
+                super.succeeded();
+                if (spIndicator != null) {
+                    spIndicator.setVisible(false);
+                }
+                if (btnOk != null) {
+                    btnOk.setDisable(false);
+                }
+            }
 
-            log.info("Сохраняем паспорт: тип={}, номер={}, наименование={}",
-                    passportType, newPassport.getNumber(), newPassport.getName());
+            @Override
+            protected void cancelled() {
+                super.cancelled();
+                if (spIndicator != null) {
+                    spIndicator.setVisible(false);
+                }
+                if (btnOk != null) {
+                    btnOk.setDisable(false);
+                }
+            }
+
+            @Override
+            protected void failed() {
+                super.failed();
+                if (spIndicator != null) {
+                    spIndicator.setVisible(false);
+                }
+                if (btnOk != null) {
+                    btnOk.setDisable(false);
+                }
+            }
+        };
+
+        new Thread(update).start();
+    }
+
+    /**
+     * Переопределенный метод okPressed для сохранения паспорта
+     */
+    @Override
+    protected void okPressed(javafx.event.Event event, StackPane spIndicator, Button btnOk) {
+        if (notNullFieldEmpty()) {
+            Warning1.create($ATTENTION, "Некоторые поля не заполнены!", "Заполните все поля");
+            return;
+        }
+
+        if (enteredDataCorrect()) {
+            Passport passportToSave = getNewItem();
 
             // Проверяем наличие паспорта в базе данных
             Passport foundPassport = ChogoriServices.CH_QUICK_PASSPORTS.findByPrefixIdAndNumber(
-                    newPassport.getPrefix(),
-                    newPassport.getNumber()
+                    passportToSave.getPrefix(),
+                    passportToSave.getNumber()
             );
 
-            if (foundPassport == null) {
-                // Паспорта нет в базе - сохраняем
-                savedPassport = ChogoriServices.CH_QUICK_PASSPORTS.save(newPassport);
-
-                if (savedPassport != null && savedPassport.getId() != null) {
-                    log.info("Паспорт успешно сохранен с ID: {}", savedPassport.getId());
-                    accepted = true;
-                    numberReserved = false; // Номер успешно использован, откат не нужен
-                } else {
-                    // Сохранение не удалось
-                    Warning1.create($ATTENTION,
-                            format("Не удалось создать паспорт \n%s", newPassport.toUsefulString()),
-                            $SERVER_IS_NOT_AVAILABLE_MAYBE);
-                    throw new RuntimeException("Не удалось сохранить паспорт в базе данных");
-                }
-            } else {
+            if (foundPassport != null) {
                 // Паспорт уже существует в базе
                 savedPassport = foundPassport;
                 log.warn("Паспорт уже существует в базе: {}", foundPassport.toUsefulString());
                 Warning1.create($ATTENTION,
                         format("Паспорт уже существует в базе данных:\n%s", foundPassport.toUsefulString()),
                         "Повторная регистрация невозможна");
-                log.error("Повторная регистрация пасспорта в базе данных");
+                return;
             }
 
-            // Закрываем окно
-            closeWindow();
-
-        } catch (Exception e) {
-            log.error("Ошибка при сохранении паспорта", e);
-
-            // При ошибке сохранения выполняем откат номера
-            if (numberReserved) {
-                rollbackNumber();
-            }
+            // Запускаем задачу сохранения
+            manipulationTask(event, spIndicator, btnOk, passportToSave);
         }
+    }
+
+    /**
+     * Задача сохранения паспорта в отдельном потоке
+     */
+    private void manipulationTask(javafx.event.Event event, StackPane spIndicator, Button btnOk, Passport passportToSave) {
+        if (spIndicator != null) {
+            spIndicator.setVisible(true);
+        }
+        if (btnOk != null) {
+            btnOk.setDisable(true);
+        }
+
+        javafx.concurrent.Task<Void> manipulation = new javafx.concurrent.Task<Void>() {
+            @Override
+            protected Void call() throws Exception {
+                log.info("Сохраняем паспорт: тип={}, номер={}, наименование={}",
+                        passportType, passportToSave.getNumber(), passportToSave.getName());
+
+                try {
+                    // Сохраняем паспорт
+                    savedPassport = ChogoriServices.CH_QUICK_PASSPORTS.save(passportToSave);
+
+                    if (savedPassport != null && savedPassport.getId() != null) {
+                        log.info("Паспорт успешно сохранен с ID: {}", savedPassport.getId());
+                        accepted = true;
+                        numberReserved = false; // Номер успешно использован, откат не нужен
+
+                        Platform.runLater(() -> {
+                            if (event != null) {
+                                closeWindow(event);
+                            }
+                        });
+                    } else {
+                        // Сохранение не удалось
+                        Platform.runLater(() -> {
+                            Warning1.create($ATTENTION,
+                                    format("Не удалось создать паспорт \n%s", passportToSave.toUsefulString()),
+                                    $SERVER_IS_NOT_AVAILABLE_MAYBE);
+                        });
+                        throw new RuntimeException("Не удалось сохранить паспорт в базе данных");
+                    }
+                } catch (Exception e) {
+                    log.error("Ошибка при сохранении паспорта", e);
+
+                    // При ошибке сохранения выполняем откат номера
+                    if (numberReserved) {
+                        rollbackNumber();
+                    }
+
+                    throw e;
+                }
+
+                return null;
+            }
+
+            @Override
+            protected void succeeded() {
+                super.succeeded();
+                if (spIndicator != null) {
+                    spIndicator.setVisible(false);
+                }
+                if (btnOk != null) {
+                    btnOk.setDisable(false);
+                }
+            }
+
+            @Override
+            protected void cancelled() {
+                super.cancelled();
+                if (spIndicator != null) {
+                    spIndicator.setVisible(false);
+                }
+                if (btnOk != null) {
+                    btnOk.setDisable(false);
+                }
+                // При отмене выполняем откат номера
+                if (numberReserved) {
+                    rollbackNumber();
+                }
+            }
+
+            @Override
+            protected void failed() {
+                super.failed();
+                if (spIndicator != null) {
+                    spIndicator.setVisible(false);
+                }
+                if (btnOk != null) {
+                    btnOk.setDisable(false);
+                }
+            }
+        };
+
+        new Thread(manipulation).start();
     }
 
     /**
@@ -317,26 +672,6 @@ public class RegistrationFormController implements Initializable {
     }
 
     /**
-     * Отмена создания паспорта
-     */
-    private void cancel() {
-        cancelled = true;
-        log.debug("Создание паспорта отменено пользователем");
-        closeWindow();
-    }
-
-    /**
-     * Закрытие окна
-     */
-    private void closeWindow() {
-        if (tfNumber.getScene() != null && tfNumber.getScene().getWindow() != null) {
-            tfNumber.getScene().getWindow().hide();
-        } else {
-            log.warn("Не удалось закрыть окно: сцена равна null");
-        }
-    }
-
-    /**
      * Получить сохраненный паспорт
      *
      * @return сохраненный паспорт или новый, если сохранение не удалось
@@ -355,15 +690,6 @@ public class RegistrationFormController implements Initializable {
     }
 
     /**
-     * Проверить, была ли операция отменена пользователем
-     *
-     * @return true если операция отменена, false в противном случае
-     */
-    public boolean isCancelled() {
-        return cancelled;
-    }
-
-    /**
      * Проверить, был ли зарезервирован номер
      *
      * @return true если номер был зарезервирован, false в противном случае
@@ -379,5 +705,14 @@ public class RegistrationFormController implements Initializable {
      */
     public int getReservedNumber() {
         return reservedNumber;
+    }
+
+    /**
+     * Проверить, была ли операция отменена пользователем
+     *
+     * @return true если операция отменена, false в противном случае
+     */
+    public boolean isCancelled() {
+        return cancelled;
     }
 }
