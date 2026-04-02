@@ -20,7 +20,8 @@ public class _Passport_Commands implements ItemCommands<Passport> {
 
     @Override
     public void add(Event event, Passport newItem){
-        ICommand command = new Passport_AddCommand((Passport)newItem, tableView);
+        // Регистрация нового паспорта - номер уже должен быть сформирован
+        ICommand command = new Passport_AddCommand(newItem, tableView);
         command.execute();
     }
 
@@ -30,14 +31,14 @@ public class _Passport_Commands implements ItemCommands<Passport> {
     }
 
     @Override
-    public void delete(Event event, List<Passport> items){
-        ICommand command = new Passport_DeleteCommand(items, tableView);
+    public void change(Event event, Passport item){
+        ICommand command = new Passport_ChangeCommand(item, tableView);
         command.execute();
     }
 
     @Override
-    public void change(Event event, Passport item){
-        ICommand command = new Passport_ChangeCommand(item, tableView);
+    public void delete(Event event, List<Passport> items){
+        ICommand command = new Passport_DeleteCommand(items, tableView);
         command.execute();
     }
 

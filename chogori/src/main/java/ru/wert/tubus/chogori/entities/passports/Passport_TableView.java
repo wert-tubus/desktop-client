@@ -22,7 +22,7 @@ import static ru.wert.tubus.chogori.statics.UtilStaticNodes.CH_SEARCH_FIELD;
 
 public class Passport_TableView extends RoutineTableView<Passport> implements Sorting<Passport> {
 
-    private static final String accWindowRes = "/chogori-fxml/drafts/draftACC.fxml";
+    private static final String accWindowRes = "/chogori-fxml/passports/passportsACC.fxml";
     private final _Passport_Commands commands;
     @Getter private PreviewerPatchController previewerController;
 
@@ -35,23 +35,25 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
 
     @Getter@Setter private List<Folder> selectedFolders;
 
+    // Контекстное меню
+    private Passport_ContextMenu contextMenu;
 
     private TableColumn<Passport, String> tcId;
     private TableColumn<Passport, VBox> tcPassport; //Колонка Идентификатор
-    private TableColumn<Passport, Label> tcDraftNumber; //Номер чертежа
-    private TableColumn<Passport, Label> tcDraftName; //Наименование чертежа
+    private TableColumn<Passport, Label> tcPassportNumber; //Номер чертежа
+    private TableColumn<Passport, Label> tcPassportName; //Наименование чертежа
+    private TableColumn<Passport, Label> tcPassportNote; //Изделие, комментарий
+    private TableColumn<Passport, Label> tcPassportUser; //Пользователь
+    private TableColumn<Passport, Label> tcPassportDate; //Дата создания
 
     //Показывать колонки
     @Getter@Setter private boolean showId; //Идентификатор
     @Getter@Setter private boolean showIdentity ; //Идентификатор
     @Getter@Setter private boolean showNumber; //Дец номер
     @Getter@Setter private boolean showName; //Наименование
-
-    //Фильтр
-//    @Getter@Setter private boolean showLegal = true; //ДЕЙСТВУЮЩИЕ - по умолчанию
-//    @Getter@Setter private boolean showChanged; //ЗАМЕНЕНННЫЕ
-//    @Getter@Setter private boolean showAnnulled; //АННУЛИРОВАННЫЕ
-
+    @Getter@Setter private boolean showNote; //Изделие
+    @Getter@Setter private boolean showUser; //Пользователь
+    @Getter@Setter private boolean showDate; //Дата
 
     /**
      * Конструктор для таблицы, связанной с предпросмотром чертежей
@@ -62,10 +64,12 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
         this(promptText);
         this.previewerController = previewerController;
 
-        new Passport_Manipulator(this);
+//        new Passport_Manipulator(this);
 
-        //Создаем изначальное контекстное меню, чтобы оно могло открыться при клике в пустом месте
-        if(useContextMenu) createContextMenu();
+        //Создаем контекстное меню
+        if (useContextMenu) {
+            createContextMenu();
+        }
 
         //Здесь происходит включение поиска по чертежам
         focusedProperty().addListener((observable, oldValue, newValue) -> {
@@ -75,57 +79,76 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
 
     }
 
-
-
     /**
      * Конструктор для таблицы без предпросмотра
      * @param promptText String, текст, добавляемый в поисковую строку
      */
     public Passport_TableView(String promptText) {
         super(promptText);
-
         commands = new _Passport_Commands(this);
-
     }
 
     @Override
     public void setTableColumns() {
+        tcId = Passport_Columns.createTcId();
+        tcPassport = Passport_Columns.createTcPassport();
+        tcPassportNumber = Passport_Columns.createTcPassportNumber();
+        tcPassportName = Passport_Columns.createTcPassportName();
+        tcPassportNote = Passport_Columns.createTcNote();
+        tcPassportUser = Passport_Columns.createTcUserName();
+        tcPassportDate = Passport_Columns.createTcDate();
 
-        tcId = Passport_Columns.createTcId(); //id пасспорта
-        tcPassport = Passport_Columns.createTcPassport(); //Колонка пасспорта
-        tcDraftNumber = Passport_Columns.createTcPassportNumber(); //Колонка Дец номер
-        tcDraftName = Passport_Columns.createTcPassportName(); //Колонка Наименование
-
-        getColumns().addAll(tcId, tcPassport, tcDraftNumber, tcDraftName);
-
+        getColumns().addAll(tcId, tcPassport, tcPassportNumber, tcPassportName, tcPassportNote, tcPassportUser, tcPassportDate);
     }
 
     /**
      * Метод выключает ненужные столбцы
      */
-    public void showTableColumns(boolean useTcId, boolean useTcPassport){
+    public void showTableColumns(boolean useTcId, boolean useTcPassport, boolean showNote, boolean showUser, boolean howDate){
         tcId.setVisible(useTcId);
         showId = useTcId;
 
-        tcPassport.setVisible(useTcPassport);
+        tcPassport.setVisible(useTcPassport); //Показывает дец номер и наименование в одном столбце
         showIdentity = useTcPassport;
 
-        tcDraftNumber.setVisible(!useTcPassport);
+        tcPassportNumber.setVisible(!useTcPassport);
         showNumber = !useTcPassport;
 
-        tcDraftName.setVisible(!useTcPassport);
+        tcPassportName.setVisible(!useTcPassport);
         showName = !useTcPassport;
 
+        tcPassportNote.setVisible(showNote);
+        tcPassportUser.setVisible(showUser);
+        tcPassportDate.setVisible(howDate);
     }
 
     @Override
     public void createContextMenu() {
-        //Контекстного меню не предусмотрено
+        // Создаем контекстное меню
+        contextMenu = new Passport_ContextMenu(this, commands, accWindowRes);
+
+        // Устанавливаем обработчик для показа контекстного меню
+        setOnContextMenuRequested(event -> {
+            // Получаем позицию клика
+            javafx.scene.control.TablePosition<Passport, ?> pos = getSelectionModel()
+                    .getSelectedCells()
+                    .stream()
+                    .findFirst()
+                    .orElse(null);
+
+            if (pos == null) {
+                // Клик на пустом месте - снимаем выделение
+                getSelectionModel().clearSelection();
+            }
+
+            // Показываем контекстное меню
+            contextMenu.show(this, event.getScreenX(), event.getScreenY());
+            event.consume();
+        });
     }
 
     @Override
     public List<Passport> prepareList() {
-
         List<Passport> list = new ArrayList<>();
         if(modifyingClass instanceof Folder){
             if(selectedFolders == null || selectedFolders.isEmpty()) {
@@ -140,6 +163,9 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
                 }
                 selectedFolders = null;
             }
+        } else {
+            // Если modifyingClass не Folder, возвращаем все паспорта
+            list = ChogoriServices.CH_QUICK_PASSPORTS.findAll();
         }
 
         return list;
@@ -194,13 +220,11 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
      */
     public static Comparator<Passport> passportsComparator() {
         return (o1, o2) -> {
-
             int result = o1.toUsefulString()
                     .compareTo(o2.toUsefulString());
             return result;
         };
     }
-
 
     @Override //Searchable
     public List<Passport> getCurrentItemSearchedList() {
@@ -216,4 +240,12 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
         this.accController = (Passport_ACCController) accController;
     }
 
+    /**
+     * Обновить контекстное меню (вызывается при изменении выделения)
+     */
+    public void updateContextMenu() {
+        if (contextMenu != null) {
+            contextMenu.createMainMenuItems();
+        }
+    }
 }

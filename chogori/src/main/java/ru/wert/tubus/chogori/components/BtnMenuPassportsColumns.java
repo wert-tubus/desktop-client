@@ -39,15 +39,38 @@ public class BtnMenuPassportsColumns extends MenuButton {
         useIdentity.setContent(cbUseIdentity);
         useIdentity.setHideOnClick(false);
 
+        //ИЗДЕЛИЕ
+        CustomMenuItem showNote = new CustomMenuItem();
+        CheckBox cbShowNote = new CheckBox("Изделие");
+        cbShowNote.setSelected(tableView.isShowNote());
+        showNote.setContent(cbShowNote);
+        showNote.setHideOnClick(false);
+
+        //РАЗРАБОТЧИК
+        CustomMenuItem showUser = new CustomMenuItem();
+        CheckBox cbShowUser = new CheckBox("Пользователь");
+        cbShowUser.setSelected(tableView.isShowUser());
+        showUser.setContent(cbShowUser);
+        showUser.setHideOnClick(false);
+
+        //ДАТА
+        CustomMenuItem showDate = new CustomMenuItem();
+        CheckBox cbShowDate = new CheckBox("Дата");
+        cbShowDate.setSelected(tableView.isShowDate());
+        showDate.setContent(cbShowDate);
+        showDate.setHideOnClick(false);
+
         if(CH_CURRENT_USER.getUserGroup().isAdministrate())
             getItems().addAll(useId);
-        getItems().addAll(useIdentity);
+
+        getItems().addAll(useIdentity, showNote, showUser, showDate);
+
 
         showingProperty().addListener((observable, oldValue, newValue) -> {
             if(!newValue) {
 
                 Platform.runLater(() -> {
-                    tableView.showTableColumns(cbUseId.isSelected(), cbUseIdentity.isSelected());
+                    tableView.showTableColumns(cbUseId.isSelected(), cbUseIdentity.isSelected(), cbShowNote.isSelected(), cbShowUser.isSelected(), cbShowDate.isSelected());
                     tableView.updateView();
                     tableView.refresh();
                 });

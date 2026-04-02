@@ -48,37 +48,15 @@
                         </VBox>
                      </children>
                   </AnchorPane>
-                  <SplitPane dividerPositions="0.7" HBox.hgrow="ALWAYS">
-                     <items>
-                      <AnchorPane maxWidth="1.7976931348623157E308">
+                <AnchorPane maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS">
+                     <children>
+                        <VBox alignment="TOP_CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <children>
-                              <VBox alignment="TOP_CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                                 <children>
-                                    <ListView fx:id="lvListOFNumbers" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS" />
-                                 </children>
-                              </VBox>
+                              <ListView fx:id="lvListOFNumbers" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS" />
                            </children>
-                        </AnchorPane>
-                      <AnchorPane>
-                           <children>
-                              <TabPane minWidth="200.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                                <tabs>
-                                  <Tab fx:id="tpPIK" text="ПИК">
-                                       <content>
-                                          <ListView fx:id="lvPIK" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" />
-                                       </content>
-                                    </Tab>
-                                  <Tab fx:id="tpSketches" text="Эскизы">
-                                       <content>
-                                          <ListView fx:id="lvSketches" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" />
-                                       </content>
-                                    </Tab>
-                                </tabs>
-                              </TabPane>
-                           </children>
-                        </AnchorPane>
-                     </items>
-                  </SplitPane>
+                        </VBox>
+                     </children>
+                  </AnchorPane>
                </children>
             </HBox>
          </children>

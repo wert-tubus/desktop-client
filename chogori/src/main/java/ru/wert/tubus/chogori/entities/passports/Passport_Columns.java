@@ -3,6 +3,7 @@ package ru.wert.tubus.chogori.entities.passports;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.VBox;
 import ru.wert.tubus.client.entity.models.Passport;
@@ -22,6 +23,9 @@ public class Passport_Columns {
         tcId.setCellValueFactory(new PropertyValueFactory<>("id"));
         tcId.setStyle("-fx-alignment: CENTER;");
         tcId.setComparator(createIntegerComparatorForStringColumn(tcId));
+        tcId.setPrefWidth(60);
+        tcId.setMinWidth(50);
+        tcId.setMaxWidth(80);
         return tcId;
     };
 
@@ -47,6 +51,7 @@ public class Passport_Columns {
         });
 
         tcPassport.setMinWidth(150);
+        tcPassport.setPrefWidth(200);
         return tcPassport;
     };
 
@@ -62,8 +67,8 @@ public class Passport_Columns {
             if(!ChogoriSettings.CH_SHOW_PREFIX && passport.getPrefix().equals(ChogoriSettings.CH_DEFAULT_PREFIX)) prefix = "";
             String decNumber = prefix + passport.getNumber();
 
-
             Label lblNumber = new Label(decNumber);
+            lblNumber.setTooltip(new Tooltip(decNumber));
 
             switch(passport.getNumber().substring(0,1)){
                 case "7" :
@@ -83,7 +88,8 @@ public class Passport_Columns {
 
         });
         tcPassportNumber.setComparator(createLabelComparator(tcPassportNumber));
-        tcPassportNumber.setMinWidth(150);
+        tcPassportNumber.setMinWidth(120);
+        tcPassportNumber.setPrefWidth(150);
         return tcPassportNumber;
     }
 
@@ -98,40 +104,85 @@ public class Passport_Columns {
             String name = passport.getName();
 
             Label lblName = new Label(name);
+            lblName.setTooltip(new Tooltip(name));
+            lblName.setWrapText(true);
 
             return new ReadOnlyObjectWrapper<>(lblName);
 
         });
         tcPassportName.setComparator(createLabelComparator(tcPassportName));
         tcPassportName.setMinWidth(150);
+        tcPassportName.setPrefWidth(250);
         return tcPassportName;
     }
 
-//    /**
-//     * Если CH_SHOW_PREFIX = false, то дефолтный префикс отсекается, остальные остаются
-//     */
-//    public static String getDecNumber(Passport passport) {
-//        if(passport == null || passport.getNumber() == null) return "";
-//        String decNumber = passport.getNumber();
-//        if(!CH_SHOW_PREFIX){
-//            String prefix = decNumber.split("\\.", -1)[0];
-//            if(prefix != null && !prefix.equals("-") && !prefix.equals("")){
-//                Prefix foundPrefix = CH_QUICK_PREFIXES.findByName(prefix);
-//                if(foundPrefix != null && foundPrefix != CH_DEFAULT_PREFIX)
-//                    decNumber = decNumber.substring(prefix.length()+1);
-//            }
-//        }
-//        return decNumber;
-//    }
-//
-//    public static String getFolderFullName(Passport passport){
-//        if(passport == null) return "";
-//        if (passport.getNumber() == null ||
-//                passport.getNumber().equals("-") ||
-//                passport.getNumber().equals("")
-//        )
-//            return passport.getName();
-//        return getDecNumber(passport) + ", " + passport.getName();
-//    }
+    /**
+     * ИЗДЕЛИЕ (NOTE)
+     */
+    public static TableColumn<Passport, Label> createTcNote() {
+        TableColumn<Passport, Label> tcNote = new TableColumn<>("Изделие");
 
+        tcNote.setCellValueFactory(cd -> {
+            Passport passport = cd.getValue();
+            String note = passport.getNote();
+            if (note == null) note = "";
+
+            Label lblNote = new Label(note);
+            lblNote.setTooltip(new Tooltip(note));
+            lblNote.setWrapText(true);
+
+            return new ReadOnlyObjectWrapper<>(lblNote);
+        });
+        tcNote.setComparator(createLabelComparator(tcNote));
+        tcNote.setMinWidth(150);
+        tcNote.setPrefWidth(200);
+        return tcNote;
+    }
+
+    /**
+     * РАЗРАБОТЧИК (USER NAME)
+     */
+    public static TableColumn<Passport, Label> createTcUserName() {
+        TableColumn<Passport, Label> tcUserName = new TableColumn<>("Разработчик");
+
+        tcUserName.setCellValueFactory(cd -> {
+            Passport passport = cd.getValue();
+            String userName = passport.getUserName();
+            if (userName == null) userName = "";
+
+            Label lblUserName = new Label(userName);
+            lblUserName.setTooltip(new Tooltip(userName));
+
+            return new ReadOnlyObjectWrapper<>(lblUserName);
+        });
+        tcUserName.setComparator(createLabelComparator(tcUserName));
+        tcUserName.setMinWidth(120);
+        tcUserName.setPrefWidth(150);
+        return tcUserName;
+    }
+
+    /**
+     * ДАТА
+     */
+    public static TableColumn<Passport, Label> createTcDate() {
+        TableColumn<Passport, Label> tcDate = new TableColumn<>("Дата");
+
+        tcDate.setCellValueFactory(cd -> {
+            Passport passport = cd.getValue();
+            String date = passport.getDate();
+            if (date == null) date = "";
+
+            Label lblDate = new Label(date);
+            lblDate.setTooltip(new Tooltip(date));
+            lblDate.setStyle("-fx-alignment: CENTER;");
+
+            return new ReadOnlyObjectWrapper<>(lblDate);
+        });
+        tcDate.setComparator(createLabelComparator(tcDate));
+        tcDate.setMinWidth(80);
+        tcDate.setPrefWidth(100);
+        tcDate.setMaxWidth(120);
+        tcDate.setStyle("-fx-alignment: CENTER;");
+        return tcDate;
+    }
 }

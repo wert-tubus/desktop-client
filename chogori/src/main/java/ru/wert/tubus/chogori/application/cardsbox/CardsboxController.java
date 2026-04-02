@@ -1,4 +1,4 @@
-package ru.wert.tubus.chogori.application.passports;
+package ru.wert.tubus.chogori.application.cardsbox;
 
 
 import javafx.application.Platform;
@@ -14,37 +14,38 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.StackPane;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.common.utils.CommonUnits;
-import ru.wert.tubus.client.entity.models.Draft;
-import ru.wert.tubus.client.entity.models.ProductGroup;
-import ru.wert.tubus.client.interfaces.Item;
-import ru.wert.tubus.client.interfaces.SearchableTab;
-import ru.wert.tubus.client.interfaces.UpdatableTabController;
-import ru.wert.tubus.chogori.entities.product_groups.ProductGroup_TreeView;
-import ru.wert.tubus.client.entity.models.Folder;
-import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.chogori.components.BtnDouble;
 import ru.wert.tubus.chogori.entities.catalogOfFolders.CatalogOfFoldersPatch;
-import ru.wert.tubus.chogori.entities.drafts.Draft_TableView;
 import ru.wert.tubus.chogori.entities.drafts.Draft_Patch;
 import ru.wert.tubus.chogori.entities.drafts.Draft_PatchController;
+import ru.wert.tubus.chogori.entities.drafts.Draft_TableView;
 import ru.wert.tubus.chogori.entities.folders.Folder_TableView;
 import ru.wert.tubus.chogori.entities.passports.Passport_Patch;
 import ru.wert.tubus.chogori.entities.passports.Passport_PatchController;
 import ru.wert.tubus.chogori.entities.passports.Passport_TableView;
-import ru.wert.tubus.chogori.previewer.PreviewerPatchController;
+import ru.wert.tubus.chogori.entities.product_groups.ProductGroup_TreeView;
 import ru.wert.tubus.chogori.images.BtnImages;
+import ru.wert.tubus.chogori.previewer.PreviewerPatchController;
 import ru.wert.tubus.chogori.setteings.ChogoriSettings;
+import ru.wert.tubus.client.entity.models.Draft;
+import ru.wert.tubus.client.entity.models.Folder;
+import ru.wert.tubus.client.entity.models.Passport;
+import ru.wert.tubus.client.entity.models.ProductGroup;
+import ru.wert.tubus.client.interfaces.Item;
+import ru.wert.tubus.client.interfaces.SearchableTab;
+import ru.wert.tubus.client.interfaces.UpdatableTabController;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import static ru.wert.tubus.chogori.application.services.ChogoriServices.*;
+import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_QUICK_DRAFTS;
+import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_QUICK_FOLDERS;
 import static ru.wert.tubus.chogori.statics.UtilStaticNodes.CH_SEARCH_FIELD;
 
 
 @Slf4j
-public class PassportsEditorController implements SearchableTab, UpdatableTabController {
+public class CardsboxController implements SearchableTab, UpdatableTabController {
 
 
     @FXML
