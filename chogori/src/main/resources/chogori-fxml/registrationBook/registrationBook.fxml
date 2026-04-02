@@ -14,7 +14,7 @@
          <children>
             <HBox fx:id="patchHeader" alignment="CENTER_LEFT">
                <children>
-                  <Label prefHeight="28.0" text="ЖУРНАЛ РЕГИСТРАЦИИ">
+                  <Label prefHeight="28.0" text="РЕГИСТРАЦИЯ НОМЕРОВ">
                      <HBox.margin>
                         <Insets left="10.0" />
                      </HBox.margin>
@@ -37,22 +37,46 @@
             </HBox>
             <HBox AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS">
                <children>
+                <AnchorPane maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS">
+                     <children>
+                        <VBox alignment="TOP_CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="3.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                           <children>
+                              <ListView fx:id="lvListOFNumbers" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS">
+                                 <VBox.margin>
+                                    <Insets />
+                                 </VBox.margin>
+                              </ListView>
+                              <HBox alignment="BOTTOM_RIGHT" VBox.vgrow="NEVER">
+                                 <children>
+                                    <Button fx:id="btnClear" mnemonicParsing="false" text="Очистить">
+                                       <HBox.margin>
+                                          <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                       </HBox.margin>
+                                    </Button>
+                                    <Button fx:id="btnSave" mnemonicParsing="false" text="Сохранить">
+                                       <HBox.margin>
+                                          <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                       </HBox.margin>
+                                    </Button>
+                                 </children>
+                                 <padding>
+                                    <Insets right="5.0" />
+                                 </padding>
+                              </HBox>
+                           </children>
+                        </VBox>
+                     </children>
+                  </AnchorPane>
                   <AnchorPane prefHeight="200.0" prefWidth="200.0">
                      <children>
                         <VBox alignment="TOP_CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <children>
                               <ListView fx:id="lvDecimalGroups" maxHeight="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS" />
                               <Separator prefWidth="200.0" />
-                              <Button fx:id="btnAddDecimalGroup" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Добавить" />
-                           </children>
-                        </VBox>
-                     </children>
-                  </AnchorPane>
-                <AnchorPane maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS">
-                     <children>
-                        <VBox alignment="TOP_CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                           <children>
-                              <ListView fx:id="lvListOFNumbers" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS" />
+                              <Button fx:id="btnAddDecimalGroup" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Добавить">
+                                 <VBox.margin>
+                                    <Insets bottom="5.0" top="5.0" />
+                                 </VBox.margin></Button>
                            </children>
                         </VBox>
                      </children>

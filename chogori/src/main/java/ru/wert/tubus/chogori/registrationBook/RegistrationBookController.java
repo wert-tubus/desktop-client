@@ -12,6 +12,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.application.services.ChogoriServices;
+import ru.wert.tubus.chogori.entities.passports.Passport_ACCController;
 import ru.wert.tubus.client.entity.models.Decimal;
 import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.client.entity.models.Prefix;
@@ -54,10 +55,6 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
 
     private ObservableList<Decimal> allDecimalGroupsList;
 
-    // Контекстные меню для списков
-    private PassportContextMenu pikContextMenu;
-    private PassportContextMenu sketchesContextMenu;
-    private PassportContextMenu selectedContextMenu;
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -85,49 +82,8 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
         // Настраиваем обработчик двойного клика для списка децимальных групп
         setupDecimalGroupsDoubleClickHandler();
 
-        // Настраиваем контекстные меню для списков паспортов
-        setupContextMenus();
     }
 
-    /**
-     * Настройка контекстных меню для всех списков паспортов
-     */
-    private void setupContextMenus() {
-        // Убираем старую настройку отображения, так как она будет в контекстном меню
-        // setupListViewDisplay(lvPIK); - убрать эту строку из initialize
-
-        // Контекстное меню для списка ПИК
-        pikContextMenu = new PassportContextMenu(
-                lvPIK,
-                this::editPassport,
-                this::refreshPassportLists,
-                null
-        );
-
-        // Контекстное меню для списка эскизов
-        sketchesContextMenu = new PassportContextMenu(
-                lvSketches,
-                this::editPassport,
-                this::refreshPassportLists,
-                null
-        );
-
-        // Контекстное меню для списка выбранных паспортов
-        selectedContextMenu = new PassportContextMenu(
-                lvListOFNumbers,
-                this::editPassport,
-                this::refreshPassportLists,
-                this::refreshSelectedList
-        );
-
-        // Добавляем обработчик изменения выбора для обновления состояния меню
-        lvPIK.getSelectionModel().selectedItemProperty().addListener(
-                (obs, old, val) -> pikContextMenu.updateMenuState());
-        lvSketches.getSelectionModel().selectedItemProperty().addListener(
-                (obs, old, val) -> sketchesContextMenu.updateMenuState());
-        lvListOFNumbers.getSelectionModel().selectedItemProperty().addListener(
-                (obs, old, val) -> selectedContextMenu.updateMenuState());
-    }
 
     /**
      * Обновление списка выбранных паспортов (удаление неактуальных)
@@ -139,47 +95,6 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
                 .filter(p -> !currentPassports.contains(p))
                 .collect(Collectors.toList());
         selectedPassportsList.removeAll(toRemove);
-    }
-
-    /**
-     * Редактирование паспорта
-     * @param passport паспорт для редактирования
-     */
-    private void editPassport(Passport passport) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/registrationBook/registrationForm.fxml"));
-            Parent parent = loader.load();
-
-            RegistrationFormController controller = loader.getController();
-            controller.setDataForEdit(passport);
-
-            new WindowDecoration("Редактирование паспорта", parent, false, WF_MAIN_STAGE, true);
-
-            // Обрабатываем результат после закрытия окна
-            if (controller.isAccepted()) {
-                Passport updatedPassport = controller.getSavedPassport();
-                if (updatedPassport != null) {
-                    // Обновляем локальный список паспортов
-                    int index = allPassportsList.indexOf(passport);
-                    if (index >= 0) {
-                        allPassportsList.set(index, updatedPassport);
-                    }
-                    // Обновляем списки
-                    refreshPassportLists();
-
-                    // Обновляем выбранные паспорта
-                    int selectedIndex = selectedPassportsList.indexOf(passport);
-                    if (selectedIndex >= 0) {
-                        selectedPassportsList.set(selectedIndex, updatedPassport);
-                        selectedPassportsList.sort(Comparator.comparing(Passport::getNumber));
-                    }
-                }
-            }
-
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            showError("Ошибка", "Не удалось открыть форму редактирования паспорта: " + ex.getMessage());
-        }
     }
 
     /**
@@ -542,7 +457,7 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
     private void getPIKNumber(Decimal decimal) {
         try {
             String nextNumber = getNextPIKNumber(decimal);
-            openCreateDialog("PIK", "Регистрация номера", nextNumber, decimal);
+//            openCreateDialog("PIK", "Регистрация номера", nextNumber, decimal);
         } catch (Exception e) {
             showError("Ошибка", "Не удалось создать паспорт ПИК: " + e.getMessage());
         }
@@ -556,50 +471,9 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
     private void getSketchNumber(Decimal decimal) {
         try {
             String nextNumber = getNextSketchNumber(decimal);
-            openCreateDialog("SKETCH", "Регистрация номера", nextNumber, decimal);
+//            openCreateDialog("SKETCH", "Регистрация номера", nextNumber, decimal);
         } catch (Exception e) {
             showError("Ошибка", "Не удалось создать эскизный паспорт: " + e.getMessage());
-        }
-    }
-
-    /**
-     * Открыть диалог создания нового паспорта
-     *
-     * @param passportType тип паспорта ("PIK" или "SKETCH")
-     * @param windowTitle  заголовок окна
-     * @param number       предварительно сформированный номер
-     * @param decimal      децимальная группа
-     */
-    private void openCreateDialog(String passportType, String windowTitle, String number, Decimal decimal) {
-        try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/registrationBook/registrationForm.fxml"));
-            Parent parent = loader.load();
-
-            RegistrationFormController controller = loader.getController();
-
-            controller.setData(passportType, number, decimal);
-
-            new WindowDecoration(windowTitle, parent, false, WF_MAIN_STAGE, true);
-
-            // Обрабатываем результат после закрытия окна
-            if (controller.isAccepted()) {
-                Passport savedPassport = controller.getSavedPassport();
-                if (savedPassport != null) {
-                    addToSelectedList(savedPassport);
-                    // Обновляем локальный список паспортов
-                    allPassportsList.add(savedPassport);
-                    // Обновляем списки ПИК и эскизов
-                    refreshPassportLists();
-                }
-            } else if (controller.isCancelled() && controller.isNumberReserved()) {
-                // Если пользователь отменил и номер был зарезервирован, выполняем декремент
-                rollbackLastNumber(decimal, controller.getReservedNumber());
-
-            }
-
-        } catch (IOException ex) {
-            ex.printStackTrace();
-            showError("Ошибка", "Не удалось открыть форму создания паспорта: " + ex.getMessage());
         }
     }
 

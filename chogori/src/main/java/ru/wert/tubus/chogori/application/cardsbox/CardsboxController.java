@@ -26,6 +26,8 @@ import ru.wert.tubus.chogori.entities.passports.Passport_TableView;
 import ru.wert.tubus.chogori.entities.product_groups.ProductGroup_TreeView;
 import ru.wert.tubus.chogori.images.BtnImages;
 import ru.wert.tubus.chogori.previewer.PreviewerPatchController;
+import ru.wert.tubus.chogori.registrationBook.RegistrationBookController;
+import ru.wert.tubus.chogori.registrationBook.RegistrationBook_Patch;
 import ru.wert.tubus.chogori.setteings.ChogoriSettings;
 import ru.wert.tubus.client.entity.models.Draft;
 import ru.wert.tubus.client.entity.models.Folder;
@@ -52,18 +54,11 @@ public class CardsboxController implements SearchableTab, UpdatableTabController
     private SplitPane sppHorizontal;
 
     @FXML
-    private SplitPane sppVertical;
+    private StackPane stpRegistrationBook;
 
     @FXML
     private StackPane stpPassports;
 
-    @FXML
-    private StackPane stpPreviewer;
-
-    @FXML
-    private StackPane stpDrafts;
-
-    private Label lblSourceOfPassports;
 
     private Passport_TableView passportsTable;
     private PreviewerPatchController previewerPatchController;
@@ -71,7 +66,7 @@ public class CardsboxController implements SearchableTab, UpdatableTabController
     private Draft_Patch draftPatch;
     private Draft_PatchController draftPatchController;
     private Passport_Patch passportsPatch;
-    private CatalogOfFoldersPatch catalogPatch;
+    private RegistrationBook_Patch registrationBook_patch;
 
     private Folder_TableView folderTableView;
     private ProductGroup_TreeView<Folder> productGroupsTreeView;
@@ -82,42 +77,13 @@ public class CardsboxController implements SearchableTab, UpdatableTabController
     @FXML
     void initialize() {
 
-        loadStpPreviewer(); //Предпросмотр инициализируется до Чертежей!
-
-        loadStackPaneDrafts(); //Чертежи
+        loadStackPanePassports(); //Пасспорта
 
         loadStackPaneCatalog(); //Каталог
 
-        loadStackPanePassports(); //Пасспорта
-
-    }
-
-    public void openPassportFromChat(Passport passport){
-
-        Draft draft = CH_QUICK_DRAFTS.findByPassport(passport).get(0);
-
-        Folder folder = draft.getFolder();
-        ProductGroup group = draft.getFolder().getProductGroup();
-//        folderTableView.getSelectionModel().selectedItemProperty().removeListener(folderTableSelectedItemChangeListener);
-//        folderTableView.updateVisibleLeafOfTableView(group);
-//        folderTableView.getSelectionModel().select(folder);
-
-
-        updateListOfPassports(folder);
-        Platform.runLater(() -> {
-            passportsTable.getSelectionModel().select(passport);
-            passportsTable.scrollTo(passport);
-//            folderTableView.getSelectionModel().selectedItemProperty().addListener(folderTableSelectedItemChangeListener);
-        });
 
 
     }
-
-    private void loadStpPreviewer() {
-        previewerPatchController =
-                CommonUnits.loadStpPreviewer(stpPreviewer, sppHorizontal, sppVertical, true); //Предпросмотр
-    }
-
 
     private BtnDouble createCatalogOrTableButton(){
         BtnDouble btnCatalogOrTable = new BtnDouble(
@@ -125,42 +91,16 @@ public class CardsboxController implements SearchableTab, UpdatableTabController
                 BtnImages.BTN_TABLE_VIEW_IMG, "Открыть входящие чертежи",
                 false);
         btnCatalogOrTable.setOnAction(e->{
-            if(btnCatalogOrTable.getStateProperty().get()) {
-                stpDrafts.getChildren().clear();
-                Parent cat = catalogPatch.getCatalogOfFoldersPatch();
-                stpDrafts.getChildren().add(0, cat);
-            } else {
-                stpDrafts.getChildren().clear();
-                stpDrafts.getChildren().add(0, draftPatch.getParent());
-            }
+//            if(btnCatalogOrTable.getStateProperty().get()) {
+//                stpDrafts.getChildren().clear();
+//                Parent cat = catalogPatch.getCatalogOfFoldersPatch();
+//                stpDrafts.getChildren().add(0, cat);
+//            } else {
+//                stpDrafts.getChildren().clear();
+//                stpDrafts.getChildren().add(0, draftPatch.getParent());
+//            }
         });
         return btnCatalogOrTable;
-    }
-
-    /**
-     * Создаем таблицу ЧЕРТЕЖЕЙ
-     */
-    private void loadStackPaneDrafts() {
-
-        draftPatch = new Draft_Patch().create();
-
-        draftPatchController = draftPatch.getDraftPatchController();
-        draftPatchController.initDraftsTableView(previewerPatchController, new Passport(), SelectionMode.MULTIPLE, false);
-        draftsTable = draftPatchController.getDraftsTable();
-        draftsTable.showTableColumns(false, true, true, true, false,
-                false, true);
-        //Инструментальную панель инициируем в последнюю очередь
-        draftPatchController.initDraftsToolBar(false, true, true, true);
-        draftPatchController.getHboxDraftsButtons().getChildren().add(CommonUnits.createVerticalDividerButton(sppVertical, 0.8, 0.4));
-
-        previewerPatchController.getLblCount().textProperty().bind(
-                Bindings.convert(draftsTable.getPreparedList().sizeProperty()));
-
-        //Для отображения чертежа по умолчанию
-        draftPatch.connectWithPreviewer(draftsTable, previewerPatchController);
-
-        stpDrafts.getChildren().add(draftPatch.getParent());
-
     }
 
     /**
@@ -173,33 +113,12 @@ public class CardsboxController implements SearchableTab, UpdatableTabController
         Passport_PatchController passportPatchController = passportsPatch.getPassportPatchController();
         passportPatchController.initPassportsTableView(previewerPatchController, new Passport(), SelectionMode.SINGLE, false);
         passportsTable = passportPatchController.getPassportsTable();
-        passportsTable.showTableColumns(false, false, false, false, false);
+        passportsTable.showTableColumns(false, true, true, true, true);
         passportsTable.setModifyingClass(new Folder());
         //Инструментальную панель инициируем в последнюю очередь
         passportPatchController.initPassportsToolBar(true, true);
         passportPatchController.getHboxPassportsButtons().getChildren().addAll(createCatalogOrTableButton(),
                 CommonUnits.createHorizontalDividerButton(sppHorizontal, 0.8, 0.4));
-
-        passportsTable.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
-            new Thread(()->{
-                try {
-                    Thread.sleep(500);
-                    if (newValue == passportsTable.getSelectionModel().getSelectedItem()) {
-                        Platform.runLater(()->{
-                            draftsTable.setModifyingItem(newValue);
-                            draftsTable.updateView();
-                        });
-                    }
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }).start();
-        });
-
-        passportsTable.setOnKeyPressed(e->{
-            if(e.getCode().equals(KeyCode.RIGHT)) draftsTable.getManipulator().goDraftsForward();
-            else if(e.getCode().equals(KeyCode.LEFT)) draftsTable.getManipulator().goDraftsBackward();
-        });
 
         stpPassports.getChildren().add(passportsPatch.getParent());
 
@@ -209,49 +128,13 @@ public class CardsboxController implements SearchableTab, UpdatableTabController
      * Создаем каталог ИЗДЕЛИЙ
      */
     private void loadStackPaneCatalog() {
-        catalogPatch = new CatalogOfFoldersPatch().create();
 
-        productGroupsTreeView = catalogPatch.getProductGroupsTreeView();
+        registrationBook_patch = new RegistrationBook_Patch().create();
+        RegistrationBookController registrationBookController = registrationBook_patch.getRegistrationBookController();
 
-        //Подключаем слушатель
-        folderTableView = catalogPatch.getFolderTableView();
+//        registrationBookController.
 
-        folderTableSelectedItemChangeListener = (observable, oldValue, newValue) -> {
-            if (newValue instanceof Folder) {
-                updateListOfPassports(newValue);
-            }
-        };
-
-        folderTableView.getSelectionModel().selectedItemProperty().addListener(folderTableSelectedItemChangeListener);
-
-
-        folderTableView.setOnMouseClicked(e->{
-            //Нажата правая клавиша мыши
-            boolean primaryBtn = e.getButton().equals(MouseButton.PRIMARY);
-            //Есть право редактировать чертежи
-            boolean editRights = ChogoriSettings.CH_CURRENT_USER_GROUP.isEditDrafts();
-
-            if((editRights && primaryBtn && e.isAltDown()) || (!editRights && primaryBtn) ){
-                Item selectedItem = folderTableView.getSelectionModel().getSelectedItem();
-                if (selectedItem instanceof Folder) {
-                    updateListOfPassports(selectedItem);
-                }
-                if((editRights && selectedItem instanceof ProductGroup) || (!editRights && selectedItem instanceof ProductGroup && e.isAltDown())){
-                    passportsPatch.getPassportPatchController().showSourceOfPassports(selectedItem);
-                    List<ProductGroup> selectedGroups = folderTableView.findMultipleProductGroups((ProductGroup) selectedItem);
-                    List<Folder> folders = new ArrayList<>();
-                    for(ProductGroup pg : selectedGroups){
-                        folders.addAll(CH_QUICK_FOLDERS.findAllByGroupId(pg.getId()));
-                    }
-                    if(folders.isEmpty()) return;
-                    passportsTable.setSelectedFolders(folders);
-                    passportsTable.updateRoutineTableView(Collections.singletonList((Passport) selectedItem), false);
-                }
-
-            }
-        });
-
-        catalogPatch.getFoldersButtons().getChildren().add(CommonUnits.createVerticalDividerButton(sppVertical, 0.8, 0.4));
+        stpRegistrationBook.getChildren().add(registrationBook_patch.getParent());
 
     }
 
