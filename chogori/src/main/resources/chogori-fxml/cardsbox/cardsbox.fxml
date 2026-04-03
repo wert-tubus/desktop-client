@@ -14,8 +14,24 @@
          <children>
             <SplitPane fx:id="sppHorizontal" dividerPositions="0.6" VBox.vgrow="ALWAYS">
               <items>
-                  <StackPane fx:id="stpPassports" prefHeight="150.0" prefWidth="200.0" />
                   <StackPane fx:id="stpRegistrationBook" prefHeight="150.0" prefWidth="200.0" />
+                  <StackPane fx:id="stpPassports" prefHeight="150.0" prefWidth="200.0">
+                     <children>
+                        <TabPane prefHeight="200.0" prefWidth="200.0" side="BOTTOM" tabClosingPolicy="UNAVAILABLE">
+                          <tabs>
+                            <Tab fx:id="tbPIK" text="ПИК">
+                                 <content>
+                                    <StackPane fx:id="spPIK" prefHeight="150.0" prefWidth="200.0" />
+                                 </content>
+                            </Tab>
+                            <Tab fx:id="tpSketch" text="Эскиз">
+                                 <content>
+                                    <StackPane fx:id="spSketch" prefHeight="150.0" prefWidth="200.0" />
+                                 </content>
+                            </Tab>
+                          </tabs>
+                        </TabPane>
+                     </children></StackPane>
               </items>
             </SplitPane>
          </children>

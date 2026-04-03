@@ -33,11 +33,6 @@ import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
 @Slf4j
 public class RegistrationBookController implements Initializable, UpdatableTabController {
 
-    @FXML
-    private ListView<Passport> lvPIK;
-
-    @FXML
-    private ListView<Passport> lvSketches;
 
     @FXML
     private ListView<Passport> lvListOFNumbers;
@@ -48,9 +43,7 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
     @FXML
     private ListView<Decimal> lvDecimalGroups;
 
-    private ObservableList<Passport> allPassportsList;
-    private ObservableList<Passport> pikPassportsList;
-    private ObservableList<Passport> sketchPassportsList;
+
     private ObservableList<Passport> selectedPassportsList;
 
     private ObservableList<Decimal> allDecimalGroupsList;
@@ -62,12 +55,6 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
         selectedPassportsList = FXCollections.observableArrayList();
         lvListOFNumbers.setItems(selectedPassportsList);
 
-        // Загружаем все паспорта
-        loadAllPassports();
-
-        // Заполняем списки
-        fillPIKListView();
-        fillSketchesListView();
 
         // Загружаем список децимальных групп
         loadDecimalGroups();
@@ -82,19 +69,6 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
         // Настраиваем обработчик двойного клика для списка децимальных групп
         setupDecimalGroupsDoubleClickHandler();
 
-    }
-
-
-    /**
-     * Обновление списка выбранных паспортов (удаление неактуальных)
-     */
-    private void refreshSelectedList() {
-        // Удаляем из выбранных те паспорта, которых больше нет в allPassportsList
-        Set<Passport> currentPassports = new HashSet<>(allPassportsList);
-        List<Passport> toRemove = selectedPassportsList.stream()
-                .filter(p -> !currentPassports.contains(p))
-                .collect(Collectors.toList());
-        selectedPassportsList.removeAll(toRemove);
     }
 
     /**
@@ -180,74 +154,30 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
         }
     }
 
-    /**
-     * Заполняет список паспортов ПИК
-     * Фильтрует паспорта с префиксом "ПИК" и номером по маске "######.###"
-     */
-    private void fillPIKListView() {
-        Pattern pikPattern = Pattern.compile("\\d{6}\\.\\d{3}");
 
-        List<Passport> pikPassports = allPassportsList.stream()
-                .filter(passport -> {
-                    Prefix prefix = passport.getPrefix();
-                    String number = passport.getNumber();
-                    return prefix != null
-                            && "ПИК".equals(prefix.getName())
-                            && number != null
-                            && pikPattern.matcher(number).matches();
-                })
-                .sorted(Comparator.comparing(Passport::getNumber))
-                .collect(Collectors.toList());
-
-        pikPassportsList = FXCollections.observableArrayList(pikPassports);
-        lvPIK.setItems(pikPassportsList);
-    }
-
-    /**
-     * Заполняет список эскизных паспортов
-     * Фильтрует паспорта с префиксом "-" или null и номером по маске "Э#####"
-     */
-    private void fillSketchesListView() {
-        Pattern sketchPattern = Pattern.compile("Э\\d{5}");
-
-        List<Passport> sketchPassports = allPassportsList.stream()
-                .filter(passport -> {
-                    Prefix prefix = passport.getPrefix();
-                    String number = passport.getNumber();
-                    boolean prefixCondition = prefix == null || "-".equals(prefix.getName());
-                    return prefixCondition
-                            && number != null
-                            && sketchPattern.matcher(number).matches();
-                })
-                .sorted(Comparator.comparing(Passport::getNumber))
-                .collect(Collectors.toList());
-
-        sketchPassportsList = FXCollections.observableArrayList(sketchPassports);
-        lvSketches.setItems(sketchPassportsList);
-    }
 
     /**
      * Настраивает обработчики выбора в списках
      * Обеспечивает возможность выбора только одного элемента
      */
     private void setupSelectionHandlers() {
-        // Обработчик выбора в списке ПИК
-        lvPIK.getSelectionModel().selectedItemProperty().addListener(
-                (observable, oldValue, newValue) -> {
-                    if (newValue != null) {
-                        lvSketches.getSelectionModel().clearSelection();
-                    }
-                }
-        );
-
-        // Обработчик выбора в списке эскизов
-        lvSketches.getSelectionModel().selectedItemProperty().addListener(
-                (observable, oldValue, newValue) -> {
-                    if (newValue != null) {
-                        lvPIK.getSelectionModel().clearSelection();
-                    }
-                }
-        );
+//        // Обработчик выбора в списке ПИК
+//        lvPIK.getSelectionModel().selectedItemProperty().addListener(
+//                (observable, oldValue, newValue) -> {
+//                    if (newValue != null) {
+//                        lvSketches.getSelectionModel().clearSelection();
+//                    }
+//                }
+//        );
+//
+//        // Обработчик выбора в списке эскизов
+//        lvSketches.getSelectionModel().selectedItemProperty().addListener(
+//                (observable, oldValue, newValue) -> {
+//                    if (newValue != null) {
+//                        lvPIK.getSelectionModel().clearSelection();
+//                    }
+//                }
+//        );
     }
 
     /**
@@ -482,7 +412,7 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
      */
     private void refreshPassportLists() {
         fillPIKListView();
-        fillSketchesListView();
+//        fillSketchesListView();
         refreshSelectedList();
     }
 

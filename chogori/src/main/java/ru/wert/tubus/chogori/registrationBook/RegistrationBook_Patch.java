@@ -3,7 +3,6 @@ package ru.wert.tubus.chogori.registrationBook;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import lombok.Getter;
-import ru.wert.tubus.chogori.entities.passports.Passport_PatchController;
 
 import java.io.IOException;
 
