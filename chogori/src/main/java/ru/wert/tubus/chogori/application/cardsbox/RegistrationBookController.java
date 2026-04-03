@@ -47,6 +47,8 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
 
     private ObservableList<Passport> allPassportsList;
 
+    private PassportContextMenu selectedContextMenu;
+
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -74,6 +76,75 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
         // Настраиваем обработчик двойного клика для списка децимальных групп
         setupDecimalGroupsDoubleClickHandler();
 
+        // Настраиваем контекстные меню для списков паспортов
+        setupContextMenus();
+
+    }
+
+    /**
+     * Настройка контекстных меню для всех списков паспортов
+     */
+    private void setupContextMenus() {
+        // Контекстное меню для списка выбранных паспортов
+        selectedContextMenu = new PassportContextMenu(
+                lvListOFNumbers,
+                this::editPassport,
+                this::refreshPassportLists,
+                this::refreshSelectedList // Обновляем список выбранных после удаления
+        );
+    }
+
+    /**
+     * Редактирование паспорта
+     * @param passport паспорт для редактирования
+     */
+    private void editPassport(Passport passport) {
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/cardsBox/registrationForm.fxml"));
+            Parent parent = loader.load();
+
+            RegistrationFormController controller = loader.getController();
+            controller.setDataForEdit(passport);
+
+            new WindowDecoration("Редактирование паспорта", parent, false, WF_MAIN_STAGE, true);
+
+            // Обрабатываем результат после закрытия окна
+            if (controller.isAccepted()) {
+                Passport updatedPassport = controller.getSavedPassport();
+                if (updatedPassport != null) {
+                    // Обновляем локальный список паспортов
+                    int index = allPassportsList.indexOf(passport);
+                    if (index >= 0) {
+                        allPassportsList.set(index, updatedPassport);
+                    }
+                    // Обновляем списки
+                    refreshPassportLists();
+
+                    // Обновляем выбранные паспорта
+                    int selectedIndex = selectedPassportsList.indexOf(passport);
+                    if (selectedIndex >= 0) {
+                        selectedPassportsList.set(selectedIndex, updatedPassport);
+                        selectedPassportsList.sort(Comparator.comparing(Passport::getNumber));
+                    }
+                }
+            }
+
+        } catch (IOException ex) {
+            ex.printStackTrace();
+            showError("Ошибка", "Не удалось открыть форму редактирования паспорта: " + ex.getMessage());
+        }
+    }
+
+    /**
+     * Обновление списка выбранных паспортов (удаление неактуальных)
+     */
+    private void refreshSelectedList() {
+        // Удаляем из выбранных те паспорта, которых больше нет в allPassportsList
+        Set<Passport> currentPassports = new HashSet<>(allPassportsList);
+        List<Passport> toRemove = selectedPassportsList.stream()
+                .filter(p -> !currentPassports.contains(p))
+                .collect(Collectors.toList());
+        selectedPassportsList.removeAll(toRemove);
     }
 
     /**
@@ -477,17 +548,7 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
         refreshSelectedList();
     }
 
-    /**
-     * Обновление списка выбранных паспортов (удаление неактуальных)
-     */
-    private void refreshSelectedList() {
-        // Удаляем из выбранных те паспорта, которых больше нет в allPassportsList
-        Set<Passport> currentPassports = new HashSet<>(allPassportsList);
-        List<Passport> toRemove = selectedPassportsList.stream()
-                .filter(p -> !currentPassports.contains(p))
-                .collect(Collectors.toList());
-        selectedPassportsList.removeAll(toRemove);
-    }
+
 
     /**
      * Откат lastNumber при отмене или ошибке

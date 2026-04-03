@@ -44,7 +44,7 @@ public class LoginController {
     void initialize() {
 
         log.debug("initialize : login window is initializing ...");
-        new BXUsers(bxUsers);
+        new BXUsers(bxUsers, null);
 
         long userId = AppProperties.getInstance().getLastUser();
         User lastUser = userId == 0L ? null : CH_USERS.findById(userId);

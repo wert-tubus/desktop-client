@@ -11,9 +11,11 @@ import ru.wert.tubus.chogori.application.services.ChogoriServices;
 import ru.wert.tubus.chogori.common.commands.ItemCommands;
 import ru.wert.tubus.chogori.common.contextMenuACC.FormView_ACCController;
 import ru.wert.tubus.chogori.common.interfaces.IFormView;
+import ru.wert.tubus.chogori.components.BXUsers;
 import ru.wert.tubus.client.entity.models.Decimal;
 import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.client.entity.models.Prefix;
+import ru.wert.tubus.client.entity.models.User;
 import ru.wert.tubus.winform.enums.EOperation;
 import ru.wert.tubus.winform.warnings.Warning1;
 
@@ -24,6 +26,8 @@ import java.util.ArrayList;
 import java.util.ResourceBundle;
 
 import static java.lang.String.format;
+import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_USERS;
+import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_USER_GROUPS;
 import static ru.wert.tubus.chogori.setteings.ChogoriSettings.CH_CURRENT_USER;
 import static ru.wert.tubus.chogori.statics.AppStatic.capitalizeFirstLetter;
 import static ru.wert.tubus.chogori.statics.AppStatic.closeWindow;
@@ -47,7 +51,7 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
     private TextArea taProduct;
 
     @FXML
-    private TextField tfUser;
+    private ComboBox<User> bxUser;
 
     @FXML
     private TextField tfDate;
@@ -77,6 +81,8 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        new BXUsers(bxUser, CH_USER_GROUPS.findByName("Конструктор"));
+
         setupButtonHandlers();
         setupValidation();
         loadPrefixes(); // Загружаем префиксы из базы
@@ -215,11 +221,11 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
 
         // Заполняем поле разработчика
         if (editingPassport.getUserName() != null) {
-            tfUser.setText(editingPassport.getUserName());
+            bxUser.getSelectionModel().select(CH_USERS.findByName(editingPassport.getUserName()));
         } else if (CH_CURRENT_USER != null && CH_CURRENT_USER.getName() != null) {
-            tfUser.setText(CH_CURRENT_USER.getName());
+            bxUser.getSelectionModel().select(CH_USERS.findByName(CH_CURRENT_USER.getName()));
         } else {
-            tfUser.setText("Неизвестный разработчик");
+            bxUser.getSelectionModel().select(null);
         }
 
         // Заполняем поле даты
@@ -232,7 +238,7 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
         }
 
         log.debug("Поля формы заполнены для редактирования: номер={}, разработчик={}, дата={}",
-                tfNumber.getText(), tfUser.getText(), tfDate.getText());
+                tfNumber.getText(), bxUser.getSelectionModel().getSelectedItem().getName(), tfDate.getText());
     }
 
     /**
@@ -319,9 +325,9 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
 
         // Заполняем поле разработчика текущим пользователем
         if (CH_CURRENT_USER != null && CH_CURRENT_USER.getName() != null) {
-            tfUser.setText(CH_CURRENT_USER.getName());
+            bxUser.getSelectionModel().select(CH_USERS.findByName(CH_CURRENT_USER.getName()));
         } else {
-            tfUser.setText("Неизвестный разработчик");
+            bxUser.getSelectionModel().select(null);
         }
 
         // Заполняем поле даты текущей датой в формате "dd.MM.yy"
@@ -330,7 +336,7 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
         tfDate.setText(currentDate.format(formatter));
 
         log.debug("Поля формы заполнены: номер={}, разработчик={}, дата={}",
-                tfNumber.getText(), tfUser.getText(), tfDate.getText());
+                tfNumber.getText(), bxUser.getSelectionModel().getSelectedItem().getName(), tfDate.getText());
     }
 
     /**
@@ -353,7 +359,7 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
         // Заполняем данные нового паспорта из полей формы
         newPassport.setName(capitalizeFirstLetter(tfName.getText().trim()));
         newPassport.setNote(capitalizeFirstLetter(taProduct.getText().trim()));
-        newPassport.setUserName(tfUser.getText());
+        newPassport.setUserName(bxUser.getSelectionModel().getSelectedItem().getName());
         newPassport.setDate(tfDate.getText());
 
         return newPassport;
@@ -389,7 +395,7 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
         if (oldItem != null) {
             oldItem.setName(capitalizeFirstLetter(tfName.getText().trim()));
             oldItem.setNote(capitalizeFirstLetter(taProduct.getText().trim()));
-            oldItem.setUserName(tfUser.getText());
+            oldItem.setUserName(bxUser.getSelectionModel().getSelectedItem().getName());
             oldItem.setDate(tfDate.getText());
         }
     }

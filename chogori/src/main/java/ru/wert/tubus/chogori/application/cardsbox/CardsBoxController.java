@@ -76,8 +76,6 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
 
         //Инструментальную панель инициируем в последнюю очередь
         passportPatchController.initPassportsToolBar(false, true);
-        passportPatchController.getHboxPassportsButtons().getChildren().
-                addAll(CommonUnits.createHorizontalDividerButton(sppHorizontal, 0.8, 0.4));
 
         spPIK.getChildren().add(passportsPIKPatch.getParent());
 
@@ -99,8 +97,6 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
 
         //Инструментальную панель инициируем в последнюю очередь
         passportPatchController.initPassportsToolBar(false, true);
-        passportPatchController.getHboxPassportsButtons().getChildren().
-                addAll(CommonUnits.createHorizontalDividerButton(sppHorizontal, 0.8, 0.4));
 
         spSketch.getChildren().add(passportsSketchPatch.getParent());
 
