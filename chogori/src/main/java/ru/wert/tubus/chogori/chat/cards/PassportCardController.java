@@ -27,7 +27,7 @@ public class PassportCardController {
     public void init(String strId) {
         Passport passport = ChogoriServices.CH_PASSPORTS.findById(Long.valueOf(strId));
         String passportName = passport.getName();
-        HBoxPassport vb = new HBoxPassport(passport, "00");
+        HBoxPassport vb = new HBoxPassport(passport, true, "00");
         vb.setStyle("-fx-padding: 0 10 0 10;");
         vb.setPrefWidth(CHAT_WIDTH * DialogController.MESSAGE_WIDTH);
         vb.setId("draftInChat");

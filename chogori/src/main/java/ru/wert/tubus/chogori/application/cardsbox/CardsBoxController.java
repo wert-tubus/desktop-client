@@ -73,6 +73,7 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
         tvPIK.showTableColumns(false, true, true, true, true);
         // Устанавливаем тип паспортов для таблицы PIK
         tvPIK.setPassportType(PassportType.PIK);
+        tvPIK.setShowPrefix(false);
 
         //Инструментальную панель инициируем в последнюю очередь
         passportPatchController.initPassportsToolBar(false, true);
@@ -94,6 +95,7 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
         tvSketch.showTableColumns(false, true, true, true, true);
         // Устанавливаем тип паспортов для таблицы эскизов
         tvSketch.setPassportType(PassportType.SKETCHES);
+        tvSketch.setShowPrefix(false);
 
         //Инструментальную панель инициируем в последнюю очередь
         passportPatchController.initPassportsToolBar(false, true);

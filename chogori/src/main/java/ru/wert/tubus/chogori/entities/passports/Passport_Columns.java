@@ -32,13 +32,13 @@ public class Passport_Columns {
     /**
      * ПАССПОРТ - ИДЕНТИФИКАТОР
      */
-    public static TableColumn<Passport, HBox> createTcPassport(){
+    public static TableColumn<Passport, HBox> createTcPassport(boolean showPrefix){
         TableColumn<Passport, HBox> tcPassport = new TableColumn<>("Идентификатор");
         //Passport выводится в виде label
         tcPassport.setCellValueFactory(cd -> {
 
             Passport passport = cd.getValue();
-            HBoxPassport hBoxPassport = new HBoxPassport(passport, "");
+            HBoxPassport hBoxPassport = new HBoxPassport(passport, showPrefix, "");
             return new ReadOnlyObjectWrapper<>(hBoxPassport);
 
         });

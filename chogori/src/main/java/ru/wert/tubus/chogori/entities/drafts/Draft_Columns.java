@@ -50,7 +50,7 @@ public class Draft_Columns {
         tcPassport.setCellValueFactory(cd -> {
 
             Passport passport = cd.getValue().getPassport();
-            HBoxPassport vBoxPassport = new HBoxPassport(passport, "00");
+            HBoxPassport vBoxPassport = new HBoxPassport(passport, true, "00");
             return new ReadOnlyObjectWrapper<>(vBoxPassport);
 
         });

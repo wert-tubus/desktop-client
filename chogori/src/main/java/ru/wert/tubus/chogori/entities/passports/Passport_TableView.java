@@ -41,6 +41,7 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
 
     // Добавляем поле для типа паспортов
     @Getter@Setter private PassportType passportType = PassportType.ALL;
+    @Getter@Setter private boolean showPrefix = true;
 
     // Паттерны для фильтрации (аналогичны CardsBoxController)
     private static final Pattern PIK_PATTERN = Pattern.compile("\\d{6}\\.\\d{3}");
@@ -102,7 +103,7 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
     @Override
     public void setTableColumns() {
         tcId = Passport_Columns.createTcId();
-        tcPassport = Passport_Columns.createTcPassport();
+        tcPassport = Passport_Columns.createTcPassport(showPrefix);
         tcPassportNumber = Passport_Columns.createTcPassportNumber();
         tcPassportName = Passport_Columns.createTcPassportName();
         tcPassportNote = Passport_Columns.createTcNote();
@@ -192,6 +193,7 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
         // Применяем фильтрацию по типу паспорта
         list = filterPassportsByType(baseList);
 
+        list.sort(Comparator.comparing(Passport::getNumber));
         return list;
     }
 

@@ -13,11 +13,13 @@ import static ru.wert.tubus.chogori.setteings.ChogoriSettings.*;
 public class HBoxPassport extends HBox {
     private final CopyPopup copyPopupControl = new CopyPopup();
 
-    public HBoxPassport(Passport passport, String variant) {
+    public HBoxPassport(Passport passport, boolean showPrefix, String variant) {
         String decNumber = passport.getNumber();
         if(!variant.equals("00")) decNumber += variant;
         Prefix prefix = passport.getPrefix();
-        if(CH_SHOW_PREFIX)
+        //CH_SHOW_PREFIX - настройка приложения выбранная пользователем
+        //showPrefix - для отображения паспортов в картотеке
+        if(CH_SHOW_PREFIX && showPrefix)
             if(!prefix.equals(CH_DEFAULT_PREFIX) || !prefix.getName().equals("-"))
                 decNumber = prefix.getName() + "." + decNumber;
 

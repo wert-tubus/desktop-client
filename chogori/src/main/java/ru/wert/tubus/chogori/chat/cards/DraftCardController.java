@@ -25,7 +25,7 @@ public class DraftCardController {
         Draft draft = ChogoriServices.CH_DRAFTS.findById(Long.valueOf(strId));
         Passport passport = draft.getPassport();
         VBox box = new VBox();
-        HBoxPassport vBoxPassport = new HBoxPassport(passport, "00");
+        HBoxPassport vBoxPassport = new HBoxPassport(passport, true, "00");
         String type = EDraftType.getDraftTypeById(draft.getDraftType()).getTypeName();
         String page = String.valueOf(draft.getPageNumber());
         Label lblTypeAndPage = new Label(type + ", стр." + page);

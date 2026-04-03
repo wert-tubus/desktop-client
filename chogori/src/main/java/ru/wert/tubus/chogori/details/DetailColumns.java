@@ -42,7 +42,7 @@ public class DetailColumns {
         tcPassport.setCellValueFactory(cd -> {
 
             Passport passport = cd.getValue().getPassport();
-            HBoxPassport vBoxPassport = new HBoxPassport(passport, cd.getValue().getVariant());
+            HBoxPassport vBoxPassport = new HBoxPassport(passport, true, cd.getValue().getVariant());
             return new ReadOnlyObjectWrapper<>(vBoxPassport);
 
         });
