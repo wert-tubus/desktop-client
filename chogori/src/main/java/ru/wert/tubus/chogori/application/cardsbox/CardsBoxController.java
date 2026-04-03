@@ -11,6 +11,7 @@ import javafx.scene.layout.StackPane;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.application.services.ChogoriServices;
 import ru.wert.tubus.chogori.common.utils.CommonUnits;
+import ru.wert.tubus.chogori.entities.passports.PassportType;
 import ru.wert.tubus.chogori.entities.passports.Passport_Patch;
 import ru.wert.tubus.chogori.entities.passports.Passport_PatchController;
 import ru.wert.tubus.chogori.entities.passports.Passport_TableView;
@@ -58,98 +59,13 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
 
     private RegistrationBook_Patch registrationBookPatch;
 
-    private ObservableList<Passport> allPassportsList;
-    private ObservableList<Passport> pikPassportsList;
-    private ObservableList<Passport> sketchPassportsList;
-
 
     @FXML
     void initialize() {
-
         loadStackPanePIKPassports(); //Паспорта PIK
         loadStackPaneSketchPassports(); //Паспорта эскизных чертежей
 
-        // Загружаем все паспорта
-        loadAllPassports();
-
-        // Заполняем списки
-        fillPIKTableView();
-        fillSketchesTableView();
-
-
-
         loadRegistrationBook(); //Журнал регистрации
-
-
-
-    }
-
-    /**
-     * Загружает все паспорта из базы данных
-     */
-    private void loadAllPassports() {
-        try {
-            allPassportsList = FXCollections.observableArrayList(
-                    ChogoriServices.CH_QUICK_PASSPORTS.findAll()
-            );
-        } catch (Exception e) {
-//            showError("Ошибка загрузки данных", "Не удалось загрузить список паспортов: " + e.getMessage());
-            allPassportsList = FXCollections.observableArrayList();
-        }
-    }
-
-
-
-    /**
-     * Заполняет список паспортов ПИК
-     * Фильтрует паспорта с префиксом "ПИК" и номером по маске "######.###"
-     */
-    private void fillPIKTableView() {
-        Pattern pikPattern = Pattern.compile("\\d{6}\\.\\d{3}");
-
-        List<Passport> pikPassports = allPassportsList.stream()
-                .filter(passport -> {
-                    Prefix prefix = passport.getPrefix();
-                    String number = passport.getNumber();
-                    return prefix != null
-                            && "ПИК".equals(prefix.getName())
-                            && number != null
-                            && pikPattern.matcher(number).matches();
-                })
-                .sorted(Comparator.comparing(Passport::getNumber))
-                .collect(Collectors.toList());
-
-        pikPassportsList = FXCollections.observableArrayList(pikPassports);
-        Platform.runLater(()->{
-            tvPIK.getItems().clear();
-            tvPIK.setItems(pikPassportsList);
-        });
-    }
-
-    /**
-     * Заполняет список эскизных паспортов
-     * Фильтрует паспорта с префиксом "-" или null и номером по маске "Э#####"
-     */
-    private void fillSketchesTableView() {
-        Pattern sketchPattern = Pattern.compile("Э\\d{5}");
-
-        List<Passport> sketchPassports = allPassportsList.stream()
-                .filter(passport -> {
-                    Prefix prefix = passport.getPrefix();
-                    String number = passport.getNumber();
-                    boolean prefixCondition = prefix == null || "-".equals(prefix.getName());
-                    return prefixCondition
-                            && number != null
-                            && sketchPattern.matcher(number).matches();
-                })
-                .sorted(Comparator.comparing(Passport::getNumber))
-                .collect(Collectors.toList());
-
-        sketchPassportsList = FXCollections.observableArrayList(sketchPassports);
-        Platform.runLater(()->{
-            tvSketch.getItems().clear();
-            tvSketch.setItems(sketchPassportsList);
-        });
     }
 
     /**
@@ -163,6 +79,8 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
         passportPatchController.initPassportsTableView(null, new Passport(), SelectionMode.SINGLE, true);
         tvPIK = passportPatchController.getPassportsTable();
         tvPIK.showTableColumns(false, true, true, true, true);
+        // Устанавливаем тип паспортов для таблицы PIK
+        tvPIK.setPassportType(PassportType.PIK);
 
         //Инструментальную панель инициируем в последнюю очередь
         passportPatchController.initPassportsToolBar(false, true);
@@ -184,6 +102,8 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
         passportPatchController.initPassportsTableView(null, new Passport(), SelectionMode.SINGLE, true);
         tvSketch = passportPatchController.getPassportsTable();
         tvSketch.showTableColumns(false, true, true, true, true);
+        // Устанавливаем тип паспортов для таблицы эскизов
+        tvSketch.setPassportType(PassportType.SKETCHES);
 
         //Инструментальную панель инициируем в последнюю очередь
         passportPatchController.initPassportsToolBar(false, true);

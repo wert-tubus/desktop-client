@@ -9,6 +9,7 @@ import lombok.Setter;
 import ru.wert.tubus.client.entity.models.Draft;
 import ru.wert.tubus.client.entity.models.Folder;
 import ru.wert.tubus.client.entity.models.Passport;
+import ru.wert.tubus.client.entity.models.Prefix;
 import ru.wert.tubus.chogori.common.commands.ItemCommands;
 import ru.wert.tubus.chogori.common.contextMenuACC.FormView_ACCController;
 import ru.wert.tubus.chogori.common.interfaces.Sorting;
@@ -18,6 +19,8 @@ import ru.wert.tubus.chogori.previewer.PreviewerPatchController;
 import ru.wert.tubus.chogori.application.services.ChogoriServices;
 
 import java.util.*;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static ru.wert.tubus.chogori.statics.UtilStaticNodes.CH_SEARCH_FIELD;
 
@@ -35,6 +38,13 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
     @Getter@Setter private String searchedText = "";
 
     @Getter@Setter private List<Folder> selectedFolders;
+
+    // Добавляем поле для типа паспортов
+    @Getter@Setter private PassportType passportType = PassportType.ALL;
+
+    // Паттерны для фильтрации (аналогичны CardsBoxController)
+    private static final Pattern PIK_PATTERN = Pattern.compile("\\d{6}\\.\\d{3}");
+    private static final Pattern SKETCH_PATTERN = Pattern.compile("Э\\d{5}");
 
     // Контекстное меню
     private Passport_ContextMenu contextMenu;
@@ -56,21 +66,14 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
     @Getter@Setter private boolean showUser; //Пользователь
     @Getter@Setter private boolean showDate; //Дата
 
-    public enum PassportType{
-        ALL, PIK, SKETCHES;
-    }
-
-    private PassportType passportType;
-
     /**
      * Конструктор для таблицы, связанной с предпросмотром чертежей
      * @param promptText String, текст, добавляемый в поисковую строку
      * @param previewerController PreviewerNoTBController контроллер окна предпросмотра
      */
-    public Passport_TableView(String promptText, PreviewerPatchController previewerController, boolean useContextMenu, boolean switchSearch, PassportType passportType) {
+    public Passport_TableView(String promptText, PreviewerPatchController previewerController, boolean useContextMenu, boolean switchSearch) {
         this(promptText);
         this.previewerController = previewerController;
-        this.passportType = passportType;
 
 //        new Passport_Manipulator(this);
 
@@ -163,25 +166,75 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
     @Override
     public List<Passport> prepareList() {
         List<Passport> list = new ArrayList<>();
+
+        // Получаем базовый список в зависимости от modifyingClass
+        List<Passport> baseList;
         if(modifyingClass instanceof Folder){
             if(selectedFolders == null || selectedFolders.isEmpty()) {
                 if (modifyingItem == null)
-                    list = ChogoriServices.CH_QUICK_PASSPORTS.findAll();
+                    baseList = ChogoriServices.CH_QUICK_PASSPORTS.findAll();
                 else {
-                    list = new ArrayList<>(findPassportsInFolder((Folder)modifyingItem));
+                    baseList = new ArrayList<>(findPassportsInFolder((Folder)modifyingItem));
                 }
             } else {
+                Set<Passport> combinedSet = new HashSet<>();
                 for(Folder folder: selectedFolders){
-                    list.addAll(findPassportsInFolder(folder));
+                    combinedSet.addAll(findPassportsInFolder(folder));
                 }
+                baseList = new ArrayList<>(combinedSet);
                 selectedFolders = null;
             }
         } else {
             // Если modifyingClass не Folder, возвращаем все паспорта
-            list = ChogoriServices.CH_QUICK_PASSPORTS.findAll();
+            baseList = ChogoriServices.CH_QUICK_PASSPORTS.findAll();
         }
 
+        // Применяем фильтрацию по типу паспорта
+        list = filterPassportsByType(baseList);
+
         return list;
+    }
+
+    /**
+     * Фильтрует список паспортов в зависимости от текущего типа
+     * @param passports исходный список паспортов
+     * @return отфильтрованный список
+     */
+    private List<Passport> filterPassportsByType(List<Passport> passports) {
+        if (passportType == null || passportType == PassportType.ALL) {
+            return passports;
+        }
+
+        return passports.stream()
+                .filter(this::matchesPassportType)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Проверяет, соответствует ли паспорт текущему типу
+     * @param passport проверяемый паспорт
+     * @return true если соответствует
+     */
+    private boolean matchesPassportType(Passport passport) {
+        Prefix prefix = passport.getPrefix();
+        String number = passport.getNumber();
+
+        if (number == null) return false;
+
+        switch (passportType) {
+            case PIK:
+                return prefix != null
+                        && "ПИК".equals(prefix.getName())
+                        && PIK_PATTERN.matcher(number).matches();
+
+            case SKETCHES:
+                boolean prefixCondition = prefix == null || "-".equals(prefix.getName());
+                return prefixCondition && SKETCH_PATTERN.matcher(number).matches();
+
+            case ALL:
+            default:
+                return true;
+        }
     }
 
     /**
