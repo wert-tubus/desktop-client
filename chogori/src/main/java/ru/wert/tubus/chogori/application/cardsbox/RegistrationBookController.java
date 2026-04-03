@@ -11,8 +11,11 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.application.services.ChogoriServices;
+import ru.wert.tubus.chogori.entities.passports.Passport_PatchController;
 import ru.wert.tubus.client.entity.models.Decimal;
 import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.client.interfaces.UpdatableTabController;
@@ -48,6 +51,9 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
     private ObservableList<Passport> allPassportsList;
 
     private PassportContextMenu selectedContextMenu;
+
+    @Setter private Passport_PatchController passportPIKController;
+    @Setter private Passport_PatchController passportSketchController;
 
 
     @Override
@@ -543,8 +549,8 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
      * Обновляет списки паспортов после добавления нового
      */
     private void refreshPassportLists() {
-//        fillPIKListView();
-//        fillSketchesListView();
+        passportPIKController.getPassportsTable().updateView();
+        passportSketchController.getPassportsTable().updateView();
         refreshSelectedList();
     }
 

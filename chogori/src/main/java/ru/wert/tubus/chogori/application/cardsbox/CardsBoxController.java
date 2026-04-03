@@ -109,6 +109,8 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
 
         registrationBookPatch = new RegistrationBook_Patch().create();
         RegistrationBookController registrationBookController = registrationBookPatch.getRegistrationBookController();
+        registrationBookController.setPassportPIKController(passportsPIKPatch.getPassportPatchController());
+        registrationBookController.setPassportSketchController(passportsSketchPatch.getPassportPatchController());
 
 //        registrationBookController.
 

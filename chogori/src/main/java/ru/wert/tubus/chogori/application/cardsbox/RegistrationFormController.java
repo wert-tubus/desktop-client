@@ -82,6 +82,7 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         new BXUsers(bxUser, CH_USER_GROUPS.findByName("Конструктор"));
+        bxUser.setStyle("-fx-font-size: 14px; -fx-background-color: white");
 
         setupButtonHandlers();
         setupValidation();
