@@ -1,4 +1,4 @@
-package ru.wert.tubus.chogori.registrationBook;
+package ru.wert.tubus.chogori.application.cardsbox;
 
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -14,7 +14,7 @@ public class RegistrationBook_Patch {
     public RegistrationBook_Patch create(){
 
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/registrationBook/registrationBook.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/cardsBox/registrationBook.fxml"));
             parent = loader.load();
             registrationBookController = loader.getController();
         } catch (IOException e) {

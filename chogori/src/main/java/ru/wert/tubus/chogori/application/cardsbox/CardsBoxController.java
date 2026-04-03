@@ -2,31 +2,23 @@ package ru.wert.tubus.chogori.application.cardsbox;
 
 
 import javafx.application.Platform;
-import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.SplitPane;
 import javafx.scene.layout.StackPane;
 import lombok.extern.slf4j.Slf4j;
-import ru.wert.tubus.chogori.application.services.ChogoriServices;
 import ru.wert.tubus.chogori.common.utils.CommonUnits;
 import ru.wert.tubus.chogori.entities.passports.PassportType;
 import ru.wert.tubus.chogori.entities.passports.Passport_Patch;
 import ru.wert.tubus.chogori.entities.passports.Passport_PatchController;
 import ru.wert.tubus.chogori.entities.passports.Passport_TableView;
-import ru.wert.tubus.chogori.registrationBook.RegistrationBookController;
-import ru.wert.tubus.chogori.registrationBook.RegistrationBook_Patch;
 import ru.wert.tubus.client.entity.models.Folder;
 import ru.wert.tubus.client.entity.models.Passport;
-import ru.wert.tubus.client.entity.models.Prefix;
 import ru.wert.tubus.client.interfaces.Item;
 import ru.wert.tubus.client.interfaces.SearchableTab;
 import ru.wert.tubus.client.interfaces.UpdatableTabController;
 
 import java.util.*;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static ru.wert.tubus.chogori.statics.UtilStaticNodes.CH_SEARCH_FIELD;
 

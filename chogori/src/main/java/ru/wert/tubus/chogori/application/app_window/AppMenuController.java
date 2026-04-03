@@ -386,7 +386,7 @@ public class AppMenuController {
      */
     private void openRegistrationBook(ActionEvent actionEvent) {
         try {
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/cardsbox/cardsbox.fxml"));
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/cardsBox/cardsbox.fxml"));
             Parent parent = loader.load();
             parent.getStylesheets().add(this.getClass().getResource("/chogori-css/details-dark.css").toString());
             String tabName = "Журнал регистрации";

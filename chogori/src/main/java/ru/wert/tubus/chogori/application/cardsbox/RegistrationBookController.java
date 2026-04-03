@@ -1,5 +1,5 @@
 // RegistrationBookController.java (обновленная версия)
-package ru.wert.tubus.chogori.registrationBook;
+package ru.wert.tubus.chogori.application.cardsbox;
 
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;

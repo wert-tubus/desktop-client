@@ -1,5 +1,5 @@
 // RegistrationFormController.java (добавлен метод setDataForEdit)
-package ru.wert.tubus.chogori.registrationBook;
+package ru.wert.tubus.chogori.application.cardsbox;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
