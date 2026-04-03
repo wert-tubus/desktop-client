@@ -48,6 +48,8 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
 
     private ObservableList<Decimal> allDecimalGroupsList;
 
+    private ObservableList<Passport> allPassportsList;
+
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -411,9 +413,21 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
      * Обновляет списки паспортов после добавления нового
      */
     private void refreshPassportLists() {
-        fillPIKListView();
+//        fillPIKListView();
 //        fillSketchesListView();
         refreshSelectedList();
+    }
+
+    /**
+     * Обновление списка выбранных паспортов (удаление неактуальных)
+     */
+    private void refreshSelectedList() {
+        // Удаляем из выбранных те паспорта, которых больше нет в allPassportsList
+        Set<Passport> currentPassports = new HashSet<>(allPassportsList);
+        List<Passport> toRemove = selectedPassportsList.stream()
+                .filter(p -> !currentPassports.contains(p))
+                .collect(Collectors.toList());
+        selectedPassportsList.removeAll(toRemove);
     }
 
     /**

@@ -49,21 +49,28 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
 
     //Показывать колонки
     @Getter@Setter private boolean showId; //Идентификатор
-    @Getter@Setter private boolean showIdentity ; //Идентификатор
+    @Getter@Setter private boolean showIdentity; //Идентификатор
     @Getter@Setter private boolean showNumber; //Дец номер
     @Getter@Setter private boolean showName; //Наименование
     @Getter@Setter private boolean showNote; //Изделие
     @Getter@Setter private boolean showUser; //Пользователь
     @Getter@Setter private boolean showDate; //Дата
 
+    public enum PassportType{
+        ALL, PIK, SKETCHES;
+    }
+
+    private PassportType passportType;
+
     /**
      * Конструктор для таблицы, связанной с предпросмотром чертежей
      * @param promptText String, текст, добавляемый в поисковую строку
      * @param previewerController PreviewerNoTBController контроллер окна предпросмотра
      */
-    public Passport_TableView(String promptText, PreviewerPatchController previewerController, boolean useContextMenu, boolean switchSearch) {
+    public Passport_TableView(String promptText, PreviewerPatchController previewerController, boolean useContextMenu, boolean switchSearch, PassportType passportType) {
         this(promptText);
         this.previewerController = previewerController;
+        this.passportType = passportType;
 
 //        new Passport_Manipulator(this);
 
@@ -105,22 +112,27 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
     /**
      * Метод выключает ненужные столбцы
      */
-    public void showTableColumns(boolean useTcId, boolean useTcPassport, boolean showNote, boolean showUser, boolean howDate){
-        tcId.setVisible(useTcId);
-        showId = useTcId;
+    public void showTableColumns(boolean showTcId, boolean showPassportInOneColumn, boolean showNote, boolean showUser, boolean showDate){
+        tcId.setVisible(showTcId);
+        this.showId = showTcId;
 
-        tcPassport.setVisible(useTcPassport); //Показывает дец номер и наименование в одном столбце
-        showIdentity = useTcPassport;
+        tcPassport.setVisible(showPassportInOneColumn); //Показывает дец номер и наименование в одном столбце
+        this.showIdentity = showPassportInOneColumn;
 
-        tcPassportNumber.setVisible(!useTcPassport);
-        showNumber = !useTcPassport;
+        tcPassportNumber.setVisible(!showPassportInOneColumn);
+        this.showNumber = !showPassportInOneColumn;
 
-        tcPassportName.setVisible(!useTcPassport);
-        showName = !useTcPassport;
+        tcPassportName.setVisible(!showPassportInOneColumn);
+        this.showName = !showPassportInOneColumn;
 
         tcPassportNote.setVisible(showNote);
+        this.showNote = showNote;
+
         tcPassportUser.setVisible(showUser);
-        tcPassportDate.setVisible(howDate);
+        this.showUser = showUser;
+
+        tcPassportDate.setVisible(showDate);
+        this.showDate = showDate;
     }
 
     @Override

@@ -2,26 +2,18 @@ package ru.wert.tubus.chogori.application.cardsbox;
 
 
 import javafx.application.Platform;
-import javafx.beans.value.ChangeListener;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.SplitPane;
-import javafx.scene.control.TableView;
 import javafx.scene.layout.StackPane;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.application.services.ChogoriServices;
 import ru.wert.tubus.chogori.common.utils.CommonUnits;
-import ru.wert.tubus.chogori.entities.drafts.Draft_Patch;
-import ru.wert.tubus.chogori.entities.drafts.Draft_PatchController;
-import ru.wert.tubus.chogori.entities.drafts.Draft_TableView;
-import ru.wert.tubus.chogori.entities.folders.Folder_TableView;
 import ru.wert.tubus.chogori.entities.passports.Passport_Patch;
 import ru.wert.tubus.chogori.entities.passports.Passport_PatchController;
 import ru.wert.tubus.chogori.entities.passports.Passport_TableView;
-import ru.wert.tubus.chogori.entities.product_groups.ProductGroup_TreeView;
-import ru.wert.tubus.chogori.previewer.PreviewerPatchController;
 import ru.wert.tubus.chogori.registrationBook.RegistrationBookController;
 import ru.wert.tubus.chogori.registrationBook.RegistrationBook_Patch;
 import ru.wert.tubus.client.entity.models.Folder;
@@ -39,7 +31,7 @@ import static ru.wert.tubus.chogori.statics.UtilStaticNodes.CH_SEARCH_FIELD;
 
 
 @Slf4j
-public class CardsboxController implements SearchableTab, UpdatableTabController {
+public class CardsBoxController implements SearchableTab, UpdatableTabController {
 
 
     @FXML
@@ -49,48 +41,40 @@ public class CardsboxController implements SearchableTab, UpdatableTabController
     private StackPane stpRegistrationBook;
 
     @FXML
-    private StackPane stpPassports;
+    private StackPane spPassports;
 
     @FXML
     private StackPane spPIK;
 
     @FXML
-    private StackPane stpSketch;
+    private StackPane spSketch;
 
 
-    private Passport_TableView passportsTable;
-    private PreviewerPatchController previewerPatchController;
-    private Draft_TableView draftsTable;
-    private Draft_Patch draftPatch;
-    private Draft_PatchController draftPatchController;
-    private Passport_Patch passportsPatch;
+    private Passport_TableView tvPIK;
+    private Passport_Patch passportsPIKPatch;
+
+    private Passport_TableView tvSketch;
+    private Passport_Patch passportsSketchPatch;
+
     private RegistrationBook_Patch registrationBookPatch;
-
-    private Folder_TableView folderTableView;
-    private ProductGroup_TreeView<Folder> productGroupsTreeView;
-
-    private ChangeListener<Item> folderTableSelectedItemChangeListener;
 
     private ObservableList<Passport> allPassportsList;
     private ObservableList<Passport> pikPassportsList;
     private ObservableList<Passport> sketchPassportsList;
 
-    private TableView<Passport> tvPIK;
-    private TableView<Passport> tvSketch;
-
 
     @FXML
     void initialize() {
 
-        loadStackPanePIKPassports(); //Пасспорта PIK
-        loadStackPaneSketchPassports(); //Пасспорта эскизных чертежей
+        loadStackPanePIKPassports(); //Паспорта PIK
+        loadStackPaneSketchPassports(); //Паспорта эскизных чертежей
 
         // Загружаем все паспорта
         loadAllPassports();
 
         // Заполняем списки
-        fillPIKListView();
-        fillSketchesListView();
+        fillPIKTableView();
+        fillSketchesTableView();
 
 
 
@@ -114,23 +98,13 @@ public class CardsboxController implements SearchableTab, UpdatableTabController
         }
     }
 
-    /**
-     * Обновление списка выбранных паспортов (удаление неактуальных)
-     */
-    private void refreshSelectedList() {
-        // Удаляем из выбранных те паспорта, которых больше нет в allPassportsList
-        Set<Passport> currentPassports = new HashSet<>(allPassportsList);
-        List<Passport> toRemove = selectedPassportsList.stream()
-                .filter(p -> !currentPassports.contains(p))
-                .collect(Collectors.toList());
-        selectedPassportsList.removeAll(toRemove);
-    }
+
 
     /**
      * Заполняет список паспортов ПИК
      * Фильтрует паспорта с префиксом "ПИК" и номером по маске "######.###"
      */
-    private void fillPIKListView() {
+    private void fillPIKTableView() {
         Pattern pikPattern = Pattern.compile("\\d{6}\\.\\d{3}");
 
         List<Passport> pikPassports = allPassportsList.stream()
@@ -146,14 +120,17 @@ public class CardsboxController implements SearchableTab, UpdatableTabController
                 .collect(Collectors.toList());
 
         pikPassportsList = FXCollections.observableArrayList(pikPassports);
-        tvPIK.setItems(pikPassportsList);
+        Platform.runLater(()->{
+            tvPIK.getItems().clear();
+            tvPIK.setItems(pikPassportsList);
+        });
     }
 
     /**
      * Заполняет список эскизных паспортов
      * Фильтрует паспорта с префиксом "-" или null и номером по маске "Э#####"
      */
-    private void fillSketchesListView() {
+    private void fillSketchesTableView() {
         Pattern sketchPattern = Pattern.compile("Э\\d{5}");
 
         List<Passport> sketchPassports = allPassportsList.stream()
@@ -169,7 +146,10 @@ public class CardsboxController implements SearchableTab, UpdatableTabController
                 .collect(Collectors.toList());
 
         sketchPassportsList = FXCollections.observableArrayList(sketchPassports);
-        tvSketch.setItems(sketchPassportsList);
+        Platform.runLater(()->{
+            tvSketch.getItems().clear();
+            tvSketch.setItems(sketchPassportsList);
+        });
     }
 
     /**
@@ -177,20 +157,19 @@ public class CardsboxController implements SearchableTab, UpdatableTabController
      */
     private void loadStackPanePIKPassports() {
 
-        passportsPatch = new Passport_Patch().create();
+        passportsPIKPatch = new Passport_Patch().create();
 
-        Passport_PatchController passportPatchController = passportsPatch.getPassportPatchController();
+        Passport_PatchController passportPatchController = passportsPIKPatch.getPassportPatchController();
         passportPatchController.initPassportsTableView(null, new Passport(), SelectionMode.SINGLE, true);
-        passportsTable = passportPatchController.getPassportsTable();
-        passportsTable.showTableColumns(false, true, true, true, true);
         tvPIK = passportPatchController.getPassportsTable();
+        tvPIK.showTableColumns(false, true, true, true, true);
 
         //Инструментальную панель инициируем в последнюю очередь
-        passportPatchController.initPassportsToolBar(true, true);
+        passportPatchController.initPassportsToolBar(false, true);
         passportPatchController.getHboxPassportsButtons().getChildren().
                 addAll(CommonUnits.createHorizontalDividerButton(sppHorizontal, 0.8, 0.4));
 
-        spPIK.getChildren().add(passportsPatch.getParent());
+        spPIK.getChildren().add(passportsPIKPatch.getParent());
 
     }
 
@@ -199,20 +178,19 @@ public class CardsboxController implements SearchableTab, UpdatableTabController
      */
     private void loadStackPaneSketchPassports() {
 
-        passportsPatch = new Passport_Patch().create();
+        passportsSketchPatch = new Passport_Patch().create();
 
-        Passport_PatchController passportPatchController = passportsPatch.getPassportPatchController();
+        Passport_PatchController passportPatchController = passportsSketchPatch.getPassportPatchController();
         passportPatchController.initPassportsTableView(null, new Passport(), SelectionMode.SINGLE, true);
-        passportsTable = passportPatchController.getPassportsTable();
-        passportsTable.showTableColumns(false, true, true, true, true);
         tvSketch = passportPatchController.getPassportsTable();
+        tvSketch.showTableColumns(false, true, true, true, true);
 
         //Инструментальную панель инициируем в последнюю очередь
-        passportPatchController.initPassportsToolBar(true, true);
+        passportPatchController.initPassportsToolBar(false, true);
         passportPatchController.getHboxPassportsButtons().getChildren().
                 addAll(CommonUnits.createHorizontalDividerButton(sppHorizontal, 0.8, 0.4));
 
-        stpSketch.getChildren().add(passportsPatch.getParent());
+        spSketch.getChildren().add(passportsSketchPatch.getParent());
 
     }
 
@@ -234,26 +212,26 @@ public class CardsboxController implements SearchableTab, UpdatableTabController
 
 
     private void updateListOfPassports(Item newValue) {
-        passportsPatch.getPassportPatchController().showSourceOfPassports(newValue);
+        passportsPIKPatch.getPassportPatchController().showSourceOfPassports(newValue);
 
-        passportsTable.setSelectedFolders(Collections.singletonList((Folder) newValue));
-        passportsTable.setSearchedText(""); //обнуляем поисковую строку
-        passportsTable.setModifyingItem(newValue);
-        passportsTable.updateView();
+        tvPIK.setSelectedFolders(Collections.singletonList((Folder) newValue));
+        tvPIK.setSearchedText(""); //обнуляем поисковую строку
+        tvPIK.setModifyingItem(newValue);
+        tvPIK.updateView();
     }
 
     @Override//SearchableTab
     public void tuneSearching() {
-        Platform.runLater(()->passportsTable.requestFocus());
-        CH_SEARCH_FIELD.changeSearchedTableView(passportsTable, "КАРТОЧКА");
+        Platform.runLater(()-> tvPIK.requestFocus());
+        CH_SEARCH_FIELD.changeSearchedTableView(tvPIK, "КАРТОЧКА");
     }
 
 
     @Override
     public void updateTab() {
-        productGroupsTreeView.updateView();
-        folderTableView.updateVisibleLeafOfTableView(folderTableView.getUpwardRow().getValue());
-        draftsTable.updateTableView();
-        passportsTable.updateTableView();
+//        productGroupsTreeView.updateView();
+//        folderTableView.updateVisibleLeafOfTableView(folderTableView.getUpwardRow().getValue());
+//        draftsTable.updateTableView();
+        tvPIK.updateTableView();
     }
 }

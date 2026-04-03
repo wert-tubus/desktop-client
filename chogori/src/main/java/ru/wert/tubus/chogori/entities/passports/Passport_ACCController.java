@@ -1,6 +1,5 @@
 package ru.wert.tubus.chogori.entities.passports;
 
-import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -33,10 +32,10 @@ import static ru.wert.tubus.winform.warnings.WarningMessages.*;
 public class Passport_ACCController extends FormView_ACCController<Passport> {
 
     @FXML
-    private TextField txtFldPassportName;  // Децимальный номер
+    private TextField tfNumber;  // Децимальный номер
 
     @FXML
-    private TextField txtFldPassword;      // Наименование
+    private TextField tfName;      // Наименование
 
     @FXML
     private TextArea taProduct;             // Изделие (note)
@@ -84,7 +83,7 @@ public class Passport_ACCController extends FormView_ACCController<Passport> {
         AppStatic.createSpIndicator(spIndicator);
 
         // Валидация поля Наименование (не может быть пустым)
-        txtFldPassword.textProperty().addListener((observable, oldValue, newValue) -> {
+        tfName.textProperty().addListener((observable, oldValue, newValue) -> {
             btnOk.setDisable(newValue == null || newValue.trim().isEmpty());
         });
     }
@@ -108,7 +107,7 @@ public class Passport_ACCController extends FormView_ACCController<Passport> {
     @Override
     public ArrayList<String> getNotNullFields() {
         ArrayList<String> notNullFields = new ArrayList<>();
-        notNullFields.add(txtFldPassword.getText());
+        notNullFields.add(tfName.getText());
         return notNullFields;
     }
 
@@ -121,7 +120,7 @@ public class Passport_ACCController extends FormView_ACCController<Passport> {
         Passport passport = new Passport();
 
         // Устанавливаем префикс и номер из децимального номера
-        String fullNumber = txtFldPassportName.getText().trim();
+        String fullNumber = tfNumber.getText().trim();
         if (fullNumber != null && !fullNumber.isEmpty()) {
             if (fullNumber.contains(".")) {
                 String[] parts = fullNumber.split("\\.");
@@ -143,7 +142,7 @@ public class Passport_ACCController extends FormView_ACCController<Passport> {
             }
         }
 
-        passport.setName(capitalizeFirstLetter(txtFldPassword.getText().trim()));
+        passport.setName(capitalizeFirstLetter(tfName.getText().trim()));
         passport.setNote(capitalizeFirstLetter(taProduct.getText().trim()));
         passport.setUserName(tfUser.getText());
         passport.setDate(tfDate.getText());
@@ -189,13 +188,13 @@ public class Passport_ACCController extends FormView_ACCController<Passport> {
         if (oldItem.getNumber() != null) {
             String prefix = (oldItem.getPrefix() != null && !"-".equals(oldItem.getPrefix().getName()))
                     ? oldItem.getPrefix().getName() + "." : "";
-            txtFldPassportName.setText(prefix + oldItem.getNumber());
-            txtFldPassportName.setEditable(false); // Номер нельзя менять при редактировании
+            tfNumber.setText(prefix + oldItem.getNumber());
+            tfNumber.setEditable(false); // Номер нельзя менять при редактировании
         }
 
         // Заполняем поле наименования
         if (oldItem.getName() != null) {
-            txtFldPassword.setText(oldItem.getName());
+            tfName.setText(oldItem.getName());
         }
 
         // Заполняем поле изделия (note)
@@ -226,7 +225,7 @@ public class Passport_ACCController extends FormView_ACCController<Passport> {
     public void changeOldItemFields(Passport oldItem) {
         if (oldItem == null) return;
 
-        oldItem.setName(capitalizeFirstLetter(txtFldPassword.getText().trim()));
+        oldItem.setName(capitalizeFirstLetter(tfName.getText().trim()));
         oldItem.setNote(capitalizeFirstLetter(taProduct.getText().trim()));
         oldItem.setUserName(tfUser.getText());
         oldItem.setDate(tfDate.getText());
@@ -241,9 +240,9 @@ public class Passport_ACCController extends FormView_ACCController<Passport> {
      */
     @Override
     public void showEmptyForm() {
-        txtFldPassportName.clear();
-        txtFldPassportName.setEditable(true);
-        txtFldPassword.clear();
+        tfNumber.clear();
+        tfNumber.setEditable(true);
+        tfName.clear();
         taProduct.clear();
         setCurrentUser();
         setCurrentDate();
@@ -257,7 +256,7 @@ public class Passport_ACCController extends FormView_ACCController<Passport> {
     @Override
     public boolean enteredDataCorrect() {
         // Проверяем, что наименование не пустое
-        String name = txtFldPassword.getText().trim();
+        String name = tfName.getText().trim();
         if (name.isEmpty()) {
             Warning1.create($ATTENTION,
                     "Поле наименования не заполнено!",

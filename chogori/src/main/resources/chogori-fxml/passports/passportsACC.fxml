@@ -17,7 +17,7 @@
                                 <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
                             </VBox.margin>
                         </Label>
-                        <TextField fx:id="txtFldPassportName" editable="false" />
+                        <TextField fx:id="tfNumber" editable="false" />
                     </children>
                 </VBox>
                 <VBox>
@@ -27,7 +27,7 @@
                                 <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
                             </VBox.margin>
                         </Label>
-                        <TextField fx:id="txtFldPassword" promptText="Введите наименование" />
+                        <TextField fx:id="tfName" promptText="Введите наименование" />
                     </children>
                 </VBox>
                 <VBox>
