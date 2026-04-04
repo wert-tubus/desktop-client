@@ -2,6 +2,7 @@
 package ru.wert.tubus.chogori.application.cardsbox;
 
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.*;
@@ -556,14 +557,14 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
             }
 
             // Запускаем задачу сохранения
-            manipulationTask(event, spIndicator, btnOk, passportToSave);
+            savePassportTask(event, spIndicator, btnOk, passportToSave);
         }
     }
 
     /**
      * Задача сохранения паспорта в отдельном потоке
      */
-    private void manipulationTask(javafx.event.Event event, StackPane spIndicator, Button btnOk, Passport passportToSave) {
+    private void savePassportTask(javafx.event.Event event, StackPane spIndicator, Button btnOk, Passport passportToSave) {
         if (spIndicator != null) {
             spIndicator.setVisible(true);
         }
@@ -571,7 +572,7 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
             btnOk.setDisable(true);
         }
 
-        javafx.concurrent.Task<Void> manipulation = new javafx.concurrent.Task<Void>() {
+        Task<Void> savePassport = new Task<Void>() {
             @Override
             protected Void call() throws Exception {
                 log.info("Сохраняем паспорт: тип={}, номер={}, наименование={}",
@@ -652,7 +653,7 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
             }
         };
 
-        new Thread(manipulation).start();
+        new Thread(savePassport).start();
     }
 
     /**
