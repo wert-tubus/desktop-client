@@ -6,6 +6,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.client.entity.models.Draft;
 import ru.wert.tubus.client.entity.models.Folder;
 import ru.wert.tubus.client.entity.models.Passport;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 
 import static ru.wert.tubus.chogori.statics.UtilStaticNodes.CH_SEARCH_FIELD;
 
+@Slf4j
 public class Passport_TableView extends RoutineTableView<Passport> implements Sorting<Passport> {
 
     private static final String accWindowRes = "/chogori-fxml/passports/passportsACC.fxml";
@@ -170,30 +172,38 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
 
         // Получаем базовый список в зависимости от modifyingClass
         List<Passport> baseList;
-        if(modifyingClass instanceof Folder){
-            if(selectedFolders == null || selectedFolders.isEmpty()) {
-                if (modifyingItem == null)
+
+        if (modifyingClass instanceof Folder) {
+            if (selectedFolders == null || selectedFolders.isEmpty()) {
+                if (modifyingItem == null) {
+                    // Если нет ни selectedFolders, ни modifyingItem - загружаем ВСЕ паспорта
                     baseList = ChogoriServices.CH_QUICK_PASSPORTS.findAll();
-                else {
-                    baseList = new ArrayList<>(findPassportsInFolder((Folder)modifyingItem));
+                    log.debug("Загружены все паспорты (нет папок для фильтрации), всего: {}", baseList.size());
+                } else {
+                    // Загружаем паспорта из конкретной папки
+                    baseList = new ArrayList<>(findPassportsInFolder((Folder) modifyingItem));
+                    log.debug("Загружены паспорта из папки: {}, всего: {}", ((Folder) modifyingItem).getName(), baseList.size());
                 }
             } else {
+                // Загружаем паспорта из выбранных папок
                 Set<Passport> combinedSet = new HashSet<>();
-                for(Folder folder: selectedFolders){
+                for (Folder folder : selectedFolders) {
                     combinedSet.addAll(findPassportsInFolder(folder));
                 }
                 baseList = new ArrayList<>(combinedSet);
                 selectedFolders = null;
+                log.debug("Загружены паспорта из {} выбранных папок, всего: {}", combinedSet.size());
             }
         } else {
             // Если modifyingClass не Folder, возвращаем все паспорта
             baseList = ChogoriServices.CH_QUICK_PASSPORTS.findAll();
+            log.debug("Загружены все паспорта (modifyingClass не Folder), всего: {}", baseList.size());
         }
 
         // Применяем фильтрацию по типу паспорта
         list = filterPassportsByType(baseList);
-
         list.sort(Comparator.comparing(Passport::getNumber));
+
         return list;
     }
 
@@ -315,5 +325,19 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
         if (contextMenu != null) {
             contextMenu.createMainMenuItems();
         }
+    }
+
+    /**
+     * Принудительное обновление таблицы с очисткой кэша.
+     */
+    public void forceRefresh() {
+        log.debug("Принудительное обновление таблицы паспортов, тип: {}", passportType);
+
+        // Сбрасываем фильтры и выделения
+        setSelectedFolders(null);
+        setModifyingItem(null);
+
+        // Обновляем таблицу
+        updateTableView();
     }
 }

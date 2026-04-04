@@ -107,17 +107,16 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
     /**
      * Создаем каталог ИЗДЕЛИЙ
      */
+    /**
+     * Создаем журнал регистрации
+     */
     private void loadRegistrationBook() {
-
         registrationBookPatch = new RegistrationBook_Patch().create();
         RegistrationBookController registrationBookController = registrationBookPatch.getRegistrationBookController();
         registrationBookController.setPassportPIKController(passportsPIKPatch.getPassportPatchController());
         registrationBookController.setPassportSketchController(passportsSketchPatch.getPassportPatchController());
 
-//        registrationBookController.
-
         stpRegistrationBook.getChildren().add(registrationBookPatch.getParent());
-
     }
 
 
@@ -141,9 +140,28 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
 
     @Override
     public void updateTab() {
-//        productGroupsTreeView.updateView();
-//        folderTableView.updateVisibleLeafOfTableView(folderTableView.getUpwardRow().getValue());
-//        draftsTable.updateTableView();
-        tvPIK.updateTableView();
+        log.debug("CardsBoxController.updateTab() вызван");
+
+        // Обновляем таблицу ПИК паспортов
+        if (tvPIK != null) {
+            tvPIK.updateTableView();
+            log.debug("Таблица ПИК обновлена");
+        }
+
+        // Обновляем таблицу эскизных паспортов
+        if (tvSketch != null) {
+            tvSketch.updateTableView();
+            log.debug("Таблица эскизов обновлена");
+        }
+
+        // Обновляем журнал регистрации
+        if (registrationBookPatch != null) {
+            RegistrationBookController registrationBookController = registrationBookPatch.getRegistrationBookController();
+            if (registrationBookController != null) {
+                registrationBookController.updateTab();
+                log.debug("Журнал регистрации обновлен");
+            }
+        }
     }
+
 }

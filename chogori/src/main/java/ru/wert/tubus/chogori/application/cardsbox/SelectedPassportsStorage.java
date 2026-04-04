@@ -1,4 +1,3 @@
-// SelectedPassportsStorage.java
 package ru.wert.tubus.chogori.application.cardsbox;
 
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -10,95 +9,155 @@ import ru.wert.tubus.client.entity.models.Passport;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static ru.wert.tubus.winform.statics.WinformStatic.WF_TEMPDIR;
-
+/**
+ * Хранилище для сохранения состояния выбранных паспортов.
+ * Использует постоянную директорию приложения для хранения данных.
+ */
 @Slf4j
 public class SelectedPassportsStorage {
 
+    /** Имя файла для сохранения состояния выбранных паспортов (JSON формат) */
     private static final String STORAGE_FILE = "selected_passports.json";
-    private static final String EXPORT_FILE = "selected_passports_export.txt";
+
+    /** Имя директории приложения для хранения данных */
+    private static final String APP_DATA_DIR = ".tubus_chogori";
+
+    /** Домашняя директория пользователя */
+    private static final String USER_HOME = System.getProperty("user.home");
+
+    /** Полный путь к директории приложения */
+    private static final String APP_DIR_PATH = USER_HOME + File.separator + APP_DATA_DIR;
+
+    /** Объект для сериализации/десериализации JSON */
     private static final ObjectMapper objectMapper;
 
     static {
         objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+
+        // Создание директории приложения, если её нет
+        try {
+            Path appDir = Paths.get(APP_DIR_PATH);
+            if (!Files.exists(appDir)) {
+                Files.createDirectories(appDir);
+                log.info("Создана директория приложения: {}", APP_DIR_PATH);
+            }
+        } catch (IOException e) {
+            log.error("Не удалось создать директорию приложения", e);
+        }
     }
 
     /**
-     * Сохраняет список выбранных паспортов (сохраняем номер + префикс как уникальный ключ)
+     * Получение пути к файлу хранения.
+     *
+     * @return файл для хранения состояния
+     */
+    private static File getStorageFile() {
+        return new File(APP_DIR_PATH, STORAGE_FILE);
+    }
+
+    /**
+     * Сохраняет список выбранных паспортов.
+     * Сохраняются только номера паспортов как уникальные идентификаторы.
+     *
+     * @param passports список выбранных паспортов
      */
     public static void saveSelectedPassports(List<Passport> passports) {
-        if (WF_TEMPDIR == null) {
-            log.warn("WF_TEMPDIR is null, cannot save selected passports");
-            return;
-        }
-
         try {
-            File storageFile = new File(WF_TEMPDIR, STORAGE_FILE);
+            File storageFile = getStorageFile();
             List<String> passportNumbers = passports.stream()
                     .map(Passport::getNumber)
                     .filter(number -> number != null && !number.isEmpty())
                     .collect(Collectors.toList());
 
             objectMapper.writeValue(storageFile, passportNumbers);
-            log.info("Saved {} selected passport numbers to {}", passportNumbers.size(), storageFile.getAbsolutePath());
+            log.info("Сохранено {} номеров выбранных паспортов в файл {}",
+                    passportNumbers.size(), storageFile.getAbsolutePath());
         } catch (IOException e) {
-            log.error("Failed to save selected passports", e);
+            log.error("Не удалось сохранить выбранные паспорта", e);
         }
     }
 
     /**
-     * Загружает список номеров выбранных паспортов
+     * Загружает список номеров выбранных паспортов из файла.
+     *
+     * @return список номеров паспортов, либо пустой список если файл не найден
      */
     public static List<String> loadSelectedPassportNumbers() {
-        if (WF_TEMPDIR == null) {
-            log.warn("WF_TEMPDIR is null, cannot load selected passports");
-            return new ArrayList<>();
-        }
-
-        File storageFile = new File(WF_TEMPDIR, STORAGE_FILE);
+        File storageFile = getStorageFile();
         if (!storageFile.exists()) {
-            log.info("No saved selected passports file found");
+            log.info("Файл с сохраненными выбранными паспортами не найден: {}", storageFile.getAbsolutePath());
             return new ArrayList<>();
         }
 
         try {
             List<String> passportNumbers = objectMapper.readValue(storageFile, new TypeReference<List<String>>() {});
-            log.info("Loaded {} selected passport numbers from {}", passportNumbers.size(), storageFile.getAbsolutePath());
+            log.info("Загружено {} номеров выбранных паспортов из файла {}",
+                    passportNumbers.size(), storageFile.getAbsolutePath());
             return passportNumbers;
         } catch (IOException e) {
-            log.error("Failed to load selected passports", e);
+            log.error("Не удалось загрузить выбранные паспорта", e);
             return new ArrayList<>();
         }
     }
 
     /**
-     * Экспортирует список выбранных паспортов в текстовый файл
+     * Экспортирует список выбранных паспортов в текстовый файл.
+     * Позволяет пользователю выбрать имя файла.
+     *
+     * @param passports    список выбранных паспортов
+     * @param initialFileName начальное имя файла
+     * @return true если экспорт успешен, false в противном случае
      */
-    public static void exportSelectedPassportsToFile(List<Passport> passports, String userHomePath) {
-        if (WF_TEMPDIR == null) {
-            log.warn("WF_TEMPDIR is null, cannot export selected passports");
-            return;
-        }
-
+    public static boolean exportSelectedPassportsToFile(List<Passport> passports, String initialFileName) {
         try {
-            // Создаем файл в домашней директории пользователя
-            File exportFile;
-            if (userHomePath != null && !userHomePath.isEmpty()) {
-                exportFile = new File(userHomePath, EXPORT_FILE);
-            } else {
-                exportFile = new File(WF_TEMPDIR, EXPORT_FILE);
+            // Используем FileChooser для выбора файла
+            javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
+            fileChooser.setTitle("Сохранить список паспортов");
+            fileChooser.setInitialFileName(initialFileName);
+
+            // Устанавливаем расширение файла по умолчанию
+            javafx.stage.FileChooser.ExtensionFilter txtFilter =
+                    new javafx.stage.FileChooser.ExtensionFilter("Текстовые файлы (*.txt)", "*.txt");
+            javafx.stage.FileChooser.ExtensionFilter allFilesFilter =
+                    new javafx.stage.FileChooser.ExtensionFilter("Все файлы (*.*)", "*.*");
+            fileChooser.getExtensionFilters().addAll(txtFilter, allFilesFilter);
+            fileChooser.setSelectedExtensionFilter(txtFilter);
+
+            // Устанавливаем начальную директорию - домашнюю папку пользователя
+            File initialDir = new File(System.getProperty("user.home"));
+            if (initialDir.exists()) {
+                fileChooser.setInitialDirectory(initialDir);
             }
 
+            // Показываем диалог сохранения
+            File exportFile = fileChooser.showSaveDialog(null);
+
+            if (exportFile == null) {
+                log.info("Пользователь отменил экспорт");
+                return false;
+            }
+
+            // Добавляем расширение .txt, если его нет
+            String filePath = exportFile.getAbsolutePath();
+            if (!filePath.toLowerCase().endsWith(".txt")) {
+                exportFile = new File(filePath + ".txt");
+            }
+
+            // Формирование содержимого файла
             StringBuilder content = new StringBuilder();
             content.append("Список выбранных паспортов\n");
             content.append("==========================\n");
-            content.append("Дата экспорта: ").append(new java.util.Date()).append("\n\n");
+            content.append("Дата экспорта: ").append(new Date()).append("\n\n");
 
             for (int i = 0; i < passports.size(); i++) {
                 Passport p = passports.get(i);
@@ -107,23 +166,26 @@ public class SelectedPassportsStorage {
 
             content.append("\n").append("Всего паспортов: ").append(passports.size());
 
-            java.nio.file.Files.write(exportFile.toPath(), content.toString().getBytes());
-            log.info("Exported {} selected passports to {}", passports.size(), exportFile.getAbsolutePath());
+            // Запись файла
+            Files.write(exportFile.toPath(), content.toString().getBytes());
+            log.info("Экспортировано {} паспортов в файл {}", passports.size(), exportFile.getAbsolutePath());
+
+            return true;
         } catch (IOException e) {
-            log.error("Failed to export selected passports", e);
+            log.error("Не удалось экспортировать выбранные паспорта", e);
+            return false;
         }
     }
 
     /**
-     * Очищает сохраненное состояние
+     * Очищает сохраненное состояние выбранных паспортов.
+     * Удаляет файл с сохраненными номерами.
      */
     public static void clearSavedState() {
-        if (WF_TEMPDIR == null) return;
-
-        File storageFile = new File(WF_TEMPDIR, STORAGE_FILE);
+        File storageFile = getStorageFile();
         if (storageFile.exists()) {
             boolean deleted = storageFile.delete();
-            log.info("Cleared saved selected passports state: {}", deleted);
+            log.info("Сохраненное состояние выбранных паспортов очищено: {}", deleted);
         }
     }
 }
