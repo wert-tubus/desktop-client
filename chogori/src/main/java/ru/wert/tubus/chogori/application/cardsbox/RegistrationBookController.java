@@ -1,5 +1,6 @@
 package ru.wert.tubus.chogori.application.cardsbox;
 
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -7,11 +8,12 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
-import javafx.stage.DirectoryChooser;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.application.services.ChogoriServices;
 import ru.wert.tubus.chogori.entities.passports.Passport_PatchController;
+import ru.wert.tubus.chogori.entities.passports.Passport_TableView;
+import ru.wert.tubus.chogori.entities.passports.PassportType;
 import ru.wert.tubus.client.entity.models.Decimal;
 import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.client.interfaces.UpdatableTabController;
@@ -456,7 +458,7 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
                         try {
                             return Integer.parseInt(p.getNumber().substring(1));
                         } catch (Exception e) {
-                            log.warn("Неверный формат номера эскиза: {}", p.getNumber());
+//                            log.warn("Неверный формат номера эскиза: {}", p.getNumber());
                             return null;
                         }
                     })
@@ -510,7 +512,8 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
                 Passport savedPassport = controller.getSavedPassport();
                 if (savedPassport != null) {
                     addToSelectedListWithSave(savedPassport);
-                    refreshPassportTables();
+                    // Передаем созданный паспорт для выделения
+                    refreshPassportTables(savedPassport);
                 }
             } else if (controller.isCancelled() && controller.isNumberReserved()) {
                 rollbackLastNumber(decimal, controller.getReservedNumber());
@@ -546,8 +549,8 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
             new WindowDecoration("Редактирование паспорта", parent, false, WF_MAIN_STAGE, true);
 
             if (controller.isAccepted()) {
-                // Обновляем таблицы
-                refreshPassportTables();
+                // Обновляем таблицы, передавая отредактированный паспорт для выделения
+                refreshPassportTables(freshPassport);
 
                 // Обновляем выбранный паспорт в списке
                 Passport updatedPassport = controller.getSavedPassport();
@@ -646,17 +649,107 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
         }
     }
 
+    // ======================== ОБНОВЛЕНИЕ ТАБЛИЦ И ВЫДЕЛЕНИЕ ========================
+
     /**
-     * Обновление таблиц паспортов (tvPIK и tvSketch).
+     * Обновление таблиц паспортов (tvPIK и tvSketch) с сохранением выделения.
+     * Используется для общего обновления без выделения конкретного паспорта.
      */
     private void refreshPassportTables() {
+        refreshPassportTables(null);
+    }
+
+    /**
+     * Обновление таблиц паспортов с возможностью выделения добавленного/измененного паспорта.
+     *
+     * @param passportToSelect паспорт, который нужно выделить (может быть null)
+     */
+    private void refreshPassportTables(Passport passportToSelect) {
+        // Обновляем таблицу PIK
         if (passportPIKController != null && passportPIKController.getPassportsTable() != null) {
-            passportPIKController.getPassportsTable().updateView();
+            Passport_TableView tvPIK = passportPIKController.getPassportsTable();
+            tvPIK.refreshPreservingType();
+
+            // Выделяем добавленный паспорт в таблице PIK, если он соответствует типу
+            if (passportToSelect != null && isPIKPassport(passportToSelect)) {
+                selectPassportInTable(tvPIK, passportToSelect);
+            }
         }
+
+        // Обновляем таблицу эскизов
         if (passportSketchController != null && passportSketchController.getPassportsTable() != null) {
-            passportSketchController.getPassportsTable().updateView();
+            Passport_TableView tvSketch = passportSketchController.getPassportsTable();
+            tvSketch.refreshPreservingType();
+
+            // Выделяем добавленный паспорт в таблице эскизов, если он соответствует типу
+            if (passportToSelect != null && isSketchPassport(passportToSelect)) {
+                selectPassportInTable(tvSketch, passportToSelect);
+            }
         }
+
         log.debug("Таблицы паспортов обновлены");
+    }
+
+    /**
+     * Проверяет, является ли паспорт ПИК.
+     *
+     * @param passport проверяемый паспорт
+     * @return true если паспорт ПИК
+     */
+    private boolean isPIKPassport(Passport passport) {
+        return passport.getPrefix() != null
+                && "ПИК".equals(passport.getPrefix().getName())
+                && passport.getNumber() != null
+                && passport.getNumber().matches("\\d{6}\\.\\d{3}");
+    }
+
+    /**
+     * Проверяет, является ли паспорт эскизным.
+     *
+     * @param passport проверяемый паспорт
+     * @return true если паспорт эскизный
+     */
+    private boolean isSketchPassport(Passport passport) {
+        boolean prefixCondition = passport.getPrefix() == null
+                || "-".equals(passport.getPrefix().getName());
+        return prefixCondition
+                && passport.getNumber() != null
+                && passport.getNumber().matches("Э\\d{5}");
+    }
+
+    /**
+     * Выделяет паспорт в таблице.
+     *
+     * @param tableView таблица, в которой нужно выделить
+     * @param passport  паспорт для выделения
+     */
+    private void selectPassportInTable(Passport_TableView tableView, Passport passport) {
+        Platform.runLater(() -> {
+            int index = findPassportIndex(tableView, passport);
+            if (index >= 0) {
+                tableView.scrollTo(index);
+                tableView.getSelectionModel().select(index);
+                log.debug("Выделен паспорт {} в таблице, индекс: {}", passport.getNumber(), index);
+            } else {
+                log.debug("Паспорт {} не найден в таблице после обновления", passport.getNumber());
+            }
+        });
+    }
+
+    /**
+     * Находит индекс паспорта в таблице.
+     *
+     * @param tableView таблица
+     * @param passport  паспорт для поиска
+     * @return индекс или -1 если не найден
+     */
+    private int findPassportIndex(Passport_TableView tableView, Passport passport) {
+        for (int i = 0; i < tableView.getItems().size(); i++) {
+            if (tableView.getItems().get(i).getId().equals(passport.getId())) {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**
@@ -691,7 +784,8 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
      */
     private void refreshAfterDelete() {
         refreshSelectedList();
-        refreshPassportTables();
+        // При удалении не передаем паспорт для выделения
+        refreshPassportTables(null);
         log.info("Выполнено обновление после удаления");
     }
 
@@ -793,6 +887,9 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
 
         // Обновляем список выбранных паспортов
         restoreSelectedPassportsState();
+
+        // Обновляем таблицы без выделения конкретного паспорта
+        refreshPassportTables(null);
 
         log.info("Вкладка журнала регистрации обновлена");
     }

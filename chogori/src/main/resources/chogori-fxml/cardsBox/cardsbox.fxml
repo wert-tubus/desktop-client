@@ -17,7 +17,7 @@
                   <StackPane fx:id="stpRegistrationBook" prefHeight="150.0" prefWidth="200.0" />
                   <StackPane fx:id="spPassports" prefHeight="150.0" prefWidth="200.0">
                      <children>
-                        <TabPane prefHeight="200.0" prefWidth="200.0" side="BOTTOM" tabClosingPolicy="UNAVAILABLE">
+                        <TabPane prefHeight="200.0" prefWidth="200.0" side="BOTTOM" style="-fx-tab-min-width: 90; -fx-font-size: 14;" tabClosingPolicy="UNAVAILABLE">
                           <tabs>
                             <Tab fx:id="tbPIK" text="ПИК">
                                  <content>

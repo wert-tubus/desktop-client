@@ -10,37 +10,46 @@
     <children>
         <VBox spacing="10.0" AnchorPane.bottomAnchor="10.0" AnchorPane.leftAnchor="10.0" AnchorPane.rightAnchor="10.0" AnchorPane.topAnchor="10.0">
             <children>
-                <VBox>
+                <VBox maxWidth="1.7976931348623157E308">
                     <children>
                         <Label text="Децимальный номер:">
                             <VBox.margin>
                                 <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
                             </VBox.margin>
                         </Label>
-                        <TextField fx:id="tfNumber" editable="false" />
+                        <TextField fx:id="tfNumber" editable="false" maxWidth="1.7976931348623157E308">
+                     <font>
+                        <Font size="14.0" />
+                     </font></TextField>
                     </children>
                 </VBox>
-                <VBox>
+                <VBox maxWidth="1.7976931348623157E308">
                     <children>
                         <Label text="Наименование:">
                             <VBox.margin>
                                 <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
                             </VBox.margin>
                         </Label>
-                        <TextField fx:id="tfName" promptText="Введите наименование" />
+                        <TextField fx:id="tfName" maxWidth="1.7976931348623157E308" promptText="Введите наименование">
+                     <font>
+                        <Font size="14.0" />
+                     </font></TextField>
                     </children>
                 </VBox>
-                <VBox>
+                <VBox maxWidth="1.7976931348623157E308">
                     <children>
                         <Label text="Изделие:">
                             <VBox.margin>
                                 <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
                             </VBox.margin>
                         </Label>
-                        <TextArea fx:id="taProduct" prefHeight="80.0" promptText="Введите информацию об изделии" />
+                        <TextArea fx:id="taProduct" maxWidth="1.7976931348623157E308" prefHeight="80.0" promptText="Введите информацию об изделии">
+                     <font>
+                        <Font size="14.0" />
+                     </font></TextArea>
                     </children>
                 </VBox>
-                <HBox spacing="10.0">
+                <HBox maxWidth="1.7976931348623157E308" spacing="10.0">
                     <children>
                         <VBox maxWidth="1.7976931348623157E308" HBox.hgrow="ALWAYS">
                             <children>
