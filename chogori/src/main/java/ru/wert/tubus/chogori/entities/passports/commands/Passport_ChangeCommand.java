@@ -16,36 +16,43 @@ public class Passport_ChangeCommand implements ICommand {
     private Passport item;
     private Passport_TableView tableView;
 
-    /**
-     *
-     * @param tableView PassportTableView
-     */
     public Passport_ChangeCommand(Passport item, Passport_TableView tableView) {
         this.item = item;
         this.tableView = tableView;
-
     }
 
     @Override
     public void execute() {
-
         try {
             ChogoriServices.CH_QUICK_PASSPORTS.update(item);
 
+            Platform.runLater(() -> {
+                // Используем метод из TableView
+                tableView.refreshPreservingType();
 
-
-            Platform.runLater(()->{
-                tableView.easyUpdate(ChogoriServices.CH_QUICK_PASSPORTS);
-                tableView.scrollTo(item);
-                tableView.getSelectionModel().select(item);
-
-                log.info("Обновлен пользователь {}", item.getName());
+                // Находим и выделяем измененный элемент
+                int updatedIndex = findItemIndex(item);
+                if (updatedIndex >= 0) {
+                    tableView.scrollTo(updatedIndex);
+                    tableView.getSelectionModel().select(updatedIndex);
+                    log.info("Обновлен паспорт {}", item.toUsefulString());
+                } else {
+                    log.debug("Паспорт {} больше не соответствует типу таблицы", item.toUsefulString());
+                }
             });
 
         } catch (Exception e) {
             Warning1.create($ATTENTION, $ERROR_WHILE_CHANGING_ITEM, $ITEM_IS_NOT_AVAILABLE_MAYBE);
-            log.error("При обновлении пользователя {} произошла ошибка {} по причине {}", item.getName(), e.getMessage(), e.getCause());
+            log.error("При обновлении паспорта {} произошла ошибка", item.toUsefulString(), e);
         }
+    }
 
+    private int findItemIndex(Passport passport) {
+        for (int i = 0; i < tableView.getItems().size(); i++) {
+            if (tableView.getItems().get(i).getId().equals(passport.getId())) {
+                return i;
+            }
+        }
+        return -1;
     }
 }

@@ -208,6 +208,30 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
     }
 
     /**
+     * Обновляет таблицу с сохранением фильтрации по типу и сортировки
+     */
+    public void refreshPreservingType() {
+        log.debug("refreshPreservingType() - тип: {}", passportType);
+
+        // Получаем базовый список
+        List<Passport> baseList;
+        if (modifyingItem instanceof Folder) {
+            baseList = new ArrayList<>(findPassportsInFolder((Folder) modifyingItem));
+        } else {
+            baseList = ChogoriServices.CH_QUICK_PASSPORTS.findAll();
+        }
+
+        // Применяем фильтрацию по типу
+        List<Passport> filteredList = filterPassportsByType(baseList);
+
+        // Сортируем
+        filteredList.sort(passportsComparator());
+
+        // Обновляем таблицу
+        getItems().setAll(filteredList);
+    }
+
+    /**
      * Фильтрует список паспортов в зависимости от текущего типа
      * @param passports исходный список паспортов
      * @return отфильтрованный список
