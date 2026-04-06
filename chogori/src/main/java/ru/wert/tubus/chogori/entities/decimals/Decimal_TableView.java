@@ -8,6 +8,7 @@ import ru.wert.tubus.chogori.common.contextMenuACC.FormView_ACCController;
 import ru.wert.tubus.chogori.common.interfaces.Sorting;
 import ru.wert.tubus.chogori.common.tableView.RoutineTableView;
 import ru.wert.tubus.chogori.entities.decimals.commands._DecimalCommands;
+import ru.wert.tubus.chogori.entities.drafts.Draft_ContextMenu;
 import ru.wert.tubus.chogori.statics.Comparators;
 import ru.wert.tubus.client.entity.models.Decimal;
 
@@ -73,8 +74,10 @@ public class Decimal_TableView extends RoutineTableView<Decimal> implements Sort
      */
     @Override
     public void createContextMenu() {
-        contextMenu = new Decimal_ContextMenu(this, commands, accWindowRes);
-        setContextMenu(contextMenu);
+        setOnContextMenuRequested(event -> {
+            contextMenu = new Decimal_ContextMenu(this, commands, accWindowRes);
+            contextMenu.show(this.getScene().getWindow(), event.getScreenX(), event.getScreenY());
+        });
     }
 
     /**

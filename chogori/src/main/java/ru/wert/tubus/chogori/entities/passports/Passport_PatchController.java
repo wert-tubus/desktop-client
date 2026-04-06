@@ -33,7 +33,6 @@ public class Passport_PatchController {
     private Object modifyingClass; //класс, от которого зависит отображаемый список в таблице (Folder, Product, Passport)
     private SelectionMode mode; //SelectionMode.SINGLE, SelectionMode.MULTIPLE
     @Getter private MenuButton btnShowColumns;
-    private Draft_TableView draftsTable;
 
     //Кнопки toolbar
     private boolean useBtnPassportsGlobe; //Показать все индентификаторы

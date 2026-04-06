@@ -259,7 +259,7 @@ public class Folder_TableView extends RoutineTableView<Item> implements IFormVie
     public void createContextMenu() {
         setOnContextMenuRequested(event -> {
             contextMenu = new Folder_ContextMenu(this, catalogTree, (_Folder_Commands) commands, accWindowRes);
-            contextMenu.show(this.getScene().getWindow(), event.getScreenX(), event.getSceneY());
+            contextMenu.show(this.getScene().getWindow(), event.getScreenX(), event.getScreenY());
         });
     }
 

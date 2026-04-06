@@ -70,7 +70,7 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
         Passport_PatchController passportPatchController = passportsPIKPatch.getPassportPatchController();
         passportPatchController.initPassportsTableView(null, new Passport(), SelectionMode.SINGLE, true);
         tvPIK = passportPatchController.getPassportsTable();
-        tvPIK.showTableColumns(false, true, true, true, true);
+        tvPIK.showTableColumns(false, true, false, false, false);
         // Устанавливаем тип паспортов для таблицы PIK
         tvPIK.setPassportType(PassportType.PIK);
         tvPIK.setShowPrefix(false);
@@ -92,7 +92,7 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
         Passport_PatchController passportPatchController = passportsSketchPatch.getPassportPatchController();
         passportPatchController.initPassportsTableView(null, new Passport(), SelectionMode.SINGLE, true);
         tvSketch = passportPatchController.getPassportsTable();
-        tvSketch.showTableColumns(false, true, true, true, true);
+        tvSketch.showTableColumns(false, true, false, false, false);
         // Устанавливаем тип паспортов для таблицы эскизов
         tvSketch.setPassportType(PassportType.SKETCHES);
         tvSketch.setShowPrefix(false);

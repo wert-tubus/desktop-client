@@ -7,6 +7,7 @@ import javafx.scene.layout.VBox;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import ru.wert.tubus.chogori.entities.drafts.Draft_ContextMenu;
 import ru.wert.tubus.client.entity.models.Draft;
 import ru.wert.tubus.client.entity.models.Folder;
 import ru.wert.tubus.client.entity.models.Passport;
@@ -143,26 +144,9 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
 
     @Override
     public void createContextMenu() {
-        // Создаем контекстное меню
-        contextMenu = new Passport_ContextMenu(this, commands, accWindowRes);
-
-        // Устанавливаем обработчик для показа контекстного меню
         setOnContextMenuRequested(event -> {
-            // Получаем позицию клика
-            javafx.scene.control.TablePosition<Passport, ?> pos = getSelectionModel()
-                    .getSelectedCells()
-                    .stream()
-                    .findFirst()
-                    .orElse(null);
-
-            if (pos == null) {
-                // Клик на пустом месте - снимаем выделение
-                getSelectionModel().clearSelection();
-            }
-
-            // Показываем контекстное меню
-            contextMenu.show(this, event.getScreenX(), event.getScreenY());
-            event.consume();
+            contextMenu = new Passport_ContextMenu(this, commands, accWindowRes);
+            contextMenu.show(this.getScene().getWindow(), event.getScreenX(), event.getScreenY());
         });
     }
 

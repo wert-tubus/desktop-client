@@ -29,6 +29,7 @@ public class Passport_ContextMenu extends FormView_ContextMenu<Passport> {
         this.tableView = tableView;
 
         createMainMenuItems();
+
     }
 
     /**
@@ -37,7 +38,7 @@ public class Passport_ContextMenu extends FormView_ContextMenu<Passport> {
      */
     @Override
     public void createMainMenuItems() {
-        boolean addItem = true;
+        boolean addItem = false;       //обавление паспорта не предусмотрено, только через его регистрацию
         boolean copyItem = false;      // Копирование паспортов не предусмотрено
         boolean changeItem = true;
         boolean deleteItem = true;
