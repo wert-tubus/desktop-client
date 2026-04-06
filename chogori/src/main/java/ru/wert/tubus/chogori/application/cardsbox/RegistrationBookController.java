@@ -152,7 +152,7 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
             log.info("Загружено {} децимальных групп", allDecimalGroupsList.size());
         } catch (Exception e) {
             log.error("Ошибка при загрузке децимальных групп", e);
-            showError("Ошибка загрузки данных", "Не удалось загрузить децимальные группы: " + e.getMessage());
+            Warning1.create("ОШИБКА!","Ошибка загрузки данных", "Не удалось загрузить децимальные группы: " + e.getMessage());
             allDecimalGroupsList = FXCollections.observableArrayList();
         }
     }
@@ -269,10 +269,10 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
     private void getPIKNumber(Decimal decimal) {
         try {
             String nextNumber = getNextPIKNumber(decimal);
-            openCreateDialog("PIK", "Регистрация номера ПИК", nextNumber, decimal);
+            openCreateDialog("PIK", "Номер ПИК", nextNumber, decimal);
         } catch (Exception e) {
             log.error("Ошибка при создании паспорта ПИК", e);
-            showError("Ошибка", "Не удалось создать паспорт ПИК: " + e.getMessage());
+            Warning1.create("ОШИБКА!","Не удалось создать паспорт ПИК", e.getMessage());
         }
     }
 
@@ -284,10 +284,10 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
     private void getSketchNumber(Decimal decimal) {
         try {
             String nextNumber = getNextSketchNumber(decimal);
-            openCreateDialog("SKETCH", "Регистрация номера эскиза", nextNumber, decimal);
+            openCreateDialog("SKETCH", "Эскизный номер", nextNumber, decimal);
         } catch (Exception e) {
             log.error("Ошибка при создании эскизного паспорта", e);
-            showError("Ошибка", "Не удалось создать эскизный паспорт: " + e.getMessage());
+            Warning1.create("ОШИБКА!","Не удалось создать эскизный паспорт", e.getMessage());
         }
     }
 
@@ -521,7 +521,7 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
 
         } catch (IOException ex) {
             log.error("Ошибка при открытии формы создания паспорта", ex);
-            showError("Ошибка", "Не удалось открыть форму создания паспорта: " + ex.getMessage());
+            Warning1.create("ОШИБКА!","Не удалось открыть форму создания паспорта", ex.getMessage());
         }
     }
 
@@ -535,7 +535,7 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
             // Получаем актуальную версию паспорта из БД перед редактированием
             Passport freshPassport = getPassportByNumber(passport.getNumber());
             if (freshPassport == null) {
-                showError("Ошибка", "Паспорт не найден в базе данных");
+                Warning1.create("ОШИБКА!","Паспорт не найден в базе данных", "Пояаится после перезагрузки");
                 refreshSelectedList();
                 return;
             }
@@ -566,7 +566,7 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
 
         } catch (IOException ex) {
             log.error("Ошибка при открытии формы редактирования паспорта", ex);
-            showError("Ошибка", "Не удалось открыть форму редактирования паспорта: " + ex.getMessage());
+            Warning1.create("ОШИБКА!","Не удалось открыть форму редактирования паспорта", ex.getMessage());
         }
     }
 
@@ -607,17 +607,12 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
         }
 
         // Формируем имя файла по умолчанию с текущей датой
-        String defaultFileName = "selected_passports_" +
-                new java.text.SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date()) + ".txt";
+        String defaultFileName = "Новые номера.txt";
 
         boolean exported = SelectedPassportsStorage.exportSelectedPassportsToFile(selectedPassportsList, defaultFileName);
 
         if (exported) {
-            Alert infoAlert = new Alert(Alert.AlertType.INFORMATION);
-            infoAlert.setTitle("Экспорт выполнен");
-            infoAlert.setHeaderText(null);
-            infoAlert.setContentText("Список успешно сохранен!");
-            infoAlert.showAndWait();
+            Warning1.create("ОТЛИЧНО!", "Экспорт выполнен", "Список успешно сохранен!");
         }
     }
 
@@ -861,20 +856,6 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
     }
 
     // ======================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ========================
-
-    /**
-     * Отображение диалогового окна с ошибкой.
-     *
-     * @param title   заголовок окна
-     * @param message текст сообщения
-     */
-    private void showError(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setHeaderText(null);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
 
     /**
      * Обновление вкладки (вызывается при переключении на эту вкладку).
