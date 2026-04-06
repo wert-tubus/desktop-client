@@ -41,7 +41,73 @@
                      <children>
                         <VBox alignment="TOP_CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                            <children>
-                              <ListView fx:id="lvDecimalGroups" maxHeight="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" VBox.vgrow="ALWAYS" />
+                              <Accordion maxHeight="1.7976931348623157E308" VBox.vgrow="ALWAYS">
+                                <panes>
+                                  <TitledPane animated="false" text="Эскизы">
+                                    <content>
+                                      <AnchorPane maxHeight="1.7976931348623157E308" minHeight="0.0" minWidth="0.0">
+                                             <children>
+                                                <ListView fx:id="lvSketches" maxHeight="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                             </children>
+                                          </AnchorPane>
+                                    </content>
+                                  </TitledPane>
+                                    <TitledPane animated="false" text="Детали 700">
+                                       <content>
+                                          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                             <children>
+                                                <ListView fx:id="lvDetails700" maxHeight="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                             </children>
+                                          </AnchorPane>
+                                       </content>
+                                    </TitledPane>
+                                  <TitledPane animated="false" text="Детали 745">
+                                    <content>
+                                      <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+                                             <children>
+                                                <ListView fx:id="lvDetails745" maxHeight="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                             </children>
+                                          </AnchorPane>
+                                    </content>
+                                  </TitledPane>
+                                  <TitledPane animated="false" text="Сборки 300">
+                                    <content>
+                                      <AnchorPane minHeight="0.0" minWidth="0.0">
+                                             <children>
+                                                <ListView fx:id="lvAssm300" maxHeight="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                             </children>
+                                          </AnchorPane>
+                                    </content>
+                                  </TitledPane>
+                                    <TitledPane animated="false" text="Сборки 400">
+                                       <content>
+                                          <AnchorPane maxHeight="1.7976931348623157E308" minHeight="0.0" minWidth="0.0">
+                                             <children>
+                                                <ListView fx:id="lvAssm400" maxHeight="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                             </children>
+                                          </AnchorPane>
+                                       </content>
+                                    </TitledPane>
+                                    <TitledPane animated="false" text="Медицина">
+                                       <content>
+                                          <AnchorPane maxHeight="1.7976931348623157E308" minHeight="0.0" minWidth="0.0">
+                                             <children>
+                                                <ListView fx:id="lvMedicine" maxHeight="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                             </children>
+                                          </AnchorPane>
+                                       </content>
+                                    </TitledPane>
+                                    <TitledPane animated="false" text="Остальное">
+                                       <content>
+                                          <AnchorPane maxHeight="1.7976931348623157E308" minHeight="0.0" minWidth="0.0">
+                                             <children>
+                                                <ListView fx:id="lvOther" maxHeight="1.7976931348623157E308" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                             </children>
+                                          </AnchorPane>
+                                       </content>
+                                    </TitledPane>
+                                </panes>
+                              </Accordion>
                               <Separator prefWidth="200.0" />
                               <Button fx:id="btnAddDecimalGroup" maxWidth="1.7976931348623157E308" mnemonicParsing="false" text="Добавить">
                                  <VBox.margin>
