@@ -8,7 +8,7 @@ import javafx.scene.layout.AnchorPane;
 import ru.wert.tubus.chogori.statics.AppStatic;
 import ru.wert.tubus.client.entity.models.Passport;
 
-public class PassportInfoController {
+public class PassportInfo_Controller {
 
     @FXML private AnchorPane apInfo;
 
@@ -23,12 +23,6 @@ public class PassportInfoController {
 
     @FXML
     private void initialize() {
-        // Базовый стиль
-        taNote.setStyle(
-                "-fx-background-color: white; " +
-                        "-fx-control-inner-background: white; " +
-                        "-fx-text-fill: black;"
-        );
 
         // Отложенная установка стиля для внутренних элементов
         taNote.sceneProperty().addListener((obs, oldScene, newScene) -> {

@@ -8,9 +8,11 @@ import javafx.fxml.FXMLLoader;
 import javafx.fxml.Initializable;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseButton;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.application.services.ChogoriServices;
+import ru.wert.tubus.chogori.entities.passports.PassportInfo_Patch;
 import ru.wert.tubus.chogori.entities.passports.Passport_PatchController;
 import ru.wert.tubus.chogori.entities.passports.Passport_TableView;
 import ru.wert.tubus.chogori.entities.passports.PassportType;
@@ -115,6 +117,13 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
                     setText(null);
                 } else {
                     setText(item.toUsefulString());
+                    setOnMouseClicked(e->{
+                        if(e.getButton().equals(MouseButton.PRIMARY) && e.getClickCount() == 2)
+                            PassportInfo_Patch.create(
+                                    getItem(),
+                                    e
+                            );
+                    });
                 }
             }
         });

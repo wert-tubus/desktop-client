@@ -12,13 +12,13 @@ import java.io.IOException;
 
 import static ru.wert.tubus.winform.statics.WinformStatic.WF_MAIN_STAGE;
 
-public class PassportInfoPatch {
+public class PassportInfo_Patch {
 
     public static void create(Passport passport, Event event){
         try {
-            FXMLLoader loader = new FXMLLoader(PassportInfoPatch.class.getResource("/chogori-fxml/passports/passportInfo.fxml"));
+            FXMLLoader loader = new FXMLLoader(PassportInfo_Patch.class.getResource("/chogori-fxml/passports/passportInfo.fxml"));
             Parent parent = loader.load();
-            PassportInfoController controller = loader.getController();
+            PassportInfo_Controller controller = loader.getController();
             controller.init(passport);
 
             Stage owner = (event == null)?

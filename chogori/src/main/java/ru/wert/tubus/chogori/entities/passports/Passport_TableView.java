@@ -2,12 +2,11 @@ package ru.wert.tubus.chogori.entities.passports;
 
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableRow;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import ru.wert.tubus.chogori.entities.drafts.Draft_ContextMenu;
 import ru.wert.tubus.client.entity.models.Draft;
 import ru.wert.tubus.client.entity.models.Folder;
 import ru.wert.tubus.client.entity.models.Passport;
@@ -92,6 +91,29 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
                 CH_SEARCH_FIELD.changeSearchedTableView(this, "КАРТОЧКА");
         });
 
+        setupDoubleClickHandler();
+
+    }
+
+    /**
+     * Настройка обработчика двойного клика по строке таблицы
+     */
+    private void setupDoubleClickHandler() {
+        setRowFactory(tv -> {
+            TableRow<Passport> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && (!row.isEmpty())) {
+                    Passport selectedPassport = row.getItem();
+                    if (selectedPassport != null) {
+                        PassportInfo_Patch.create(
+                                getSelectionModel().getSelectedItem(),
+                                null
+                        );
+                    }
+                }
+            });
+            return row;
+        });
     }
 
     /**
