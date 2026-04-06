@@ -15,14 +15,12 @@ import ru.wert.tubus.chogori.application.services.ChogoriServices;
 import ru.wert.tubus.chogori.entities.passports.PassportInfo_Patch;
 import ru.wert.tubus.chogori.entities.passports.Passport_PatchController;
 import ru.wert.tubus.chogori.entities.passports.Passport_TableView;
-import ru.wert.tubus.chogori.entities.passports.PassportType;
 import ru.wert.tubus.client.entity.models.Decimal;
 import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.client.interfaces.UpdatableTabController;
 import ru.wert.tubus.winform.warnings.Warning1;
 import ru.wert.tubus.winform.window_decoration.WindowDecoration;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
@@ -81,7 +79,7 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
         lvListOFNumbers.setItems(selectedPassportsList);
 
         // Настройка отображения списка паспортов
-        setupListViewDisplay(lvListOFNumbers);
+        setupNewNumbersListView(lvListOFNumbers);
 
         // Восстановление ранее выбранных паспортов (по номерам, без загрузки всех паспортов)
         restoreSelectedPassportsState();
@@ -104,11 +102,11 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
     // ======================== НАСТРОЙКА ОТОБРАЖЕНИЯ ========================
 
     /**
-     * Настройка отображения элементов в списке паспортов.
+     * Настройка отображения элементов в списке новых номеров.
      *
      * @param listView список для настройки
      */
-    private void setupListViewDisplay(ListView<Passport> listView) {
+    private void setupNewNumbersListView(ListView<Passport> listView) {
         listView.setCellFactory(lv -> new ListCell<Passport>() {
             @Override
             protected void updateItem(Passport item, boolean empty) {
@@ -118,11 +116,9 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
                 } else {
                     setText(item.toUsefulString());
                     setOnMouseClicked(e->{
+                        //По двойному клику открывается окно с информацией
                         if(e.getButton().equals(MouseButton.PRIMARY) && e.getClickCount() == 2)
-                            PassportInfo_Patch.create(
-                                    getItem(),
-                                    e
-                            );
+                            PassportInfo_Patch.create(getItem());
                     });
                 }
             }

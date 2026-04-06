@@ -3,6 +3,7 @@ package ru.wert.tubus.chogori.application.cardsbox;
 import javafx.scene.control.*;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import ru.wert.tubus.chogori.entities.passports.PassportInfo_Patch;
 import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.winform.warnings.Warning1;
 
@@ -82,7 +83,20 @@ public class PassportContextMenu {
             }
         });
 
+        // Пункт меню "Удалить из базы данных"
+        MenuItem showInfo = new MenuItem("Инфо");
+        showInfo.setOnAction(event -> {
+            Passport selected = listView.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                PassportInfo_Patch.create(selected);
+            }
+        });
+
+
+
         contextMenu.getItems().addAll(editItem, removeItem, deleteFromDbItem);
+        contextMenu.getItems().add(new SeparatorMenuItem());
+        contextMenu.getItems().add(showInfo);
         listView.setContextMenu(contextMenu);
     }
 

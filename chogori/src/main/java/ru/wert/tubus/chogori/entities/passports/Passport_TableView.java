@@ -105,10 +105,7 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
                 if (event.getClickCount() == 2 && (!row.isEmpty())) {
                     Passport selectedPassport = row.getItem();
                     if (selectedPassport != null) {
-                        PassportInfo_Patch.create(
-                                getSelectionModel().getSelectedItem(),
-                                null
-                        );
+                        PassportInfo_Patch.create(getSelectionModel().getSelectedItem());
                     }
                 }
             });

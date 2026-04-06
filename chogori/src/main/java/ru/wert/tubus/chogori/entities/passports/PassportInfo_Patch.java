@@ -2,7 +2,6 @@ package ru.wert.tubus.chogori.entities.passports;
 
 import javafx.event.Event;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.stage.Stage;
 import ru.wert.tubus.client.entity.models.Passport;
@@ -14,20 +13,18 @@ import static ru.wert.tubus.winform.statics.WinformStatic.WF_MAIN_STAGE;
 
 public class PassportInfo_Patch {
 
-    public static void create(Passport passport, Event event){
+    public static void create(Passport passport){
         try {
             FXMLLoader loader = new FXMLLoader(PassportInfo_Patch.class.getResource("/chogori-fxml/passports/passportInfo.fxml"));
             Parent parent = loader.load();
             PassportInfo_Controller controller = loader.getController();
             controller.init(passport);
 
-            Stage owner = (event == null)?
-                    WF_MAIN_STAGE: (Stage)((Node)event.getSource()).getScene().getWindow();
-
-            new WindowDecoration("Информация о номере", parent, false, owner, true);
+            // Всегда используем главное окно как owner
+            // Это самый простой и надежный способ
+            new WindowDecoration("Информация о номере", parent, false, WF_MAIN_STAGE, true);
         } catch (IOException e) {
             e.printStackTrace();
         }
-
     }
 }

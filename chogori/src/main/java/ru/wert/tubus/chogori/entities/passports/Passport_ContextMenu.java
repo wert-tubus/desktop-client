@@ -6,6 +6,7 @@ import ru.wert.tubus.chogori.entities.passports.commands._Passport_Commands;
 import ru.wert.tubus.client.entity.models.Passport;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -61,10 +62,7 @@ public class Passport_ContextMenu extends FormView_ContextMenu<Passport> {
     @Override
     public List<MenuItem> createExtraItems() {
         MenuItem info = new MenuItem("Инфо");
-        info.setOnAction(event -> PassportInfo_Patch.create(
-                tableView.getSelectionModel().getSelectedItem(),
-                null
-        ));
-        return Arrays.asList(info);
+        info.setOnAction(event -> PassportInfo_Patch.create(tableView.getSelectionModel().getSelectedItem()));
+        return Collections.singletonList(info);
     }
 }
