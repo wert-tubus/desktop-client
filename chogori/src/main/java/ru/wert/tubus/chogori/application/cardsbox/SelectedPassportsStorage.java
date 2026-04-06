@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.client.entity.models.Passport;
+import ru.wert.tubus.winform.statics.WinformStatic;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,16 +26,10 @@ import java.util.stream.Collectors;
 public class SelectedPassportsStorage {
 
     /** Имя файла для сохранения состояния выбранных паспортов (JSON формат) */
-    private static final String STORAGE_FILE = "selected_passports.json";
-
-    /** Имя директории приложения для хранения данных */
-    private static final String APP_DATA_DIR = ".tubus_chogori";
-
-    /** Домашняя директория пользователя */
-    private static final String USER_HOME = System.getProperty("user.home");
+    private static final String STORAGE_FILE = "registered_passports.json";
 
     /** Полный путь к директории приложения */
-    private static final String APP_DIR_PATH = USER_HOME + File.separator + APP_DATA_DIR;
+    private static final String APP_DIR_PATH = WinformStatic.HOME_DIRECTORY;
 
     /** Объект для сериализации/десериализации JSON */
     private static final ObjectMapper objectMapper;
@@ -122,7 +117,7 @@ public class SelectedPassportsStorage {
         try {
             // Используем FileChooser для выбора файла
             javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();
-            fileChooser.setTitle("Сохранить список паспортов");
+            fileChooser.setTitle("Сохранить список номеров");
             fileChooser.setInitialFileName(initialFileName);
 
             // Устанавливаем расширение файла по умолчанию
@@ -155,8 +150,8 @@ public class SelectedPassportsStorage {
 
             // Формирование содержимого файла
             StringBuilder content = new StringBuilder();
-            content.append("Список выбранных паспортов\n");
-            content.append("==========================\n");
+            content.append("Список зарегистрированных номеров\n");
+            content.append("=================================\n");
             content.append("Дата экспорта: ").append(new Date()).append("\n\n");
 
             for (int i = 0; i < passports.size(); i++) {
@@ -164,7 +159,7 @@ public class SelectedPassportsStorage {
                 content.append(String.format("%d. %s\n", i + 1, p.toUsefulString()));
             }
 
-            content.append("\n").append("Всего паспортов: ").append(passports.size());
+            content.append("\n").append("Всего номеров: ").append(passports.size());
 
             // Запись файла
             Files.write(exportFile.toPath(), content.toString().getBytes());
