@@ -5,6 +5,8 @@ import ru.wert.tubus.chogori.common.contextMenuACC.FormView_ContextMenu;
 import ru.wert.tubus.chogori.entities.passports.commands._Passport_Commands;
 import ru.wert.tubus.client.entity.models.Passport;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -59,11 +61,11 @@ public class Passport_ContextMenu extends FormView_ContextMenu<Passport> {
      */
     @Override
     public List<MenuItem> createExtraItems() {
-        // Дополнительных пунктов меню пока нет
-        // При необходимости здесь можно добавить:
-        // - Открыть в новой вкладке
-        // - Экспортировать данные
-        // - Показать связанные чертежи
-        return null;
+        MenuItem info = new MenuItem("Инфо");
+        info.setOnAction(event -> PassportInfoPatch.create(
+                tableView.getSelectionModel().getSelectedItem(),
+                null
+        ));
+        return Arrays.asList(info);
     }
 }
