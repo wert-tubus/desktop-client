@@ -12,8 +12,10 @@ import javafx.scene.input.MouseButton;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.application.services.ChogoriServices;
+import ru.wert.tubus.chogori.common.commands.ItemCommands;
 import ru.wert.tubus.chogori.common.contextMenuACC.FormView_ACCController;
 import ru.wert.tubus.chogori.entities.decimals.Decimal_ACCController;
+import ru.wert.tubus.chogori.entities.decimals.commands._DecimalCommands;
 import ru.wert.tubus.chogori.entities.passports.PassportInfo_Patch;
 import ru.wert.tubus.chogori.entities.passports.Passport_PatchController;
 import ru.wert.tubus.chogori.entities.passports.Passport_TableView;
@@ -607,54 +609,156 @@ public class RegistrationBookController implements UpdatableTabController {
         return String.format("Э%05d", number);
     }
 
-// ======================== ДОБАВЛЕНИЕ ДЕЦИМАЛЬНОЙ ГРУППЫ ========================
-
     // ======================== ДОБАВЛЕНИЕ ДЕЦИМАЛЬНОЙ ГРУППЫ ========================
 
     /**
      * Добавление новой децимальной группы.
-     * Использует готовую форму Decimal_ACCController.
+     * Использует готовую форму DecimalFormController.
      */
     private void addDecimalGroup() {
         try {
-            // Загружаем FXML форму
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/decimals/decimalsACC.fxml"));
-            Parent contentPane = loader.load();
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/cardsBox/decimalsForm.fxml"));
+            Parent parent = loader.load();
 
-            Decimal_ACCController controller = loader.getController();
+            DecimalFormController controller = loader.getController();
 
-            // Настраиваем контроллер через рефлексию
-            try {
-                java.lang.reflect.Field operationField = FormView_ACCController.class.getDeclaredField("operation");
-                operationField.setAccessible(true);
-                operationField.set(controller, EOperation.ADD);
+            // Открытие окна
+            new WindowDecoration("Добавление", parent, false, WF_MAIN_STAGE, true);
 
-                java.lang.reflect.Field serviceField = FormView_ACCController.class.getDeclaredField("service");
-                serviceField.setAccessible(true);
-                serviceField.set(controller, CH_DECIMALS);
-
-
-            } catch (Exception e) {
-                log.error("Ошибка настройки контроллера", e);
-                Warning1.create("ОШИБКА!", "Не удалось настроить форму добавления", e.getMessage());
-                return;
+            // Обработка результата
+            if (controller.isAccepted()) {
+                Decimal savedDecimal = controller.getSavedDecimal();
+                if (savedDecimal != null) {
+                    // Добавление децимальной группы в соответствующий список
+                    addDecimalToAppropriateList(savedDecimal);
+                    log.info("Децимальная группа успешно добавлена: {}", savedDecimal.toUsefulString());
+                }
             }
-
-            // Оборачиваем контент в WindowDecoration
-            // Используем waiting = true, чтобы дождаться закрытия окна
-            new WindowDecoration(
-                    "Добавление децимальной группы",
-                    contentPane,
-                    false,
-                    WF_MAIN_STAGE,
-                    true
-            );
-
-            loadAndDistributeDecimalGroups();
 
         } catch (IOException e) {
             log.error("Ошибка при открытии формы добавления децимальной группы", e);
             Warning1.create("ОШИБКА!", "Не удалось открыть форму добавления", e.getMessage());
+        }
+    }
+
+    /**
+     * Добавление децимальной группы в соответствующий ListView с последующим выделением.
+     *
+     * @param decimal децимальная группа для добавления
+     */
+    private void addDecimalToAppropriateList(Decimal decimal) {
+        // Определяем, в какой список нужно добавить
+        ListView<Decimal> targetListView = getTargetListViewForDecimal(decimal);
+
+        if (targetListView == null) {
+            log.warn("Не удалось определить целевой список для децимальной группы: {}", decimal.getName());
+            // Если не удалось определить, просто обновляем все списки
+            loadAndDistributeDecimalGroups();
+            return;
+        }
+
+        // Получаем текущие элементы списка
+        ObservableList<Decimal> currentItems = targetListView.getItems();
+
+        // Проверяем, нет ли уже такой группы (по имени или ID)
+        boolean exists = currentItems.stream()
+                .anyMatch(d -> d.getId().equals(decimal.getId()) ||
+                        (d.getName() != null && d.getName().equals(decimal.getName())));
+
+        if (exists) {
+            log.warn("Децимальная группа {} уже существует в списке", decimal.getName());
+            Warning1.create($ATTENTION, "Такая группа уже существует",
+                    "Децимальная группа '" + decimal.getName() + "' уже присутствует в списке");
+            return;
+        }
+
+        // Добавляем новую группу
+        currentItems.add(decimal);
+
+        // Сортируем список по имени
+        sortDecimalList(currentItems);
+
+        // Находим индекс добавленного элемента после сортировки
+        int newIndex = currentItems.indexOf(decimal);
+
+        // Раскрываем соответствующую панель в аккордеоне
+        expandTitledPaneForListView(targetListView);
+
+        // Выделяем добавленный элемент
+        selectDecimalInListView(targetListView, newIndex, decimal);
+    }
+
+    /**
+     * Определяет целевой ListView для децимальной группы на основе её имени.
+     *
+     * @param decimal децимальная группа
+     * @return соответствующий ListView или null, если не определен
+     */
+    private ListView<Decimal> getTargetListViewForDecimal(Decimal decimal) {
+        String decimalName = decimal.getName();
+
+        if (SKETCH_NAME.equals(decimalName)) {
+            return lvSketches;
+        }
+
+        Integer numericValue = parseDecimalNameToInt(decimalName);
+        if (numericValue == null) {
+            return lvOther;
+        }
+
+        if (numericValue >= DETAILS_700_START && numericValue <= DETAILS_700_END) {
+            return lvDetails700;
+        } else if (numericValue >= DETAILS_745_START && numericValue <= DETAILS_745_END) {
+            return lvDetails745;
+        } else if (numericValue >= ASSM_300_START && numericValue <= ASSM_300_END) {
+            return lvAssm300;
+        } else if (numericValue >= ASSM_400_START && numericValue <= ASSM_400_END) {
+            return lvAssm400;
+        } else if (numericValue >= MEDICINE_START && numericValue <= MEDICINE_END) {
+            return lvMedicine;
+        } else {
+            return lvOther;
+        }
+    }
+
+    /**
+     * Раскрывает TitledPane в Accordion, содержащий указанный ListView.
+     *
+     * @param listView ListView, панель которого нужно раскрыть
+     */
+    private void expandTitledPaneForListView(ListView<?> listView) {
+        if (accDecimalGroups == null || listView == null) {
+            return;
+        }
+
+        for (TitledPane pane : accDecimalGroups.getPanes()) {
+            if (pane.getContent() instanceof ListView<?> && pane.getContent() == listView) {
+                if (!pane.isExpanded()) {
+                    pane.setExpanded(true);
+                    log.debug("Раскрыта панель для списка: {}", pane.getText());
+                }
+                break;
+            }
+        }
+    }
+
+    /**
+     * Выделяет децимальную группу в указанном ListView.
+     *
+     * @param listView список, в котором нужно выделить элемент
+     * @param index индекс элемента
+     * @param decimal децимальная группа для логирования
+     */
+    private void selectDecimalInListView(ListView<Decimal> listView, int index, Decimal decimal) {
+        if (index >= 0) {
+            Platform.runLater(() -> {
+                listView.scrollTo(index);
+                listView.getSelectionModel().select(index);
+                listView.requestFocus();
+                log.debug("Выделена децимальная группа {} в списке, индекс: {}", decimal.getName(), index);
+            });
+        } else {
+            log.warn("Не удалось найти индекс для выделения децимальной группы: {}", decimal.getName());
         }
     }
 
@@ -690,7 +794,7 @@ public class RegistrationBookController implements UpdatableTabController {
         try {
             Passport freshPassport = getPassportByNumber(passport.getNumber());
             if (freshPassport == null) {
-                Warning1.create("ОШИБКА!", "Паспорт не найден в базе данных", "Появится после перезагрузки");
+                Warning1.create("ОШИБКА!", "Номер не найден в базе данных", "Появится после перезагрузки");
                 refreshSelectedList();
                 return;
             }
@@ -701,7 +805,7 @@ public class RegistrationBookController implements UpdatableTabController {
             RegistrationFormController controller = loader.getController();
             controller.setDataForEdit(freshPassport);
 
-            new WindowDecoration("Редактирование паспорта", parent, false, WF_MAIN_STAGE, true);
+            new WindowDecoration("Редактирование номера", parent, false, WF_MAIN_STAGE, true);
 
             if (controller.isAccepted()) {
                 refreshPassportTables(freshPassport);
@@ -719,7 +823,7 @@ public class RegistrationBookController implements UpdatableTabController {
 
         } catch (IOException ex) {
             log.error("Ошибка при открытии формы редактирования паспорта", ex);
-            Warning1.create("ОШИБКА!", "Не удалось открыть форму редактирования паспорта", ex.getMessage());
+            Warning1.create("ОШИБКА!", "Не удалось открыть форму редактирования номера", ex.getMessage());
         }
     }
 
