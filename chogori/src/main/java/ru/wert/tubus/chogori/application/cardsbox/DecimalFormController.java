@@ -212,43 +212,6 @@ public class DecimalFormController extends FormView_ACCController<Decimal> imple
         log.debug("Данные формы инициализированы для создания");
     }
 
-    /**
-     * Установка данных для редактирования существующего классификатора.
-     *
-     * @param decimal классификатор для редактирования
-     */
-    public void setDataForEdit(Decimal decimal) {
-        if (decimal == null) {
-            log.error("Попытка редактирования null классификатора");
-            return;
-        }
-
-        if (SKETCH.equals(decimal.getName())) {
-            Warning1.create("Внимание!",
-                    "Эскиз не подлежит изменению!",
-                    "Закройте окно.");
-            Platform.runLater(() -> {
-                if (tfName.getScene() != null) {
-                    tfName.getScene().getWindow().hide();
-                }
-            });
-            return;
-        }
-
-        this.editMode = true;
-        this.editingDecimal = decimal;
-        this.newDecimal = decimal;
-
-        // Сохраняем старые значения для возможного отката
-        this.initialNumberOfOldItem = decimal.getInitialNumber();
-        this.lastNumberOfOldItem = decimal.getLastNumber();
-
-        fillFormFieldsForEdit();
-        updateOkButtonState();
-
-        log.debug("Режим редактирования: классификатор {}", decimal.toUsefulString());
-    }
-
     // ======================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ========================
 
     /**

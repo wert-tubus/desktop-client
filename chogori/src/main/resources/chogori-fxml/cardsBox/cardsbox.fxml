@@ -17,14 +17,14 @@
                   <StackPane fx:id="stpRegistrationBook" prefHeight="150.0" prefWidth="200.0" />
                   <StackPane fx:id="spPassports" prefHeight="150.0" prefWidth="200.0">
                      <children>
-                        <TabPane prefHeight="200.0" prefWidth="200.0" side="BOTTOM" style="-fx-tab-min-width: 90; -fx-font-size: 14;" tabClosingPolicy="UNAVAILABLE">
+                        <TabPane fx:id="tabPane" prefHeight="200.0" prefWidth="200.0" side="BOTTOM" style="-fx-tab-min-width: 90; -fx-font-size: 14;" tabClosingPolicy="UNAVAILABLE">
                           <tabs>
-                            <Tab fx:id="tbPIK" text="ПИК">
+                            <Tab fx:id="tabPIK" text="ПИК">
                                  <content>
                                     <StackPane fx:id="spPIK" prefHeight="150.0" prefWidth="200.0" />
                                  </content>
                             </Tab>
-                            <Tab fx:id="tpSketch" text="Эскиз">
+                            <Tab fx:id="tabSketch" text="Эскиз">
                                  <content>
                                     <StackPane fx:id="spSketch" prefHeight="150.0" prefWidth="200.0" />
                                  </content>

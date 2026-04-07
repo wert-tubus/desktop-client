@@ -5,13 +5,16 @@ import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.SplitPane;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.layout.StackPane;
 import lombok.extern.slf4j.Slf4j;
-import ru.wert.tubus.chogori.common.utils.CommonUnits;
+import ru.wert.tubus.chogori.application.cardsbox.registrationBook.RegistrationBookController;
 import ru.wert.tubus.chogori.entities.passports.PassportType;
 import ru.wert.tubus.chogori.entities.passports.Passport_Patch;
 import ru.wert.tubus.chogori.entities.passports.Passport_PatchController;
 import ru.wert.tubus.chogori.entities.passports.Passport_TableView;
+import ru.wert.tubus.chogori.search.SearchField;
 import ru.wert.tubus.client.entity.models.Folder;
 import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.client.interfaces.Item;
@@ -20,6 +23,7 @@ import ru.wert.tubus.client.interfaces.UpdatableTabController;
 
 import java.util.*;
 
+import static ru.wert.tubus.chogori.setteings.ChogoriSettings.CH_DEFAULT_PREFIX;
 import static ru.wert.tubus.chogori.statics.UtilStaticNodes.CH_SEARCH_FIELD;
 
 
@@ -42,6 +46,15 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
     @FXML
     private StackPane spSketch;
 
+    @FXML
+    private Tab tabPIK;
+
+    @FXML
+    private Tab tabSketch;
+
+    @FXML
+    private TabPane tabPane;
+
 
     private Passport_TableView tvPIK;
     private Passport_Patch passportsPIKPatch;
@@ -58,6 +71,15 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
         loadStackPaneSketchPassports(); //Паспорта эскизных чертежей
 
         loadRegistrationBook(); //Журнал регистрации
+
+        tabPane.getSelectionModel().selectedItemProperty().addListener((observable, oldTab, newTab) -> {
+            if (newTab.equals(tabPIK))
+                CH_SEARCH_FIELD.changeSearchedTableView(tvPIK, CH_DEFAULT_PREFIX.getName());
+            else if (newTab.equals(tabSketch))
+                CH_SEARCH_FIELD.changeSearchedTableView(tvSketch, "ЭСКИЗ");
+        });
+
+        tabPane.getSelectionModel().select(tabPIK);
     }
 
     /**
@@ -119,22 +141,10 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
         stpRegistrationBook.getChildren().add(registrationBookPatch.getParent());
     }
 
-
-
-
-    private void updateListOfPassports(Item newValue) {
-        passportsPIKPatch.getPassportPatchController().showSourceOfPassports(newValue);
-
-        tvPIK.setSelectedFolders(Collections.singletonList((Folder) newValue));
-        tvPIK.setSearchedText(""); //обнуляем поисковую строку
-        tvPIK.setModifyingItem(newValue);
-        tvPIK.updateView();
-    }
-
     @Override//SearchableTab
     public void tuneSearching() {
         Platform.runLater(()-> tvPIK.requestFocus());
-        CH_SEARCH_FIELD.changeSearchedTableView(tvPIK, "КАРТОЧКА");
+        CH_SEARCH_FIELD.changeSearchedTableView(tvPIK, CH_DEFAULT_PREFIX.getName());
     }
 
 

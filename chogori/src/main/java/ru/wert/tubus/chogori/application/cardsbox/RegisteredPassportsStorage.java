@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
  * Использует постоянную директорию приложения для хранения данных.
  */
 @Slf4j
-public class SelectedPassportsStorage {
+public class RegisteredPassportsStorage {
 
     /** Имя файла для сохранения состояния выбранных паспортов (JSON формат) */
     private static final String STORAGE_FILE = "registered_passports.json";
@@ -66,7 +66,7 @@ public class SelectedPassportsStorage {
      *
      * @param passports список выбранных паспортов
      */
-    public static void saveSelectedPassports(List<Passport> passports) {
+    public static void saveRegisteredPassports(List<Passport> passports) {
         try {
             File storageFile = getStorageFile();
             List<String> passportNumbers = passports.stream()
@@ -87,7 +87,7 @@ public class SelectedPassportsStorage {
      *
      * @return список номеров паспортов, либо пустой список если файл не найден
      */
-    public static List<String> loadSelectedPassportNumbers() {
+    public static List<String> loadRegisteredPassportNumbers() {
         File storageFile = getStorageFile();
         if (!storageFile.exists()) {
             log.info("Файл с сохраненными выбранными паспортами не найден: {}", storageFile.getAbsolutePath());
@@ -113,7 +113,7 @@ public class SelectedPassportsStorage {
      * @param initialFileName начальное имя файла
      * @return true если экспорт успешен, false в противном случае
      */
-    public static boolean exportSelectedPassportsToFile(List<Passport> passports, String initialFileName) {
+    public static boolean exportRegisteredPassportsToFile(List<Passport> passports, String initialFileName) {
         try {
             // Используем FileChooser для выбора файла
             javafx.stage.FileChooser fileChooser = new javafx.stage.FileChooser();

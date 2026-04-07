@@ -3,6 +3,7 @@ package ru.wert.tubus.chogori.application.cardsbox;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import lombok.Getter;
+import ru.wert.tubus.chogori.application.cardsbox.registrationBook.RegistrationBookController;
 
 import java.io.IOException;
 
