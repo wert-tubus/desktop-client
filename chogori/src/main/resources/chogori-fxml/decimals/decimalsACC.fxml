@@ -8,32 +8,63 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-
 <VBox prefHeight="300.0" prefWidth="300.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.wert.tubus.chogori.entities.decimals.Decimal_ACCController">
    <children>
-      <VBox>
+      <HBox alignment="BOTTOM_LEFT">
          <children>
-              <Label text="Децимальный номер (6 цифр) :">
-                  <font>
-                      <Font size="14.0" />
-                  </font>
-               <VBox.margin>
-                  <Insets left="10.0" top="5.0" />
-               </VBox.margin>
-              </Label>
-              <TextField fx:id="tfName" prefHeight="25.0" GridPane.columnIndex="1">
-                  <GridPane.margin>
-                      <Insets right="10.0" />
-                  </GridPane.margin>
-                  <font>
-                      <Font size="14.0" />
-                  </font>
-               <VBox.margin>
-                  <Insets bottom="5.0" left="10.0" right="10.0" top="5.0" />
-               </VBox.margin>
-              </TextField>
+            <VBox>
+               <children>
+                    <Label text="Номер (6 цифр)">
+                        <font>
+                            <Font size="14.0" />
+                        </font>
+                     <VBox.margin>
+                        <Insets left="10.0" top="5.0" />
+                     </VBox.margin>
+                    </Label>
+                    <TextField fx:id="tfName" prefHeight="30.0" prefWidth="269.0" GridPane.columnIndex="1">
+                        <GridPane.margin>
+                            <Insets right="10.0" />
+                        </GridPane.margin>
+                        <font>
+                            <Font size="14.0" />
+                        </font>
+                     <VBox.margin>
+                        <Insets bottom="5.0" left="10.0" top="5.0" />
+                     </VBox.margin>
+                    </TextField>
+               </children>
+            </VBox>
+            <Label text=".">
+               <font>
+                  <Font name="System Bold" size="18.0" />
+               </font>
+               <HBox.margin>
+                  <Insets left="5.0" />
+               </HBox.margin>
+            </Label>
+            <VBox>
+               <children>
+                  <Label text="Начинать с">
+                     <font>
+                        <Font size="14.0" />
+                     </font>
+                     <VBox.margin>
+                        <Insets left="10.0" top="5.0" />
+                     </VBox.margin>
+                  </Label>
+                    <TextField fx:id="tfInitialNumber" prefHeight="30.0">
+                        <font>
+                            <Font size="14.0" />
+                        </font>
+                     <VBox.margin>
+                        <Insets bottom="5.0" left="5.0" right="10.0" top="5.0" />
+                     </VBox.margin>
+                    </TextField>
+               </children>
+            </VBox>
          </children>
-      </VBox>
+      </HBox>
       <VBox VBox.vgrow="ALWAYS">
          <children>
       
@@ -55,27 +86,12 @@
               </TextArea>
          </children>
       </VBox>
-      <HBox alignment="CENTER_RIGHT">
-         <children>
-      
-                                      <Label text="Начальный номер :">
-                  <font>
-                      <Font size="14.0" />
-                  </font>
-              </Label>
-              <TextField fx:id="tfInitialNumber" prefHeight="30.0" prefWidth="105.0" GridPane.columnIndex="1" GridPane.rowIndex="2">
-                  <GridPane.margin>
-                      <Insets right="10.0" />
-                  </GridPane.margin>
-                  <font>
-                      <Font size="14.0" />
-                  </font>
-               <HBox.margin>
-                  <Insets bottom="5.0" left="5.0" right="10.0" top="5.0" />
-               </HBox.margin>
-              </TextField>
-         </children>
-      </HBox>
+      <HBox alignment="CENTER_RIGHT" />
+      <Separator prefWidth="200.0">
+         <VBox.margin>
+            <Insets bottom="5.0" left="10.0" right="10.0" top="5.0" />
+         </VBox.margin>
+      </Separator>
 
               <StackPane fx:id="stackPaneForButtons">
             <children>

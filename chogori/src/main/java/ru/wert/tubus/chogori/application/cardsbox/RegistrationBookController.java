@@ -12,6 +12,7 @@ import javafx.scene.input.MouseButton;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.application.services.ChogoriServices;
+import ru.wert.tubus.chogori.common.contextMenuACC.FormView_ACCController;
 import ru.wert.tubus.chogori.entities.decimals.Decimal_ACCController;
 import ru.wert.tubus.chogori.entities.passports.PassportInfo_Patch;
 import ru.wert.tubus.chogori.entities.passports.Passport_PatchController;
@@ -28,6 +29,7 @@ import java.net.URL;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_DECIMALS;
 import static ru.wert.tubus.winform.statics.WinformStatic.WF_MAIN_STAGE;
 import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
 
@@ -40,7 +42,7 @@ import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
  * без использования кэшированных списков, чтобы избежать рассинхронизации.
  */
 @Slf4j
-public class RegistrationBookController implements Initializable, UpdatableTabController {
+public class RegistrationBookController implements UpdatableTabController {
 
     // ======================== FXML КОМПОНЕНТЫ ========================
 
@@ -110,8 +112,8 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
 
     // ======================== ИНИЦИАЛИЗАЦИЯ ========================
 
-    @Override
-    public void initialize(URL location, ResourceBundle resources) {
+    @FXML
+    public void initialize() {
         // Инициализация списка выбранных паспортов
         selectedPassportsList = FXCollections.observableArrayList();
         lvListOFNumbers.setItems(selectedPassportsList);
@@ -188,7 +190,7 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
      */
     private void loadAndDistributeDecimalGroups() {
         try {
-            List<Decimal> allDecimals = ChogoriServices.CH_DECIMALS.findAll();
+            List<Decimal> allDecimals = CH_DECIMALS.findAll();
             log.info("Загружено {} децимальных групп", allDecimals.size());
 
             distributeDecimalsToLists(allDecimals);
@@ -431,7 +433,7 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
     private void getPIKNumber(Decimal decimal) {
         try {
             String nextNumber = getNextPIKNumber(decimal);
-            openCreateDialog("PIK", "Номер ПИК", nextNumber, decimal);
+            openRegistrationDialog("PIK", "Номер ПИК", nextNumber, decimal);
         } catch (Exception e) {
             log.error("Ошибка при создании паспорта ПИК", e);
             Warning1.create("ОШИБКА!", "Не удалось создать паспорт ПИК", e.getMessage());
@@ -446,7 +448,7 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
     private void getSketchNumber(Decimal decimal) {
         try {
             String nextNumber = getNextSketchNumber(decimal);
-            openCreateDialog("SKETCH", "Эскизный номер", nextNumber, decimal);
+            openRegistrationDialog("SKETCH", "Эскизный номер", nextNumber, decimal);
         } catch (Exception e) {
             log.error("Ошибка при создании эскизного паспорта", e);
             Warning1.create("ОШИБКА!", "Не удалось создать эскизный паспорт", e.getMessage());
@@ -461,7 +463,7 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
      */
     private String getNextPIKNumber(Decimal decimal) {
         try {
-            Decimal freshDecimal = ChogoriServices.CH_DECIMALS.findById(decimal.getId());
+            Decimal freshDecimal = CH_DECIMALS.findById(decimal.getId());
             if (freshDecimal == null) {
                 throw new RuntimeException("Децимальная группа не найдена");
             }
@@ -480,7 +482,7 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
                 String formattedNumber = formatPIKNumber(freshDecimal.getName(), newNumber);
 
                 freshDecimal.setLastNumber(newNumber);
-                boolean updated = ChogoriServices.CH_DECIMALS.update(freshDecimal);
+                boolean updated = CH_DECIMALS.update(freshDecimal);
 
                 if (!updated) {
                     throw new RuntimeException("Не удалось обновить lastNumber в базе данных");
@@ -539,7 +541,7 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
      */
     private String getNextSketchNumber(Decimal decimal) {
         try {
-            Decimal freshDecimal = ChogoriServices.CH_DECIMALS.findById(decimal.getId());
+            Decimal freshDecimal = CH_DECIMALS.findById(decimal.getId());
             if (freshDecimal == null) {
                 throw new RuntimeException("Децимальная группа не найдена");
             }
@@ -558,7 +560,7 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
                 String formattedNumber = formatSketchNumber(newNumber);
 
                 freshDecimal.setLastNumber(newNumber);
-                boolean updated = ChogoriServices.CH_DECIMALS.update(freshDecimal);
+                boolean updated = CH_DECIMALS.update(freshDecimal);
 
                 if (!updated) {
                     throw new RuntimeException("Не удалось обновить lastNumber в базе данных");
@@ -605,144 +607,60 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
         return String.format("Э%05d", number);
     }
 
+// ======================== ДОБАВЛЕНИЕ ДЕЦИМАЛЬНОЙ ГРУППЫ ========================
+
     // ======================== ДОБАВЛЕНИЕ ДЕЦИМАЛЬНОЙ ГРУППЫ ========================
 
     /**
      * Добавление новой децимальной группы.
-     * Открывает окно создания, проверяет уникальность и добавляет в соответствующий список.
+     * Использует готовую форму Decimal_ACCController.
      */
     private void addDecimalGroup() {
         try {
             // Загружаем FXML форму
-            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/entities/decimal-form.fxml"));
-            Parent parent = loader.load();
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/decimals/decimalsACC.fxml"));
+            Parent contentPane = loader.load();
 
             Decimal_ACCController controller = loader.getController();
 
-            // Инициализируем контроллер для операции CREATE
-            controller.init(EOperation.ADD, null, null);
+            // Настраиваем контроллер через рефлексию
+            try {
+                java.lang.reflect.Field operationField = FormView_ACCController.class.getDeclaredField("operation");
+                operationField.setAccessible(true);
+                operationField.set(controller, EOperation.ADD);
 
-            // Открываем окно
-            new WindowDecoration("Добавление децимальной группы", parent, false, WF_MAIN_STAGE, true);
+                java.lang.reflect.Field serviceField = FormView_ACCController.class.getDeclaredField("service");
+                serviceField.setAccessible(true);
+                serviceField.set(controller, CH_DECIMALS);
 
-            // Проверяем, был ли создан новый объект
-            Decimal newDecimal = controller.getNewItem();
-            if (newDecimal == null || newDecimal.getName() == null || newDecimal.getName().isEmpty()) {
-                log.debug("Создание децимальной группы отменено или не выполнено");
+
+            } catch (Exception e) {
+                log.error("Ошибка настройки контроллера", e);
+                Warning1.create("ОШИБКА!", "Не удалось настроить форму добавления", e.getMessage());
                 return;
             }
 
-            // Проверяем уникальность имени в БД
-            if (isDecimalNameExists(newDecimal.getName())) {
-                Warning1.create("Внимание!",
-                        "Децимальная группа с таким именем уже существует",
-                        "Введите другое наименование");
-                return;
-            }
+            // Оборачиваем контент в WindowDecoration
+            // Используем waiting = true, чтобы дождаться закрытия окна
+            new WindowDecoration(
+                    "Добавление децимальной группы",
+                    contentPane,
+                    false,
+                    WF_MAIN_STAGE,
+                    true
+            );
 
-            // Сохраняем в БД
-            Decimal savedDecimal = ChogoriServices.CH_DECIMALS.save(newDecimal);
-            if (savedDecimal == null || savedDecimal.getId() == null) {
-                Warning1.create("ОШИБКА!",
-                        "Не удалось сохранить децимальную группу",
-                        "Пожалуйста, попробуйте снова");
-                return;
-            }
-
-            // Добавляем в соответствующий ListView
-            addDecimalToAppropriateList(savedDecimal);
-
-            log.info("Децимальная группа {} успешно добавлена", savedDecimal.getName());
-
-            // Показываем сообщение об успехе
-            Warning1.create("УСПЕХ!",
-                    "Децимальная группа добавлена",
-                    "Группа " + savedDecimal.getName() + " успешно создана");
+            loadAndDistributeDecimalGroups();
 
         } catch (IOException e) {
             log.error("Ошибка при открытии формы добавления децимальной группы", e);
-            Warning1.create("ОШИБКА!",
-                    "Не удалось открыть форму добавления",
-                    e.getMessage());
-        } catch (Exception e) {
-            log.error("Ошибка при добавлении децимальной группы", e);
-            Warning1.create("ОШИБКА!",
-                    "Не удалось добавить децимальную группу",
-                    e.getMessage());
-        }
-    }
-
-    /**
-     * Проверка существования децимальной группы с таким именем в БД.
-     *
-     * @param name имя для проверки
-     * @return true если существует
-     */
-    private boolean isDecimalNameExists(String name) {
-        try {
-            List<Decimal> allDecimals = ChogoriServices.CH_DECIMALS.findAll();
-            return allDecimals.stream()
-                    .anyMatch(d -> d.getName() != null && d.getName().equals(name));
-        } catch (Exception e) {
-            log.error("Ошибка при проверке уникальности имени", e);
-            return true; // В случае ошибки считаем, что имя существует
-        }
-    }
-
-    /**
-     * Добавление децимальной группы в соответствующий ListView на основе её имени.
-     *
-     * @param decimal децимальная группа для добавления
-     */
-    private void addDecimalToAppropriateList(Decimal decimal) {
-        String name = decimal.getName();
-
-        if (SKETCH_NAME.equals(name)) {
-            addToListAndSort(lvSketches, decimal);
-            return;
-        }
-
-        Integer numericValue = parseDecimalNameToInt(name);
-        if (numericValue == null) {
-            addToListAndSort(lvOther, decimal);
-            return;
-        }
-
-        if (numericValue >= DETAILS_700_START && numericValue <= DETAILS_700_END) {
-            addToListAndSort(lvDetails700, decimal);
-        } else if (numericValue >= DETAILS_745_START && numericValue <= DETAILS_745_END) {
-            addToListAndSort(lvDetails745, decimal);
-        } else if (numericValue >= ASSM_300_START && numericValue <= ASSM_300_END) {
-            addToListAndSort(lvAssm300, decimal);
-        } else if (numericValue >= ASSM_400_START && numericValue <= ASSM_400_END) {
-            addToListAndSort(lvAssm400, decimal);
-        } else if (numericValue >= MEDICINE_START && numericValue <= MEDICINE_END) {
-            addToListAndSort(lvMedicine, decimal);
-        } else {
-            addToListAndSort(lvOther, decimal);
-        }
-    }
-
-    /**
-     * Добавление элемента в ListView с последующей сортировкой.
-     *
-     * @param listView целевой ListView
-     * @param decimal элемент для добавления
-     */
-    private void addToListAndSort(ListView<Decimal> listView, Decimal decimal) {
-        ObservableList<Decimal> items = listView.getItems();
-        if (items == null) {
-            listView.setItems(FXCollections.observableArrayList(decimal));
-            setupListViewDecimalGroups(listView);
-        } else {
-            items.add(decimal);
-            items.sort(Comparator.comparing(Decimal::getName));
+            Warning1.create("ОШИБКА!", "Не удалось открыть форму добавления", e.getMessage());
         }
     }
 
     // ======================== ДИАЛОГОВЫЕ ОКНА ========================
 
-    private void openCreateDialog(String passportType, String windowTitle, String number, Decimal decimal) {
+    private void openRegistrationDialog(String passportType, String windowTitle, String number, Decimal decimal) {
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/cardsBox/registrationForm.fxml"));
             Parent parent = loader.load();
@@ -846,10 +764,10 @@ public class RegistrationBookController implements Initializable, UpdatableTabCo
 
     private void rollbackLastNumber(Decimal decimal, int reservedNumber) {
         try {
-            Decimal freshDecimal = ChogoriServices.CH_DECIMALS.findById(decimal.getId());
+            Decimal freshDecimal = CH_DECIMALS.findById(decimal.getId());
             if (freshDecimal != null && freshDecimal.getLastNumber() == reservedNumber) {
                 freshDecimal.setLastNumber(reservedNumber - 1);
-                ChogoriServices.CH_DECIMALS.update(freshDecimal);
+                CH_DECIMALS.update(freshDecimal);
                 log.info("Выполнен откат lastNumber для decimal {} с {} на {}",
                         decimal.getName(), reservedNumber, reservedNumber - 1);
             }

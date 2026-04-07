@@ -1,0 +1,5 @@
+/* Убирает широченные поля вокруг listView */
+.titled-pane > .content{
+    -fx-padding: -9.6;
+    -fx-margin: 0;
+}
