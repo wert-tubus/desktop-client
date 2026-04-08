@@ -43,7 +43,7 @@
                                     <children>
                                         <Accordion maxHeight="1.7976931348623157E308" prefHeight="534.0" prefWidth="226.0" stylesheets="@../../chogori-css/accordion.css" VBox.vgrow="ALWAYS">
                                             <panes>
-                                                <TitledPane animated="false" text="Эскизы">
+                                                <TitledPane fx:id="tpSketches" animated="false" text="Эскизы">
                                                     <content>
                                                         <AnchorPane>
                                                             <children>
@@ -52,7 +52,7 @@
                                                         </AnchorPane>
                                                     </content>
                                                 </TitledPane>
-                                                <TitledPane animated="false" text="Детали 700">
+                                                <TitledPane fx:id="tpDetails700" animated="false" text="Детали 700">
                                                     <content>
                                                         <AnchorPane>
                                                             <children>
@@ -61,7 +61,7 @@
                                                         </AnchorPane>
                                                     </content>
                                                 </TitledPane>
-                                                <TitledPane animated="false" prefHeight="384.0" prefWidth="195.0" text="Детали 745">
+                                                <TitledPane fx:id="tpDetails745" animated="false" prefHeight="384.0" prefWidth="195.0" text="Детали 745">
                                                     <content>
                                                         <AnchorPane>
                                                             <children>
@@ -70,7 +70,7 @@
                                                         </AnchorPane>
                                                     </content>
                                                 </TitledPane>
-                                                <TitledPane animated="false" text="Сборки 300">
+                                                <TitledPane fx:id="tpAssm300" animated="false" text="Сборки 300">
                                                     <content>
                                                         <AnchorPane>
                                                             <children>
@@ -79,7 +79,7 @@
                                                         </AnchorPane>
                                                     </content>
                                                 </TitledPane>
-                                                <TitledPane animated="false" text="Сборки 400">
+                                                <TitledPane fx:id="tpAssm400" animated="false" text="Сборки 400">
                                                     <content>
                                                         <AnchorPane>
                                                             <children>
@@ -88,7 +88,7 @@
                                                         </AnchorPane>
                                                     </content>
                                                 </TitledPane>
-                                                <TitledPane animated="false" text="Медицина">
+                                                <TitledPane fx:id="tpMedicine" animated="false" text="Медицина">
                                                     <content>
                                                         <AnchorPane>
                                                             <children>
@@ -97,7 +97,7 @@
                                                         </AnchorPane>
                                                     </content>
                                                 </TitledPane>
-                                                <TitledPane animated="false" text="Остальное">
+                                                <TitledPane fx:id="tpOther" animated="false" text="Остальное">
                                                     <content>
                                                         <AnchorPane>
                                                             <children>

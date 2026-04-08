@@ -10,7 +10,7 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * Менеджер для управления списком выбранных паспортов
+ * Менеджер для управления списком недавно зарегистрированных номеров
  */
 @Slf4j
 public class RegisteredPassportsManager {
