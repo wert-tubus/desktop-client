@@ -14,23 +14,24 @@
          <children>
             <AnchorPane fx:id="movingPane">
                <children>
-                  <Label fx:id="lblWarningTitle" text="ACTIVITY NAME" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                  <Label fx:id="lblWarningTitle" text="ACTIVITY NAME" wrapText="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                      <font>
-                        <Font name="System Bold" size="18.0" />
+                        <Font name="System Bold" size="14.0" />
                      </font>
                   </Label>
                </children>
             </AnchorPane>
             <Separator prefWidth="200.0" />
-            <VBox alignment="CENTER_LEFT">
+            <VBox alignment="CENTER_LEFT" fillWidth="true">
                <children>
-                  <Label fx:id="lblProblem" text="Проблема!">
+                  <Label fx:id="lblProblem" maxWidth="360.0" text="Проблема!" wrapText="true">
                      <font>
-                        <Font size="20.0" />
-                     </font></Label>
-                  <Label fx:id="lblDecision" text="Решение проблемы" wrapText="true">
+                        <Font size="16.0" />
+                     </font>
+                  </Label>
+                  <Label fx:id="lblDecision" maxWidth="360.0" text="Решение проблемы" wrapText="true">
                      <font>
-                        <Font name="System Italic" size="20.0" />
+                        <Font name="System Italic" size="14.0" />
                      </font>
                      <VBox.margin>
                         <Insets bottom="10.0" />
@@ -48,7 +49,7 @@
                      <children>
                         <Button fx:id="btnCancel" mnemonicParsing="false" prefWidth="135.0" text="ОТМЕНИТЬ">
                            <font>
-                              <Font name="System Bold" size="18.0" />
+                              <Font name="System Bold" size="14.0" />
                            </font>
                            <HBox.margin>
                               <Insets right="10.0" />
@@ -56,7 +57,7 @@
                         </Button>
                         <Button fx:id="btnYes" layoutX="135.0" mnemonicParsing="false" prefWidth="135.0" text="ДА">
                            <font>
-                              <Font name="System Bold" size="18.0" />
+                              <Font name="System Bold" size="14.0" />
                            </font>
                         </Button>
                      </children>
