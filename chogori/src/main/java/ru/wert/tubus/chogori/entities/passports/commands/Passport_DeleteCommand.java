@@ -39,7 +39,7 @@ public class Passport_DeleteCommand implements ICommand {
             }
         }
 
-        // Используем метод из TableView
+        // Используем refreshPreservingType, который сохраняет текущий фильтр
         tableView.refreshPreservingType();
 
         // Выделяем нужную строку

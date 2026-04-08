@@ -7,6 +7,7 @@ import javafx.scene.layout.HBox;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import ru.wert.tubus.client.entity.models.Decimal;
 import ru.wert.tubus.client.entity.models.Draft;
 import ru.wert.tubus.client.entity.models.Folder;
 import ru.wert.tubus.client.entity.models.Passport;
@@ -44,6 +45,9 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
     // Добавляем поле для типа паспортов
     @Getter@Setter private PassportType passportType = PassportType.ALL;
     @Getter@Setter private boolean showPrefix = true;
+
+    // Добавляем поле для внешнего фильтра по децимальной группе (из RegistrationBookController)
+    @Getter@Setter private Decimal externalFilterDecimal = null;
 
     // Паттерны для фильтрации (аналогичны CardsBoxController)
     private static final Pattern PIK_PATTERN = Pattern.compile("\\d{6}\\.\\d{3}");
@@ -181,7 +185,7 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
                 if (modifyingItem == null) {
                     // Если нет ни selectedFolders, ни modifyingItem - загружаем ВСЕ паспорта
                     baseList = ChogoriServices.CH_QUICK_PASSPORTS.findAll();
-                    log.debug("Загружены все паспорты (нет папок для фильтрации), всего: {}", baseList.size());
+                    log.debug("Загружены все паспорта (нет папок для фильтрации), всего: {}", baseList.size());
                 } else {
                     // Загружаем паспорта из конкретной папки
                     baseList = new ArrayList<>(findPassportsInFolder((Folder) modifyingItem));
@@ -205,16 +209,36 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
 
         // Применяем фильтрацию по типу паспорта
         list = filterPassportsByType(baseList);
+
+        // Применяем внешний фильтр по децимальной группе (из RegistrationBookController)
+        list = filterPassportsByExternalDecimal(list);
+
         list.sort(Comparator.comparing(Passport::getNumber));
 
         return list;
     }
 
     /**
-     * Обновляет таблицу с сохранением фильтрации по типу и сортировки
+     * Фильтрует список паспортов по внешнему фильтру (децимальной группе)
+     * @param passports исходный список паспортов
+     * @return отфильтрованный список
+     */
+    private List<Passport> filterPassportsByExternalDecimal(List<Passport> passports) {
+        if (externalFilterDecimal == null) {
+            return passports;
+        }
+
+        return passports.stream()
+                .filter(p -> p.getNumber() != null && p.getNumber().contains(externalFilterDecimal.getName()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Обновляет таблицу с сохранением фильтрации по типу и внешнего фильтра
      */
     public void refreshPreservingType() {
-        log.debug("refreshPreservingType() - тип: {}", passportType);
+        log.debug("refreshPreservingType() - тип: {}, внешний фильтр: {}", passportType,
+                externalFilterDecimal != null ? externalFilterDecimal.getName() : "null");
 
         // Получаем базовый список
         List<Passport> baseList;
@@ -226,6 +250,9 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
 
         // Применяем фильтрацию по типу
         List<Passport> filteredList = filterPassportsByType(baseList);
+
+        // Применяем внешний фильтр по децимальной группе
+        filteredList = filterPassportsByExternalDecimal(filteredList);
 
         // Сортируем
         filteredList.sort(passportsComparator());
@@ -366,5 +393,15 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
 
         // Обновляем таблицу
         updateTableView();
+    }
+
+    /**
+     * Устанавливает внешний фильтр по децимальной группе и обновляет таблицу
+     * @param decimal децимальная группа для фильтрации (null - снять фильтр)
+     */
+    public void setExternalFilterAndRefresh(Decimal decimal) {
+        this.externalFilterDecimal = decimal;
+        refreshPreservingType();
+        log.debug("Установлен внешний фильтр: {}", decimal != null ? decimal.getName() : "null");
     }
 }

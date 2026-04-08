@@ -170,11 +170,18 @@ public class RegistrationBookController implements UpdatableTabController {
     private void filterPIKTableByDecimal(Decimal decimal) {
         if (passportPIKController != null && passportPIKController.getPassportsTable() != null) {
             Passport_TableView tvPIK = passportPIKController.getPassportsTable();
-            List<Passport> filteredPassports = passportService.getAllPassportsByDecimal(decimal);
-            tvPIK.setItems(FXCollections.observableArrayList(filteredPassports));
-            if (!filteredPassports.isEmpty()) {
+
+            // Устанавливаем внешний фильтр в таблице
+            tvPIK.setExternalFilterAndRefresh(decimal);
+
+            // Сохраняем текущий фильтр
+            currentPIKFilterDecimal = decimal;
+
+            // Прокручиваем к последнему элементу
+            if (!tvPIK.getItems().isEmpty()) {
                 tvPIK.scrollTo(tvPIK.getItems().size() - 1);
             }
+
             log.debug("ПИК таблица отфильтрована по децимальной группе: {}", decimal.getName());
         }
     }
@@ -187,14 +194,13 @@ public class RegistrationBookController implements UpdatableTabController {
             Passport_TableView tvPIK = passportPIKController.getPassportsTable();
 
             if (currentPIKFilterDecimal != null) {
-                // Сохраняем текущий фильтр
-                List<Passport> filteredPassports = passportService.getAllPassportsByDecimal(currentPIKFilterDecimal);
-                tvPIK.setItems(FXCollections.observableArrayList(filteredPassports));
+                // Устанавливаем фильтр заново (он сам обновит таблицу)
+                tvPIK.setExternalFilterAndRefresh(currentPIKFilterDecimal);
                 log.debug("ПИК таблица обновлена с сохранением фильтра по: {}", currentPIKFilterDecimal.getName());
             } else {
-                // Обновляем без изменения фильтра (просто рефреш)
-                tvPIK.refreshPreservingType();
-                log.debug("ПИК таблица обновлена без изменения фильтра");
+                // Сбрасываем внешний фильтр и обновляем
+                tvPIK.setExternalFilterAndRefresh(null);
+                log.debug("ПИК таблица обновлена без фильтра");
             }
         }
     }

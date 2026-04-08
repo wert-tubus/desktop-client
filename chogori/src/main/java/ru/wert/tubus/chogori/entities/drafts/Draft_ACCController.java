@@ -64,6 +64,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
+import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_QUICK_PASSPORTS;
 import static ru.wert.tubus.chogori.setteings.ChogoriSettings.CH_CORRECT_DET_TO_ASSM;
 import static ru.wert.tubus.chogori.setteings.ChogoriSettings.CH_CURRENT_USER;
 import static ru.wert.tubus.chogori.statics.AppStatic.*;
@@ -335,7 +336,7 @@ public class Draft_ACCController extends FormView_ACCController<Draft> {
         txtNumber.textProperty().addListener(observable -> {
             String name = txtNumber.getText().trim();
             Platform.runLater(()->{
-                currentPassport = ChogoriServices.CH_QUICK_PASSPORTS.findByPrefixIdAndNumber(bxPrefix.getValue(), name);
+                currentPassport = CH_QUICK_PASSPORTS.findByPrefixIdAndNumber(bxPrefix.getValue(), name);
                 if(currentPassport != null)
                     lblDraftNameInDB.setText("=> " + currentPassport.getName());
                 else
@@ -487,7 +488,7 @@ public class Draft_ACCController extends FormView_ACCController<Draft> {
      */
     public boolean draftIsDuplicated(Draft newDraft, Draft oldDraft){
         //Так как пасспорт нового чертежа еще фактически не существует, то ищем такой же пасспорт в базе по косвенным признакам
-        Passport passport = ChogoriServices.CH_QUICK_PASSPORTS.findByPrefixIdAndNumber(newDraft.getPassport().getPrefix(), newDraft.getPassport().getNumber());
+        Passport passport = CH_QUICK_PASSPORTS.findByPrefixIdAndNumber(newDraft.getPassport().getPrefix(), newDraft.getPassport().getNumber());
         if (passport == null) {
             log.debug("draftIsDuplicated : пасспорта {} не найдено", newDraft.getPassport().toUsefulString());
             return false; //Если пасспорта в базе нет - чертеж новый
@@ -1166,11 +1167,17 @@ public class Draft_ACCController extends FormView_ACCController<Draft> {
         Passport newPassport = new Passport(bxPrefix.getValue(),
                 txtNumber.getText().trim(),
                 txtName.getText().trim(),
-                newDraft.getFolder().getName(),
+                bxFolder.getValue().getName(),
                 CH_CURRENT_USER.getName(),
                 LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM.yy")),
                 new ArrayList<>());
-        newDraft.setPassport(newPassport);
+        Passport foundPassport = CH_QUICK_PASSPORTS.findByPrefixIdAndNumber(newPassport.getPrefix(), newPassport.getNumber());
+        if(foundPassport == null){
+            Passport savedPassport = CH_QUICK_PASSPORTS.save(newPassport);
+            newDraft.setPassport(savedPassport);
+        } else
+            newDraft.setPassport(foundPassport);
+
         newDraft.setFolder(bxFolder.getValue());
         newDraft.setInitialDraftName(lblFileName.getText());
         if(operationProperty.get().equals(EOperation.ADD) || operationProperty.get().equals(EOperation.ADD_FOLDER))
@@ -1255,7 +1262,7 @@ public class Draft_ACCController extends FormView_ACCController<Draft> {
                 !oldItem.getPassport().getNumber().equals(txtNumber.getText()) ||
                 !oldItem.getPassport().getName().equals(txtName.getText())) {
             //Проверяем наличие готового пасспорта в базе
-            Passport p = ChogoriServices.CH_QUICK_PASSPORTS.findByPrefixIdAndNumber(bxPrefix.getValue(), txtNumber.getText().trim());
+            Passport p = CH_QUICK_PASSPORTS.findByPrefixIdAndNumber(bxPrefix.getValue(), txtNumber.getText().trim());
             if(p == null) {
                 oldItem.setPassport(new Passport(
                         bxPrefix.getValue(),
