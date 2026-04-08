@@ -9,6 +9,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_DECIMALS;
+import static ru.wert.tubus.chogori.setteings.ChogoriSettings.CH_DEFAULT_PREFIX;
 
 /**
  * Сервис для операций с паспортами (поиск номеров, форматирование и т.д.)
@@ -158,6 +159,20 @@ public class PassportService {
             log.error("Ошибка при поиске паспорта по номеру {}", number, e);
             return null;
         }
+    }
+
+    public List<Passport> getAllPassportsByDecimal(Decimal decimal){
+        List<Passport> filteredPassports = new ArrayList<>();
+        for(Passport p : getAllPassports()){
+            if(p.getPrefix().getName().equals(CH_DEFAULT_PREFIX.getName()) &&
+                    p.getNumber().contains(decimal.getName())){
+                filteredPassports.add(p);
+            }
+        }
+        filteredPassports.sort(Comparator.comparing(Passport::getNumber,
+                Comparator.nullsLast(Comparator.naturalOrder())));
+
+        return filteredPassports;
     }
 
     public boolean isPIKPassport(Passport passport) {

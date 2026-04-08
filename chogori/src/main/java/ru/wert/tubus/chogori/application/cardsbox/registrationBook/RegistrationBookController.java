@@ -10,10 +10,7 @@ import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import ru.wert.tubus.chogori.application.cardsbox.DecimalFormController;
-import ru.wert.tubus.chogori.application.cardsbox.PassportContextMenu;
-import ru.wert.tubus.chogori.application.cardsbox.RegistrationFormController;
-import ru.wert.tubus.chogori.application.cardsbox.RegisteredPassportsStorage;
+import ru.wert.tubus.chogori.application.cardsbox.*;
 import ru.wert.tubus.chogori.entities.passports.PassportInfo_Patch;
 import ru.wert.tubus.chogori.entities.passports.Passport_PatchController;
 import ru.wert.tubus.chogori.entities.passports.Passport_TableView;
@@ -75,6 +72,7 @@ public class RegistrationBookController implements UpdatableTabController {
 
     @Setter private Passport_PatchController passportPIKController;
     @Setter private Passport_PatchController passportSketchController;
+    @Setter private CardsBoxController cardsBoxController;
 
     // ======================== ИНИЦИАЛИЗАЦИЯ ========================
 
@@ -87,11 +85,113 @@ public class RegistrationBookController implements UpdatableTabController {
         initializeSelectedPassportsList();
         initializeDecimalGroupsLists();
         setupButtonHandlers();
-        setupDoubleClickHandlers();
         setupContextMenus();
 
         // Восстановление состояния
         registeredPassportsManager.restoreState();
+
+        Platform.runLater(this::setupSketchListViews);
+        Platform.runLater(this::setupPIKListViews);
+    }
+
+    /**
+     * Настраивает списки децимальных групп для эскизных номеров
+     */
+    private void setupSketchListViews() {
+        lvSketches.setOnMouseClicked(event -> {
+            Decimal selected = lvSketches.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                if (event.getClickCount() == 2) {
+                    // Двойной клик - создание эскизного паспорта
+                    createSketchPassport(selected);
+                } else if (event.getClickCount() == 1) {
+                    // Одинарный клик - открытие вкладки
+                    openSketchTab();
+                }
+            }
+        });
+    }
+
+    /**
+     * Настраивает списки децимальных групп для ПИК-номеров
+     */
+    private void setupPIKListViews() {
+        List<ListView<Decimal>> listViews = Arrays.asList(
+                lvDetails700, lvDetails745, lvAssm300, lvAssm400, lvMedicine, lvOther
+        );
+
+        TableView<Passport> tvPIK = passportPIKController.getPassportsTable();
+
+        for (ListView<Decimal> listView : listViews) {
+            listView.setCellFactory(lv -> new ListCell<Decimal>() {
+                @Override
+                protected void updateItem(Decimal item, boolean empty) {
+                    super.updateItem(item, empty);
+                    if (empty || item == null) {
+                        setText(null);
+                    } else {
+                        setText(item.getName());
+
+                        // Подсветка, если есть связанные паспорта
+                        boolean hasRelatedPassports = tvPIK.getItems().stream()
+                                .anyMatch(p -> p.getNumber() != null &&
+                                        p.getNumber().contains(item.getName()));
+
+                        if (hasRelatedPassports) {
+                            setStyle("-fx-font-weight: bold; -fx-text-fill: #0066cc;");
+                        } else {
+                            setStyle(null);
+                        }
+                    }
+                }
+            });
+
+            // Добавляем обработчик клика мыши для фильтрации таблицы
+            listView.setOnMouseClicked(event -> {
+                Decimal selected = listView.getSelectionModel().getSelectedItem();
+                if (selected != null) {
+                    if (event.getClickCount() == 2) {
+                        // Двойной клик - создание нового паспорта
+                        createPIKPassport(selected);
+                    } else if (event.getClickCount() == 1) {
+                        // Одинарный клик - фильтрация таблицы
+                        openPIKTab();
+                        tvPIK.setItems(FXCollections.observableArrayList(
+                                passportService.getAllPassportsByDecimal(selected)));
+                        tvPIK.scrollTo(tvPIK.getItems().size());
+                    }
+                }
+            });
+        }
+    }
+
+    /**
+     * Открывает вкладку с ПИК-номерами и прокручивает таблицу к последнему элементу.
+     */
+    private void openPIKTab() {
+        if (passportPIKController != null && cardsBoxController.getTabPIK() != null) {
+            // Активируем вкладку с ПИК-паспортами
+            cardsBoxController.getTabPIK().getTabPane().getSelectionModel()
+                    .select(cardsBoxController.getTabPIK());
+
+            TableView<Passport> tvPIK = passportPIKController.getPassportsTable();
+            if (tvPIK != null && !tvPIK.getItems().isEmpty()) {
+                tvPIK.scrollTo(tvPIK.getItems().size() - 1);
+            }
+        }
+    }
+
+    /**
+     * Открывает вкладку с эскизными номерами и прокручивает таблицу к последнему элементу.
+     */
+    private void openSketchTab() {
+        if (passportSketchController != null && cardsBoxController.getTabSketch() != null) {
+            // Активируем вкладку с эскизами
+            cardsBoxController.getTabSketch().getTabPane().getSelectionModel()
+                    .select(cardsBoxController.getTabSketch());
+            TableView<Passport> tvSketches = passportSketchController.getPassportsTable();
+            tvSketches.scrollTo(tvSketches.getItems().size());
+        }
     }
 
     /**
@@ -171,27 +271,6 @@ public class RegistrationBookController implements UpdatableTabController {
         }
         if (btnSave != null) {
             btnSave.setOnAction(e -> exportSelectedListToFile());
-        }
-    }
-
-    /**
-     * Настройка обработчиков двойного клика для всех списков децимальных групп.
-     * При двойном клике открывается форма создания нового паспорта.
-     */
-    private void setupDoubleClickHandlers() {
-        for (ListView<Decimal> listView : groupToListViewMap.values()) {
-            listView.setOnMouseClicked(event -> {
-                if (event.getClickCount() == 2) {
-                    Decimal selected = listView.getSelectionModel().getSelectedItem();
-                    if (selected != null) {
-                        if (DecimalGroupingService.isSketch(selected)) {
-                            createSketchPassport(selected);
-                        } else {
-                            createPIKPassport(selected);
-                        }
-                    }
-                }
-            });
         }
     }
 

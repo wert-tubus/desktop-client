@@ -41,7 +41,7 @@
                             <children>
                                 <VBox alignment="TOP_CENTER" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                     <children>
-                                        <Accordion maxHeight="1.7976931348623157E308" prefHeight="534.0" prefWidth="226.0" stylesheets="@../../chogori-css/accordion.css" VBox.vgrow="ALWAYS">
+                                        <Accordion fx:id="accDecimalGroups" maxHeight="1.7976931348623157E308" prefHeight="534.0" prefWidth="226.0" stylesheets="@../../chogori-css/accordion.css" VBox.vgrow="ALWAYS">
                                             <panes>
                                                 <TitledPane fx:id="tpSketches" animated="false" text="Эскизы">
                                                     <content>

@@ -8,6 +8,7 @@ import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.layout.StackPane;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.application.cardsbox.registrationBook.RegistrationBookController;
 import ru.wert.tubus.chogori.entities.passports.PassportType;
@@ -46,13 +47,13 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
     @FXML
     private StackPane spSketch;
 
-    @FXML
+    @FXML@Getter
     private Tab tabPIK;
 
-    @FXML
+    @FXML@Getter
     private Tab tabSketch;
 
-    @FXML
+    @FXML@Getter
     private TabPane tabPane;
 
 
@@ -137,6 +138,7 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
         RegistrationBookController registrationBookController = registrationBookPatch.getRegistrationBookController();
         registrationBookController.setPassportPIKController(passportsPIKPatch.getPassportPatchController());
         registrationBookController.setPassportSketchController(passportsSketchPatch.getPassportPatchController());
+        registrationBookController.setCardsBoxController(this);
 
         stpRegistrationBook.getChildren().add(registrationBookPatch.getParent());
     }
