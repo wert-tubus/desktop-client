@@ -34,15 +34,16 @@ public class Passport extends _BaseEntity implements Item  {
             return prefix.getName() + "." + body;
     }
 
-
     @Override
     public String toString() {
-
         return "Passport{" +
-                ", id=" + id +
-                " prefix=" + ((prefix == null) ? null : prefix.getName()) +
+                "id=" + id +
+                ", prefix=" + ((prefix == null) ? null : prefix.getName()) +
                 ", number='" + number + '\'' +
                 ", name='" + name + '\'' +
+                ", note='" + note + '\'' +
+                ", userName='" + userName + '\'' +
+                ", date='" + date + '\'' +
                 '}';
     }
 }

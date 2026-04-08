@@ -1268,7 +1268,7 @@ public class Draft_ACCController extends FormView_ACCController<Draft> {
                         bxPrefix.getValue(),
                         txtNumber.getText().trim(),
                         txtName.getText(),
-                        oldItem.getFolder().getName(),
+                        bxFolder.getValue().getName(),
                         CH_CURRENT_USER.getName(),
                         LocalDate.now().format(DateTimeFormatter.ofPattern("dd.MM.yy")),
                         new ArrayList<>())
