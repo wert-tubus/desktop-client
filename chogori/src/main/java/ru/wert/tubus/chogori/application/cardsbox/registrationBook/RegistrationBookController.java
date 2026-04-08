@@ -74,6 +74,9 @@ public class RegistrationBookController implements UpdatableTabController {
     @Setter private Passport_PatchController passportSketchController;
     @Setter private CardsBoxController cardsBoxController;
 
+    // Хранение текущего фильтра для ПИК таблицы (для эскизов фильтрации нет)
+    private Decimal currentPIKFilterDecimal = null;
+
     // ======================== ИНИЦИАЛИЗАЦИЯ ========================
 
     /**
@@ -95,7 +98,10 @@ public class RegistrationBookController implements UpdatableTabController {
     }
 
     /**
-     * Настраивает списки децимальных групп для эскизных номеров
+     * Настраивает списки децимальных групп для эскизных номеров.
+     * Эскизы НЕ фильтруются по decimal, всегда показываются все эскизные номера (маска ЭXXXXX).
+     * Двойной клик - создание эскизного паспорта.
+     * Одинарный клик - открытие вкладки с эскизами.
      */
     private void setupSketchListViews() {
         lvSketches.setOnMouseClicked(event -> {
@@ -105,7 +111,7 @@ public class RegistrationBookController implements UpdatableTabController {
                     // Двойной клик - создание эскизного паспорта
                     createSketchPassport(selected);
                 } else if (event.getClickCount() == 1) {
-                    // Одинарный клик - открытие вкладки
+                    // Одинарный клик - открытие вкладки с эскизами (без фильтрации)
                     openSketchTab();
                 }
             }
@@ -113,7 +119,9 @@ public class RegistrationBookController implements UpdatableTabController {
     }
 
     /**
-     * Настраивает списки децимальных групп для ПИК-номеров
+     * Настраивает списки децимальных групп для ПИК-номеров.
+     * Одинарный клик - фильтрация таблицы по выбранной decimal.
+     * Двойной клик - создание нового паспорта.
      */
     private void setupPIKListViews() {
         List<ListView<Decimal>> listViews = Arrays.asList(
@@ -129,19 +137,9 @@ public class RegistrationBookController implements UpdatableTabController {
                     super.updateItem(item, empty);
                     if (empty || item == null) {
                         setText(null);
+                        setStyle(null);
                     } else {
                         setText(item.getName());
-
-                        // Подсветка, если есть связанные паспорта
-                        boolean hasRelatedPassports = tvPIK.getItems().stream()
-                                .anyMatch(p -> p.getNumber() != null &&
-                                        p.getNumber().contains(item.getName()));
-
-                        if (hasRelatedPassports) {
-                            setStyle("-fx-font-weight: bold; -fx-text-fill: #0066cc;");
-                        } else {
-                            setStyle(null);
-                        }
                     }
                 }
             });
@@ -156,12 +154,59 @@ public class RegistrationBookController implements UpdatableTabController {
                     } else if (event.getClickCount() == 1) {
                         // Одинарный клик - фильтрация таблицы
                         openPIKTab();
-                        tvPIK.setItems(FXCollections.observableArrayList(
-                                passportService.getAllPassportsByDecimal(selected)));
-                        tvPIK.scrollTo(tvPIK.getItems().size());
+                        currentPIKFilterDecimal = selected;
+                        filterPIKTableByDecimal(selected);
                     }
                 }
             });
+        }
+    }
+
+    /**
+     * Фильтрация ПИК таблицы по децимальной группе.
+     *
+     * @param decimal децимальная группа для фильтрации
+     */
+    private void filterPIKTableByDecimal(Decimal decimal) {
+        if (passportPIKController != null && passportPIKController.getPassportsTable() != null) {
+            Passport_TableView tvPIK = passportPIKController.getPassportsTable();
+            List<Passport> filteredPassports = passportService.getAllPassportsByDecimal(decimal);
+            tvPIK.setItems(FXCollections.observableArrayList(filteredPassports));
+            if (!filteredPassports.isEmpty()) {
+                tvPIK.scrollTo(tvPIK.getItems().size() - 1);
+            }
+            log.debug("ПИК таблица отфильтрована по децимальной группе: {}", decimal.getName());
+        }
+    }
+
+    /**
+     * Обновление ПИК таблицы с сохранением текущего фильтра.
+     */
+    private void refreshPIKTablePreservingFilter() {
+        if (passportPIKController != null && passportPIKController.getPassportsTable() != null) {
+            Passport_TableView tvPIK = passportPIKController.getPassportsTable();
+
+            if (currentPIKFilterDecimal != null) {
+                // Сохраняем текущий фильтр
+                List<Passport> filteredPassports = passportService.getAllPassportsByDecimal(currentPIKFilterDecimal);
+                tvPIK.setItems(FXCollections.observableArrayList(filteredPassports));
+                log.debug("ПИК таблица обновлена с сохранением фильтра по: {}", currentPIKFilterDecimal.getName());
+            } else {
+                // Обновляем без изменения фильтра (просто рефреш)
+                tvPIK.refreshPreservingType();
+                log.debug("ПИК таблица обновлена без изменения фильтра");
+            }
+        }
+    }
+
+    /**
+     * Обновление эскизной таблицы (всегда показывает все эскизы, без фильтрации).
+     */
+    private void refreshSketchTable() {
+        if (passportSketchController != null && passportSketchController.getPassportsTable() != null) {
+            Passport_TableView tvSketch = passportSketchController.getPassportsTable();
+            tvSketch.refreshPreservingType();
+            log.debug("Эскизная таблица обновлена (все эскизы)");
         }
     }
 
@@ -182,7 +227,7 @@ public class RegistrationBookController implements UpdatableTabController {
     }
 
     /**
-     * Открывает вкладку с эскизными номерами и прокручивает таблицу к последнему элементу.
+     * Открывает вкладку с эскизными номерами (все эскизы, без фильтрации).
      */
     private void openSketchTab() {
         if (passportSketchController != null && cardsBoxController.getTabSketch() != null) {
@@ -190,7 +235,9 @@ public class RegistrationBookController implements UpdatableTabController {
             cardsBoxController.getTabSketch().getTabPane().getSelectionModel()
                     .select(cardsBoxController.getTabSketch());
             TableView<Passport> tvSketches = passportSketchController.getPassportsTable();
-            tvSketches.scrollTo(tvSketches.getItems().size());
+            if (!tvSketches.getItems().isEmpty()) {
+                tvSketches.scrollTo(tvSketches.getItems().size() - 1);
+            }
         }
     }
 
@@ -405,7 +452,7 @@ public class RegistrationBookController implements UpdatableTabController {
                 Passport savedPassport = controller.getSavedPassport();
                 if (savedPassport != null) {
                     registeredPassportsManager.addPassport(savedPassport);
-                    refreshPassportTables(savedPassport);
+                    refreshAfterPassportCreation(savedPassport, decimal);
                 }
             } else if (controller.isCancelled() && controller.isNumberReserved()) {
                 passportService.rollbackLastNumber(decimal, controller.getReservedNumber());
@@ -414,6 +461,22 @@ public class RegistrationBookController implements UpdatableTabController {
             log.error("Ошибка при открытии формы создания паспорта", ex);
             Warning1.create("ОШИБКА!", "Не удалось открыть форму создания паспорта", ex.getMessage());
         }
+    }
+
+    /**
+     * Обновление после создания паспорта.
+     *
+     * @param savedPassport созданный паспорт
+     * @param decimal децимальная группа
+     */
+    private void refreshAfterPassportCreation(Passport savedPassport, Decimal decimal) {
+        // Просто раскрываем панель с нужной группой
+        expandTitledPane(DecimalGroupingService.determineGroup(decimal));
+
+        // Обновляем таблицы
+        refreshTablesPreservingState();
+
+        log.info("Паспорт {} успешно создан", savedPassport.getNumber());
     }
 
     /**
@@ -439,7 +502,7 @@ public class RegistrationBookController implements UpdatableTabController {
             new WindowDecoration("Редактирование номера", parent, false, WF_MAIN_STAGE, true);
 
             if (controller.isAccepted()) {
-                refreshPassportTables(freshPassport);
+                refreshTablesPreservingState();
 
                 Passport updatedPassport = controller.getSavedPassport();
                 if (updatedPassport != null) {
@@ -450,6 +513,16 @@ public class RegistrationBookController implements UpdatableTabController {
             log.error("Ошибка при открытии формы редактирования паспорта", ex);
             Warning1.create("ОШИБКА!", "Не удалось открыть форму редактирования номера", ex.getMessage());
         }
+    }
+
+    /**
+     * Обновление таблиц с сохранением текущего состояния.
+     * Для ПИК - сохраняет фильтр, для эскизов - просто обновляет.
+     */
+    private void refreshTablesPreservingState() {
+        refreshPIKTablePreservingFilter();
+        refreshSketchTable();
+        log.debug("Таблицы обновлены с сохранением состояния");
     }
 
     // ======================== ДОБАВЛЕНИЕ ДЕЦИМАЛЬНОЙ ГРУППЫ ========================
@@ -482,7 +555,7 @@ public class RegistrationBookController implements UpdatableTabController {
     }
 
     /**
-     * Добавление децимальной группы в соответствующий ListView с последующим выделением.
+     * Добавление децимальной группы в соответствующий ListView.
      *
      * @param decimal децимальная группа для добавления
      */
@@ -511,28 +584,10 @@ public class RegistrationBookController implements UpdatableTabController {
         currentItems.add(decimal);
         sortDecimalList(currentItems);
 
-        // Поиск индекса по ID
-        int newIndex = findDecimalIndexById(currentItems, decimal.getId());
-
-        // Раскрытие панели и выделение
+        // Раскрываем панель
         expandTitledPane(group);
-        selectDecimalInListView(targetListView, newIndex, decimal);
-    }
 
-    /**
-     * Поиск индекса децимальной группы в списке по ID.
-     *
-     * @param items список элементов
-     * @param id ID для поиска
-     * @return индекс элемента или -1, если не найден
-     */
-    private int findDecimalIndexById(ObservableList<Decimal> items, Long id) {
-        for (int i = 0; i < items.size(); i++) {
-            if (items.get(i).getId().equals(id)) {
-                return i;
-            }
-        }
-        return -1;
+        log.debug("Децимальная группа {} добавлена в список", decimal.getName());
     }
 
     /**
@@ -567,104 +622,23 @@ public class RegistrationBookController implements UpdatableTabController {
         }
     }
 
-    /**
-     * Выделяет децимальную группу в указанном ListView.
-     *
-     * @param listView список, в котором нужно выделить элемент
-     * @param index индекс элемента
-     * @param decimal децимальная группа для логирования
-     */
-    private void selectDecimalInListView(ListView<Decimal> listView, int index, Decimal decimal) {
-        if (index >= 0) {
-            Platform.runLater(() -> {
-                listView.scrollTo(index);
-                listView.getSelectionModel().select(index);
-                listView.requestFocus();
-                log.debug("Выделена децимальная группа {} в списке, индекс: {}", decimal.getName(), index);
-            });
-        } else {
-            log.warn("Не удалось найти индекс для выделения децимальной группы: {}", decimal.getName());
-        }
-    }
-
     // ======================== ОБНОВЛЕНИЕ ТАБЛИЦ ========================
 
     /**
      * Обновление таблиц паспортов (ПИК и эскизы).
-     * Вызывается из контекстного меню и после создания/редактирования паспорта.
+     * Вызывается из контекстного меню.
      */
     private void refreshPassportTables() {
-        refreshPassportTables(null);
-    }
-
-    /**
-     * Обновление таблиц паспортов (ПИК и эскизы).
-     *
-     * @param passportToSelect паспорт для выделения после обновления (может быть null)
-     */
-    private void refreshPassportTables(Passport passportToSelect) {
-        refreshPIKPassportsTable(passportToSelect);
-        refreshSketchPassportsTable(passportToSelect);
-        log.debug("Таблицы паспортов обновлены");
-    }
-
-    /**
-     * Обновление таблицы ПИК паспортов.
-     *
-     * @param passportToSelect паспорт для выделения
-     */
-    private void refreshPIKPassportsTable(Passport passportToSelect) {
-        if (passportPIKController != null && passportPIKController.getPassportsTable() != null) {
-            Passport_TableView tvPIK = passportPIKController.getPassportsTable();
-            tvPIK.refreshPreservingType();
-            if (passportToSelect != null && passportService.isPIKPassport(passportToSelect)) {
-                selectPassportInTable(tvPIK, passportToSelect);
-            }
-        }
-    }
-
-    /**
-     * Обновление таблицы эскизных паспортов.
-     *
-     * @param passportToSelect паспорт для выделения
-     */
-    private void refreshSketchPassportsTable(Passport passportToSelect) {
-        if (passportSketchController != null && passportSketchController.getPassportsTable() != null) {
-            Passport_TableView tvSketch = passportSketchController.getPassportsTable();
-            tvSketch.refreshPreservingType();
-            if (passportToSelect != null && passportService.isSketchPassport(passportToSelect)) {
-                selectPassportInTable(tvSketch, passportToSelect);
-            }
-        }
-    }
-
-    /**
-     * Выделяет паспорт в таблице.
-     *
-     * @param tableView таблица для выделения
-     * @param passport паспорт для выделения
-     */
-    private void selectPassportInTable(Passport_TableView tableView, Passport passport) {
-        Platform.runLater(() -> {
-            for (int i = 0; i < tableView.getItems().size(); i++) {
-                if (tableView.getItems().get(i).getId().equals(passport.getId())) {
-                    tableView.scrollTo(i);
-                    tableView.getSelectionModel().select(i);
-                    log.debug("Выделен паспорт {} в таблице, индекс: {}", passport.getNumber(), i);
-                    return;
-                }
-            }
-            log.debug("Паспорт {} не найден в таблице после обновления", passport.getNumber());
-        });
+        refreshTablesPreservingState();
     }
 
     /**
      * Обновление после удаления паспорта.
-     * Обновляет список выбранных паспортов и таблицы.
+     * Обновляет список выбранных паспортов и таблицы с сохранением состояния.
      */
     private void refreshAfterDelete() {
         registeredPassportsManager.refresh();
-        refreshPassportTables();
+        refreshTablesPreservingState();
         log.info("Выполнено обновление после удаления");
     }
 
@@ -714,13 +688,19 @@ public class RegistrationBookController implements UpdatableTabController {
 
     /**
      * Обновление содержимого вкладки при её активации.
-     * Загружает свежие данные из базы данных и восстанавливает состояние.
+     * Загружает свежие данные из базы данных, но сохраняет текущие фильтры.
      */
     @Override
     public void updateTab() {
+        // Обновляем списки децимальных групп
         loadAndDistributeDecimalGroups();
+
+        // Восстанавливаем состояние выбранных паспортов
         registeredPassportsManager.restoreState();
-        refreshPassportTables();
-        log.info("Вкладка журнала регистрации обновлена");
+
+        // Обновляем таблицы с сохранением текущих фильтров
+        refreshTablesPreservingState();
+
+        log.info("Вкладка журнала регистрации обновлена (фильтры сохранены)");
     }
 }

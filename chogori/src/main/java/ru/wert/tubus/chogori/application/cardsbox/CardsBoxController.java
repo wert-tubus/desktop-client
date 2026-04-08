@@ -99,7 +99,7 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
         tvPIK.setShowPrefix(false);
 
         //Инструментальную панель инициируем в последнюю очередь
-        passportPatchController.initPassportsToolBar(false, true);
+        passportPatchController.initPassportsToolBar(true, true);
 
         spPIK.getChildren().add(passportsPIKPatch.getParent());
 
