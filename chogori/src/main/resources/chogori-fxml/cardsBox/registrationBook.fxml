@@ -131,6 +131,15 @@
                                           <Font name="System Italic" size="14.0" />
                                        </font>
                                     </Label>
+                                    <HBox alignment="CENTER_RIGHT" spacing="2.0" HBox.hgrow="ALWAYS">
+                                       <children>
+                                          <Button fx:id="btnUp" mnemonicParsing="false" />
+                                          <Button fx:id="btnDown" mnemonicParsing="false" />
+                                       </children>
+                                       <HBox.margin>
+                                          <Insets right="10.0" />
+                                       </HBox.margin>
+                                    </HBox>
                                  </children>
                               </HBox>
                                         <ListView fx:id="lvListOFNumbers" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS">

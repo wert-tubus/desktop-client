@@ -7,10 +7,13 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.application.cardsbox.*;
+import ru.wert.tubus.chogori.components.BtnDown;
+import ru.wert.tubus.chogori.components.BtnUp;
 import ru.wert.tubus.chogori.entities.passports.PassportInfo_Patch;
 import ru.wert.tubus.chogori.entities.passports.Passport_PatchController;
 import ru.wert.tubus.chogori.entities.passports.Passport_TableView;
@@ -24,6 +27,8 @@ import java.io.IOException;
 import java.util.*;
 
 import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_DECIMALS;
+import static ru.wert.tubus.chogori.images.BtnImages.BTN_ROLLDOWN_IMG;
+import static ru.wert.tubus.chogori.images.BtnImages.BTN_ROLLUP_IMG;
 import static ru.wert.tubus.winform.statics.WinformStatic.WF_MAIN_STAGE;
 import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
 
@@ -64,6 +69,9 @@ public class RegistrationBookController implements UpdatableTabController {
     @FXML private TitledPane tpMedicine;
     @FXML private TitledPane tpOther;
 
+    @FXML private Button btnUp;
+    @FXML private Button btnDown;
+
     // ======================== СЕРВИСЫ И МЕНЕДЖЕРЫ ========================
 
     private final PassportService passportService = new PassportService();
@@ -85,6 +93,9 @@ public class RegistrationBookController implements UpdatableTabController {
      */
     @FXML
     public void initialize() {
+        new BtnUp<>(btnUp, lvListOFNumbers);
+        new BtnDown<>(btnDown, lvListOFNumbers);
+
         initializeSelectedPassportsList();
         initializeDecimalGroupsLists();
         setupButtonHandlers();
@@ -325,6 +336,7 @@ public class RegistrationBookController implements UpdatableTabController {
         if (btnSave != null) {
             btnSave.setOnAction(e -> exportSelectedListToFile());
         }
+
     }
 
     /**
