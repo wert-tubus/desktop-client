@@ -2,6 +2,7 @@ package ru.wert.tubus.chogori.application.cardsbox.registrationBook;
 
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
+import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -93,8 +94,8 @@ public class RegistrationBookController implements UpdatableTabController {
      */
     @FXML
     public void initialize() {
-        new BtnUp<>(btnUp, lvListOFNumbers);
-        new BtnDown<>(btnDown, lvListOFNumbers);
+        new BtnUp<>(btnUp, lvListOFNumbers, () -> registeredPassportsManager.saveState());
+        new BtnDown<>(btnDown, lvListOFNumbers, () -> registeredPassportsManager.saveState());
 
         initializeSelectedPassportsList();
         initializeDecimalGroupsLists();

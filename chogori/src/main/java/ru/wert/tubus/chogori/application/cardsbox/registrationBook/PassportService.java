@@ -161,35 +161,6 @@ public class PassportService {
         }
     }
 
-    public List<Passport> getAllPassportsByDecimal(Decimal decimal){
-        List<Passport> filteredPassports = new ArrayList<>();
-        for(Passport p : getAllPassports()){
-            if(p.getPrefix().getName().equals(CH_DEFAULT_PREFIX.getName()) &&
-                    p.getNumber().contains(decimal.getName())){
-                filteredPassports.add(p);
-            }
-        }
-        filteredPassports.sort(Comparator.comparing(Passport::getNumber,
-                Comparator.nullsLast(Comparator.naturalOrder())));
-
-        return filteredPassports;
-    }
-
-    public boolean isPIKPassport(Passport passport) {
-        return passport.getPrefix() != null
-                && PIK_PREFIX.equals(passport.getPrefix().getName())
-                && passport.getNumber() != null
-                && passport.getNumber().matches("\\d{6}\\.\\d{3}");
-    }
-
-    public boolean isSketchPassport(Passport passport) {
-        boolean prefixCondition = passport.getPrefix() == null
-                || "-".equals(passport.getPrefix().getName());
-        return prefixCondition
-                && passport.getNumber() != null
-                && passport.getNumber().matches("Э\\d{5}");
-    }
-
     public void rollbackLastNumber(Decimal decimal, int reservedNumber) {
         try {
             Decimal freshDecimal = CH_DECIMALS.findById(decimal.getId());

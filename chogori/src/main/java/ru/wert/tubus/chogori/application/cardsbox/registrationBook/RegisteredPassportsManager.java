@@ -32,7 +32,6 @@ public class RegisteredPassportsManager {
 
         if (!exists) {
             registeredPassports.add(passport);
-            sortPassports();
             saveState();
             log.info("Паспорт {} добавлен в список выбранных", passport.getNumber());
         }
@@ -67,7 +66,6 @@ public class RegisteredPassportsManager {
         if (!invalidPassports.isEmpty()) {
             registeredPassports.clear();
             registeredPassports.addAll(validPassports);
-            sortPassports();
             saveState();
             log.info("Удалено {} неактуальных паспортов из списка выбранных", invalidPassports.size());
         }
@@ -80,7 +78,6 @@ public class RegisteredPassportsManager {
         int index = registeredPassports.indexOf(oldPassport);
         if (index >= 0) {
             registeredPassports.set(index, updatedPassport);
-            sortPassports();
             saveState();
         }
     }
@@ -107,7 +104,6 @@ public class RegisteredPassportsManager {
 
         if (!restored.isEmpty()) {
             registeredPassports.setAll(restored);
-            sortPassports();
             log.info("Восстановлено {} выбранных паспортов", restored.size());
 
             if (restored.size() != savedNumbers.size()) {
@@ -128,10 +124,6 @@ public class RegisteredPassportsManager {
         } else {
             RegisteredPassportsStorage.clearSavedState();
         }
-    }
-
-    private void sortPassports() {
-        registeredPassports.sort(Comparator.comparing(Passport::getNumber, Comparator.nullsLast(Comparator.naturalOrder())));
     }
 
     public ObservableList<Passport> getList() {

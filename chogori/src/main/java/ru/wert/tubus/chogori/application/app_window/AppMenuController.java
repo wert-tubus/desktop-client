@@ -351,10 +351,9 @@ public class AppMenuController {
 
 //        draftsMenu.getItems().add(draftsCabinetItem);
         draftsMenu.getItems().add(draftsItem);
-        draftsMenu.getItems().add(registrarItem);
-        draftsMenu.getItems().add(new SeparatorMenuItem());
         draftsMenu.getItems().add(changeHistoryItem);
-
+        draftsMenu.getItems().add(new SeparatorMenuItem());
+        draftsMenu.getItems().add(registrarItem);
 
         return draftsMenu;
     }
