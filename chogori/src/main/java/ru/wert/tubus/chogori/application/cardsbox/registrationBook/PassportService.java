@@ -142,7 +142,7 @@ public class PassportService {
 
     private List<Passport> getAllPassports() {
         try {
-            return ChogoriServices.CH_QUICK_PASSPORTS.findAll();
+            return ChogoriServices.CH_PASSPORTS.findAll();
         } catch (Exception e) {
             log.error("Ошибка при загрузке паспортов из БД", e);
             return new ArrayList<>();

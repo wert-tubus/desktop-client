@@ -349,11 +349,12 @@ public class AppMenuController {
         MenuItem registrarItem = new MenuItem("Журнал регистрации");
         registrarItem.setOnAction(this::openRegistrationBook);
 
-        draftsMenu.getItems().add(draftsCabinetItem);
+//        draftsMenu.getItems().add(draftsCabinetItem);
         draftsMenu.getItems().add(draftsItem);
+        draftsMenu.getItems().add(registrarItem);
         draftsMenu.getItems().add(new SeparatorMenuItem());
         draftsMenu.getItems().add(changeHistoryItem);
-        draftsMenu.getItems().add(registrarItem);
+
 
         return draftsMenu;
     }

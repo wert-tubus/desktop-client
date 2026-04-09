@@ -7,8 +7,7 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
 import ru.wert.tubus.client.interfaces.Item;
 
-import static ru.wert.tubus.chogori.images.BtnImages.BTN_ROLLDOWN_IMG;
-import static ru.wert.tubus.chogori.images.BtnImages.BTN_ROLLUP_IMG;
+import static ru.wert.tubus.chogori.images.BtnImages.*;
 
 public class BtnUp<T extends Item> {
 
@@ -18,7 +17,7 @@ public class BtnUp<T extends Item> {
         this.listView = listView;
 
         btnUp.setId("patchButton");
-        btnUp.setGraphic(new ImageView(BTN_ROLLUP_IMG));
+        btnUp.setGraphic(new ImageView(BTN_UP_IMG));
         btnUp.setTooltip(new Tooltip("Поднять"));
         btnUp.setOnAction(event -> moveSelectedItemUp());
         

@@ -7,6 +7,7 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
 import ru.wert.tubus.client.interfaces.Item;
 
+import static ru.wert.tubus.chogori.images.BtnImages.BTN_DOWN_IMG;
 import static ru.wert.tubus.chogori.images.BtnImages.BTN_ROLLDOWN_IMG;
 
 public class BtnDown<T extends Item> {
@@ -17,7 +18,7 @@ public class BtnDown<T extends Item> {
         this.lvListOFNumbers = lvListOFNumbers;
 
         btnDown.setId("patchButton");
-        btnDown.setGraphic(new ImageView(BTN_ROLLDOWN_IMG));
+        btnDown.setGraphic(new ImageView(BTN_DOWN_IMG));
         btnDown.setTooltip(new Tooltip("Опустить"));
         btnDown.setOnAction(event -> moveSelectedItemDown());
 

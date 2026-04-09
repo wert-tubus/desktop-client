@@ -139,8 +139,6 @@ public class RegistrationBookController implements UpdatableTabController {
                 lvDetails700, lvDetails745, lvAssm300, lvAssm400, lvMedicine, lvOther
         );
 
-        TableView<Passport> tvPIK = passportPIKController.getPassportsTable();
-
         for (ListView<Decimal> listView : listViews) {
             listView.setCellFactory(lv -> new ListCell<Decimal>() {
                 @Override
