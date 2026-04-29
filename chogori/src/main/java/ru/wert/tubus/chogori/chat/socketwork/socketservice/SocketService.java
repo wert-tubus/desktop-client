@@ -8,6 +8,7 @@ import javafx.concurrent.Task;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.chat.socketwork.ServiceMessaging;
 import ru.wert.tubus.client.entity.models.Message;
+import ru.wert.tubus.winform.statics.WinformStatic;
 
 import java.io.IOException;
 
@@ -96,7 +97,8 @@ public class SocketService {
 
     /** Запускает сервис сокета */
     public static void start() {
-        if (!socketService.isRunning()) {
+        if (!socketService.isRunning()
+                && WinformStatic.USE_CHAT_SERVER) { //Если чат-сервис нужен
             socketService.restart();
         }
     }
