@@ -16,16 +16,24 @@ public class BXUsers {
 
     public BXUsers(ComboBox<User> bxUsers, UserGroup userGroup) {
 
-        //!!!!!!!!!!!!!!!!!!!
         bxUsers.setEditable(false);
-
         bxUsers.setStyle("-fx-font-size: 24; -fx-background-color: white");
-        
+
         List<User> allUsers = new ArrayList<>();
-        for(User u: UserService.getInstance().findAll())
-            //Если userGroup == null добавляем всех пользователей
-            //Если userGroup == null добавляем пользователей определенной группы даже если они неактивны
-            if(u.getUserGroup().equals(userGroup) & u.isActive()) allUsers.add(u);
+
+        for(User u : UserService.getInstance().findAll()) {
+            // Если userGroup == null - добавляем всех активных пользователей
+            // Если userGroup != null - добавляем пользователей определенной группы (даже неактивных)
+            if(userGroup == null) {
+                if(u.isActive()) {
+                    allUsers.add(u);
+                }
+            } else {
+                if(u.getUserGroup().equals(userGroup)) {
+                    allUsers.add(u);
+                }
+            }
+        }
 
         ObservableList<User> activeUsers = FXCollections.observableArrayList(allUsers);
         activeUsers.sort(Comparator.comparing(User::getName));
