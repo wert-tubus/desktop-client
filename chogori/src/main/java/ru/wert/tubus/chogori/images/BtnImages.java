@@ -8,6 +8,7 @@ public class BtnImages {
     static int size24 = 24;
     static int size32 = 32;
     public static Image BTN_GLOBE_IMG = new Image(BtnImages.class.getResourceAsStream("/chogori-pics/btns/globe(32x32).png"), size16, size16, true, true);
+    public static Image BTN_EDIT_IMG = new Image(BtnImages.class.getResourceAsStream("/chogori-pics/btns/edit.png"), size16, size16, true, true);
     public static Image BTN_PIN_IMG = new Image(BtnImages.class.getResourceAsStream("/chogori-pics/btns/pin(32x32).png"), size16, size16, true, true);
     public static Image BTN_ROLLUP_IMG = new Image(BtnImages.class.getResourceAsStream("/chogori-pics/btns/rollup(32x32).png"), size16, size16, true, true);
     public static Image BTN_ROLLDOWN_IMG = new Image(BtnImages.class.getResourceAsStream("/chogori-pics/btns/rolldown(32x32).png"), size16, size16, true, true);

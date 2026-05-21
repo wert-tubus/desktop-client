@@ -121,17 +121,25 @@
                             <children>
                                 <VBox alignment="TOP_CENTER" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" spacing="3.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                                     <children>
-                              <Label maxWidth="1.7976931348623157E308" text="Описание по ЕСКД">
-                                 <font>
-                                    <Font name="System Italic" size="14.0" />
-                                 </font>
-                                 <padding>
-                                    <Insets left="10.0" />
-                                 </padding>
+                              <HBox alignment="CENTER_LEFT">
+                                 <children>
+                                    <Label maxWidth="1.7976931348623157E308" text="Описание по ЕСКД" HBox.hgrow="ALWAYS">
+                                       <font>
+                                          <Font name="System Italic" size="14.0" />
+                                       </font>
+                                       <VBox.margin>
+                                          <Insets top="4.0" />
+                                       </VBox.margin>
+                                       <HBox.margin>
+                                          <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                       </HBox.margin>
+                                    </Label>
+                                    <Button fx:id="btnEditDescription" mnemonicParsing="false" />
+                                 </children>
                                  <VBox.margin>
-                                    <Insets top="4.0" />
+                                    <Insets right="10.0" />
                                  </VBox.margin>
-                              </Label>
+                              </HBox>
                               <TextArea fx:id="taDescriptionESKD" editable="false" prefHeight="42.0" prefWidth="550.0" wrapText="true" VBox.vgrow="SOMETIMES" />
                               <HBox>
                                  <children>
@@ -161,7 +169,12 @@
                                         </ListView>
                                         <HBox alignment="BOTTOM_RIGHT" VBox.vgrow="NEVER">
                                             <children>
-                                                <Button fx:id="btnClear" mnemonicParsing="false" text="Очистить">
+                                    <Button fx:id="btnPrint" mnemonicParsing="false" prefWidth="78.0" text="Печать">
+                                       <HBox.margin>
+                                          <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                       </HBox.margin>
+                                    </Button>
+                                                <Button fx:id="btnClear" mnemonicParsing="false" prefWidth="78.0" text="Очистить">
                                                     <HBox.margin>
                                                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                     </HBox.margin>

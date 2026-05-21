@@ -6,7 +6,9 @@ import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -24,8 +26,11 @@ import ru.wert.tubus.winform.window_decoration.WindowDecoration;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_DECIMALS;
+import static ru.wert.tubus.chogori.images.BtnImages.BTN_DOWN_IMG;
+import static ru.wert.tubus.chogori.images.BtnImages.BTN_EDIT_IMG;
 import static ru.wert.tubus.winform.statics.WinformStatic.WF_MAIN_STAGE;
 import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
 
@@ -46,6 +51,7 @@ public class RegistrationBookController implements UpdatableTabController {
     @FXML private Button btnAddDecimalGroup;
     @FXML private Button btnClear;
     @FXML private Button btnSave;
+    @FXML private Button btnPrint;
     @FXML private Accordion accDecimalGroups;
 
 
@@ -72,12 +78,14 @@ public class RegistrationBookController implements UpdatableTabController {
 
     @FXML private Button btnUp;
     @FXML private Button btnDown;
+    @FXML private Button btnEditDescription;
 
     // ======================== СЕРВИСЫ И МЕНЕДЖЕРЫ ========================
 
     private final PassportService passportService = new PassportService();
     private RegisteredPassportsManager registeredPassportsManager;
     private final Map<DecimalGroupingService.DecimalGroup, ListView<Decimal>> groupToListViewMap = new EnumMap<>(DecimalGroupingService.DecimalGroup.class);
+    private final RegistrationBookPrintService printService = new RegistrationBookPrintService();
 
     @Setter private Passport_PatchController passportPIKController;
     @Setter private Passport_PatchController passportSketchController;
@@ -96,6 +104,7 @@ public class RegistrationBookController implements UpdatableTabController {
     public void initialize() {
         new BtnUp<>(btnUp, lvListOFNumbers, () -> registeredPassportsManager.saveState());
         new BtnDown<>(btnDown, lvListOFNumbers, () -> registeredPassportsManager.saveState());
+
 
         initializeSelectedPassportsList();
         initializeDecimalGroupsLists();
@@ -122,6 +131,7 @@ public class RegistrationBookController implements UpdatableTabController {
         lvSketches.setOnMouseClicked(event -> {
             Decimal selected = lvSketches.getSelectionModel().getSelectedItem();
             if (selected != null) {
+                showDescriptionESKD(selected);
                 if (event.getClickCount() == 2) {
                     // Двойной клик - создание эскизного паспорта
                     createSketchPassport(selected);
@@ -161,6 +171,7 @@ public class RegistrationBookController implements UpdatableTabController {
             listView.setOnMouseClicked(event -> {
                 Decimal selected = listView.getSelectionModel().getSelectedItem();
                 if (selected != null) {
+                    showDescriptionESKD(selected);
                     if (event.getClickCount() == 2) {
                         // Двойной клик - создание нового паспорта
                         createPIKPassport(selected);
@@ -168,7 +179,6 @@ public class RegistrationBookController implements UpdatableTabController {
                         // Одинарный клик - фильтрация таблицы
                         openPIKTab();
                         currentPIKFilterDecimal = selected;
-                        showDescriptionESKD(selected);
                         filterPIKTableByDecimal(selected);
                     }
                 }
@@ -356,8 +366,27 @@ public class RegistrationBookController implements UpdatableTabController {
         }
         if (btnSave != null) {
             btnSave.setOnAction(e -> exportSelectedListToFile());
+        }if (btnPrint != null) {
+                btnPrint.setOnAction(e -> printList());
+        }if (btnEditDescription != null) {
+            btnEditDescription.setId("patchButton");
+            btnEditDescription.setTooltip(new Tooltip("Редактировать описание"));
+            btnEditDescription.setGraphic(new ImageView(BTN_EDIT_IMG));
+            btnEditDescription.setOnAction(e -> editDescription());
+        }
+        
+    }
+
+    private void printList() {
+        if (registeredPassportsManager.isEmpty()) {
+            Warning1.create($ATTENTION, "Список пуст", "Нечего печатать");
+            return;
         }
 
+        printService.printPassportsList(registeredPassportsManager.getList());
+    }
+
+    private void editDescription() {
     }
 
     /**
@@ -445,13 +474,37 @@ public class RegistrationBookController implements UpdatableTabController {
      * @param decimal децимальная группа
      */
     private void createPIKPassport(Decimal decimal) {
-        try {
-            String nextNumber = passportService.getNextPIKNumber(decimal);
-            openRegistrationDialog("PIK", "Номер ПИК", nextNumber, decimal);
-        } catch (Exception e) {
-            log.error("Ошибка при создании паспорта ПИК", e);
-            Warning1.create("ОШИБКА!", "Не удалось создать паспорт ПИК", e.getMessage());
-        }
+        // Показываем индикацию загрузки
+        showLoadingCursorAndDisableControls();
+
+        CompletableFuture.supplyAsync(() -> {
+            try {
+                return passportService.getNextPIKNumber(decimal);
+            } catch (Exception e) {
+                log.error("Ошибка при получении следующего номера ПИК", e);
+                return null;
+            }
+        }).thenAccept(nextNumber -> {
+            Platform.runLater(() -> {
+                // Скрываем индикацию загрузки
+                hideLoadingCursorAndEnableControls();
+
+                if (nextNumber != null && !nextNumber.isEmpty()) {
+                    openRegistrationDialog("PIK", "Номер ПИК", nextNumber, decimal);
+                } else {
+                    Warning1.create("ОШИБКА!", "Не удалось получить следующий номер",
+                            "Проверьте подключение к базе данных");
+                }
+            });
+        }).exceptionally(ex -> {
+            log.error("Ошибка в асинхронной операции получения номера ПИК", ex);
+            Platform.runLater(() -> {
+                hideLoadingCursorAndEnableControls();
+                Warning1.create("ОШИБКА!", "Не удалось создать паспорт ПИК",
+                        ex.getMessage() != null ? ex.getMessage() : "Неизвестная ошибка");
+            });
+            return null;
+        });
     }
 
     /**
@@ -460,13 +513,95 @@ public class RegistrationBookController implements UpdatableTabController {
      * @param decimal децимальная группа
      */
     private void createSketchPassport(Decimal decimal) {
-        try {
-            String nextNumber = passportService.getNextSketchNumber(decimal);
-            openRegistrationDialog("SKETCH", "Эскизный номер", nextNumber, decimal);
-        } catch (Exception e) {
-            log.error("Ошибка при создании эскизного паспорта", e);
-            Warning1.create("ОШИБКА!", "Не удалось создать эскизный паспорт", e.getMessage());
+        // Показываем индикацию загрузки
+        showLoadingCursorAndDisableControls();
+
+        CompletableFuture.supplyAsync(() -> {
+            try {
+                return passportService.getNextSketchNumber(decimal);
+            } catch (Exception e) {
+                log.error("Ошибка при получении следующего эскизного номера", e);
+                return null;
+            }
+        }).thenAccept(nextNumber -> {
+            Platform.runLater(() -> {
+                // Скрываем индикацию загрузки
+                hideLoadingCursorAndEnableControls();
+
+                if (nextNumber != null && !nextNumber.isEmpty()) {
+                    openRegistrationDialog("SKETCH", "Эскизный номер", nextNumber, decimal);
+                } else {
+                    Warning1.create("ОШИБКА!", "Не удалось получить следующий эскизный номер",
+                            "Проверьте подключение к базе данных");
+                }
+            });
+        }).exceptionally(ex -> {
+            log.error("Ошибка в асинхронной операции получения эскизного номера", ex);
+            Platform.runLater(() -> {
+                hideLoadingCursorAndEnableControls();
+                Warning1.create("ОШИБКА!", "Не удалось создать эскизный паспорт",
+                        ex.getMessage() != null ? ex.getMessage() : "Неизвестная ошибка");
+            });
+            return null;
+        });
+    }
+
+    /**
+     * Показывает курсор загрузки и блокирует все контролы на форме
+     */
+    private void showLoadingCursorAndDisableControls() {
+        if (WF_MAIN_STAGE != null && WF_MAIN_STAGE.getScene() != null) {
+            Scene scene = WF_MAIN_STAGE.getScene();
+            scene.setCursor(javafx.scene.Cursor.WAIT);
         }
+
+        // Блокируем все контролы
+        disableAllControls(true);
+    }
+
+    /**
+     * Скрывает курсор загрузки и разблокирует все контролы на форме
+     */
+    private void hideLoadingCursorAndEnableControls() {
+        if (WF_MAIN_STAGE != null && WF_MAIN_STAGE.getScene() != null) {
+            Scene scene = WF_MAIN_STAGE.getScene();
+            scene.setCursor(javafx.scene.Cursor.DEFAULT);
+        }
+
+        // Разблокируем все контролы
+        disableAllControls(false);
+    }
+
+    /**
+     * Блокирует/разблокирует все контролы на форме
+     *
+     * @param disable true - блокировать, false - разблокировать
+     */
+    private void disableAllControls(boolean disable) {
+        // Кнопки
+        if (btnAddDecimalGroup != null) btnAddDecimalGroup.setDisable(disable);
+        if (btnClear != null) btnClear.setDisable(disable);
+        if (btnSave != null) btnSave.setDisable(disable);
+        if (btnUp != null) btnUp.setDisable(disable);
+        if (btnDown != null) btnDown.setDisable(disable);
+        if (btnEditDescription != null) btnEditDescription.setDisable(disable);
+
+        // Списки децимальных групп
+        if (lvSketches != null) lvSketches.setDisable(disable);
+        if (lvDetails700 != null) lvDetails700.setDisable(disable);
+        if (lvDetails745 != null) lvDetails745.setDisable(disable);
+        if (lvAssm300 != null) lvAssm300.setDisable(disable);
+        if (lvAssm400 != null) lvAssm400.setDisable(disable);
+        if (lvMedicine != null) lvMedicine.setDisable(disable);
+        if (lvOther != null) lvOther.setDisable(disable);
+
+        // Аккордеон
+        if (accDecimalGroups != null) accDecimalGroups.setDisable(disable);
+
+        // Текстовая область
+        if (taDescriptionESKD != null) taDescriptionESKD.setDisable(disable);
+
+        log.debug("Все контролы {}блокированы", disable ? "за" : "раз");
     }
 
     /**
@@ -509,7 +644,7 @@ public class RegistrationBookController implements UpdatableTabController {
      * @param decimal децимальная группа
      */
     private void refreshAfterPassportCreation(Passport savedPassport, Decimal decimal) {
-        // Просто раскрываем панель с нужной группой
+        // Раскрываем панель с нужной группой
         expandTitledPane(DecimalGroupingService.determineGroup(decimal));
 
         // Обновляем таблицы
