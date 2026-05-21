@@ -2,13 +2,11 @@ package ru.wert.tubus.chogori.application.cardsbox.registrationBook;
 
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
-import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.control.*;
-import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -28,8 +26,6 @@ import java.io.IOException;
 import java.util.*;
 
 import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_DECIMALS;
-import static ru.wert.tubus.chogori.images.BtnImages.BTN_ROLLDOWN_IMG;
-import static ru.wert.tubus.chogori.images.BtnImages.BTN_ROLLUP_IMG;
 import static ru.wert.tubus.winform.statics.WinformStatic.WF_MAIN_STAGE;
 import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
 
@@ -51,6 +47,10 @@ public class RegistrationBookController implements UpdatableTabController {
     @FXML private Button btnClear;
     @FXML private Button btnSave;
     @FXML private Accordion accDecimalGroups;
+
+
+    @FXML
+    TextArea taDescriptionESKD;
 
     // Списки децимальных групп
     @FXML private ListView<Decimal> lvSketches;
@@ -165,11 +165,19 @@ public class RegistrationBookController implements UpdatableTabController {
                         // Одинарный клик - фильтрация таблицы
                         openPIKTab();
                         currentPIKFilterDecimal = selected;
+                        showDescriptionESKD(selected);
                         filterPIKTableByDecimal(selected);
                     }
                 }
             });
         }
+    }
+
+    /**
+     * Метод выводит описание децимальной группы по ЕСКД
+     */
+    private void showDescriptionESKD(Decimal decimal) {
+        taDescriptionESKD.setText(decimal.getDescription());
     }
 
     /**
