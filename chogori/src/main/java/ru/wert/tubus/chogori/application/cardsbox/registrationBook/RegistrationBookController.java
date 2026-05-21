@@ -105,8 +105,11 @@ public class RegistrationBookController implements UpdatableTabController {
         // Восстановление состояния
         registeredPassportsManager.restoreState();
 
-        Platform.runLater(this::setupSketchListViews);
-        Platform.runLater(this::setupPIKListViews);
+        Platform.runLater(() -> {
+            setupSketchListView();
+            setupPIKListViews();
+            expandGroup745();
+        });
     }
 
     /**
@@ -115,7 +118,7 @@ public class RegistrationBookController implements UpdatableTabController {
      * Двойной клик - создание эскизного паспорта.
      * Одинарный клик - открытие вкладки с эскизами.
      */
-    private void setupSketchListViews() {
+    private void setupSketchListView() {
         lvSketches.setOnMouseClicked(event -> {
             Decimal selected = lvSketches.getSelectionModel().getSelectedItem();
             if (selected != null) {
@@ -170,6 +173,17 @@ public class RegistrationBookController implements UpdatableTabController {
                     }
                 }
             });
+        }
+    }
+
+    /**
+     * Открытие панели с группой 745 при загрузке контроллера.
+     * Приоритетно раскрывается DETAILS_745, если данные уже загружены.
+     */
+    private void expandGroup745() {
+        if (accDecimalGroups != null && tpDetails745 != null) {
+            accDecimalGroups.setExpandedPane(tpDetails745);
+            log.debug("Панель DETAILS_745 раскрыта при загрузке");
         }
     }
 
