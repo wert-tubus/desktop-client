@@ -147,6 +147,7 @@ public class RegistrationBookController implements UpdatableTabController {
      * Настраивает списки децимальных групп для ПИК-номеров.
      * Одинарный клик - фильтрация таблицы по выбранной decimal.
      * Двойной клик - создание нового паспорта.
+     * Правый клик - открытие контекстного меню для редактирования.
      */
     private void setupPIKListViews() {
         List<ListView<Decimal>> listViews = Arrays.asList(
@@ -162,7 +163,28 @@ public class RegistrationBookController implements UpdatableTabController {
                         setText(null);
                         setStyle(null);
                     } else {
-                        setText(item.getName());
+                        String number = item.getName();
+                        setText(number);
+
+                        // Раскрашиваем номер в зависимости от первой цифры
+                        if (number != null && !number.isEmpty()) {
+                            String firstDigit = number.substring(0, 1);
+                            switch (firstDigit) {
+                                case "7":
+                                    setStyle("-fx-text-fill: darkgreen; -fx-font-size: 14; -fx-font-weight: bold;");
+                                    break;
+                                case "3":
+                                    setStyle("-fx-text-fill: darkblue; -fx-font-size: 14; -fx-font-weight: bold;");
+                                    break;
+                                case "4":
+                                    setStyle("-fx-text-fill: saddlebrown; -fx-font-size: 14; -fx-font-weight: bold;");
+                                    break;
+                                default:
+                                    setStyle("-fx-text-fill: black; -fx-font-size: 14; -fx-font-weight: bold;");
+                            }
+                        } else {
+                            setStyle("-fx-text-fill: black; -fx-font-size: 14; -fx-font-weight: bold;");
+                        }
                     }
                 }
             });
@@ -185,15 +207,17 @@ public class RegistrationBookController implements UpdatableTabController {
                 Decimal selected = listView.getSelectionModel().getSelectedItem();
                 if (selected != null) {
                     showDescriptionESKD(selected);
-                    if (event.getClickCount() == 2) {
+
+                    if (event.getClickCount() == 2 && event.getButton().equals(MouseButton.PRIMARY)) {
                         // Двойной клик - создание нового паспорта
                         createPIKPassport(selected);
-                    } else if (event.getClickCount() == 1) {
-                        // Одинарный клик - фильтрация таблицы
+                    } else if (event.getClickCount() == 1 && event.getButton().equals(MouseButton.PRIMARY)) {
+                        // Одинарный левый клик - фильтрация таблицы
                         openPIKTab();
                         currentPIKFilterDecimal = selected;
                         filterPIKTableByDecimal(selected);
                     }
+                    // Правый клик обрабатывается контекстным меню, ничего не делаем
                 }
             });
         }
@@ -465,8 +489,7 @@ public class RegistrationBookController implements UpdatableTabController {
                     }
 
                     log.info("Децимальная группа успешно обновлена: {}", updatedDecimal.toUsefulString());
-                    Warning1.create("ОТЛИЧНО!", "Описание обновлено",
-                            "Децимальная группа '" + updatedDecimal.getName() + "' успешно обновлена");
+
                 }
             }
         } catch (IOException e) {
