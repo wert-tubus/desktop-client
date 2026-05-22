@@ -52,6 +52,7 @@ public class RegistrationBookController implements UpdatableTabController {
     @FXML private Button btnAddDecimalGroup;
     @FXML private Button btnClear;
     @FXML private Button btnSave;
+    @FXML private Button btnLoad;
     @FXML private Button btnPrint;
     @FXML private Accordion accDecimalGroups;
 
@@ -88,6 +89,7 @@ public class RegistrationBookController implements UpdatableTabController {
     private RegisteredPassportsManager registeredPassportsManager;
     private final Map<DecimalGroupingService.DecimalGroup, ListView<Decimal>> groupToListViewMap = new EnumMap<>(DecimalGroupingService.DecimalGroup.class);
     private final RegistrationBookPrintService printService = new RegistrationBookPrintService();
+    private PassportListFileManager fileManager;
 
     @Setter private Passport_PatchController passportPIKController;
     @Setter private Passport_PatchController passportSketchController;
@@ -349,6 +351,16 @@ public class RegistrationBookController implements UpdatableTabController {
         ObservableList<Passport> selectedList = FXCollections.observableArrayList();
         lvListOFNumbers.setItems(selectedList);
         registeredPassportsManager = new RegisteredPassportsManager(selectedList, passportService);
+
+        // Инициализация менеджера файлов
+        fileManager = new PassportListFileManager(
+                passportService,
+                passport -> registeredPassportsManager.addPassport(passport),
+                () -> registeredPassportsManager.clear(),
+                () -> refreshTablesPreservingState(),
+                this::showLoadingCursorAndDisableControls,
+                this::hideLoadingCursorAndEnableControls
+        );
 
         lvListOFNumbers.setCellFactory(lv -> new ListCell<Passport>() {
             @Override
@@ -1013,17 +1025,15 @@ public class RegistrationBookController implements UpdatableTabController {
      */
     @FXML
     private void exportSelectedListToFile() {
-        if (registeredPassportsManager.isEmpty()) {
-            Warning1.create($ATTENTION, "Список пуст", "Нечего экспортировать");
-            return;
-        }
+        fileManager.exportToFile(registeredPassportsManager.getList(), "Новые номера.txt");
+    }
 
-        boolean exported = RegisteredPassportsStorage.exportRegisteredPassportsToFile(
-                registeredPassportsManager.getList(), "Новые номера.txt");
-
-        if (exported) {
-            Warning1.create("ОТЛИЧНО!", "Экспорт выполнен", "Список успешно сохранен!");
-        }
+    /**
+     * Загрузка списка выбранных паспортов из файла.
+     */
+    @FXML
+    private void loadSelectedList() {
+        fileManager.loadFromFile();
     }
 
     // ======================== ОБНОВЛЕНИЕ ВКЛАДКИ ========================

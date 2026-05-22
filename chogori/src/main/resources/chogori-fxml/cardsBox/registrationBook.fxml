@@ -184,6 +184,11 @@
                                                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                     </HBox.margin>
                                                 </Button>
+                                    <Button fx:id="btnLoad" mnemonicParsing="false" text="Загрузить">
+                                       <HBox.margin>
+                                          <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                       </HBox.margin>
+                                    </Button>
                                             </children>
                                             <padding>
                                                 <Insets right="5.0" />
