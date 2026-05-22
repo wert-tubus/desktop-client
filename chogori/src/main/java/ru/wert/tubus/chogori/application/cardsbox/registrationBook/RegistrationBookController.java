@@ -167,6 +167,19 @@ public class RegistrationBookController implements UpdatableTabController {
                 }
             });
 
+            // Добавляем контекстное меню для правой кнопки мыши
+            ContextMenu contextMenu = new ContextMenu();
+            MenuItem editItem = new MenuItem("Изменить");
+            editItem.setOnAction(event -> {
+                Decimal selected = listView.getSelectionModel().getSelectedItem();
+                if (selected != null) {
+                    editDescription();
+                }
+            });
+            contextMenu.getItems().add(editItem);
+
+            listView.setContextMenu(contextMenu);
+
             // Добавляем обработчик клика мыши для фильтрации таблицы
             listView.setOnMouseClicked(event -> {
                 Decimal selected = listView.getSelectionModel().getSelectedItem();
