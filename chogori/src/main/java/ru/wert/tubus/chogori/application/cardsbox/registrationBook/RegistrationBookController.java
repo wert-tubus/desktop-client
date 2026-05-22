@@ -76,6 +76,7 @@ public class RegistrationBookController implements UpdatableTabController {
     @FXML private TitledPane tpMedicine;
     @FXML private TitledPane tpOther;
 
+    @FXML private Button btnAddSeparator;
     @FXML private Button btnUp;
     @FXML private Button btnDown;
     @FXML private Button btnEditDescription;
@@ -165,26 +166,6 @@ public class RegistrationBookController implements UpdatableTabController {
                     } else {
                         String number = item.getName();
                         setText(number);
-
-                        // Раскрашиваем номер в зависимости от первой цифры
-                        if (number != null && !number.isEmpty()) {
-                            String firstDigit = number.substring(0, 1);
-                            switch (firstDigit) {
-                                case "7":
-                                    setStyle("-fx-text-fill: darkgreen; -fx-font-size: 14; -fx-font-weight: bold;");
-                                    break;
-                                case "3":
-                                    setStyle("-fx-text-fill: darkblue; -fx-font-size: 14; -fx-font-weight: bold;");
-                                    break;
-                                case "4":
-                                    setStyle("-fx-text-fill: saddlebrown; -fx-font-size: 14; -fx-font-weight: bold;");
-                                    break;
-                                default:
-                                    setStyle("-fx-text-fill: black; -fx-font-size: 14; -fx-font-weight: bold;");
-                            }
-                        } else {
-                            setStyle("-fx-text-fill: black; -fx-font-size: 14; -fx-font-weight: bold;");
-                        }
                     }
                 }
             });
@@ -341,8 +322,35 @@ public class RegistrationBookController implements UpdatableTabController {
                 super.updateItem(item, empty);
                 if (empty || item == null) {
                     setText(null);
+                    setStyle(null);
                 } else {
                     setText(item.toUsefulString());
+
+                    // Устанавливаем цвет в зависимости от типа чертежа или первой цифры номера
+                    String number = item.getNumber();
+                    if (number != null && !number.isEmpty()) {
+                        // Проверка на эскизный номер (начинается с буквы Э)
+                        if (number.startsWith("Э")) {
+                            setStyle("-fx-text-fill: #7322a3; -fx-font-size: 14; -fx-font-weight: bold;");
+                        } else {
+                            switch (number.substring(0, 1)) {
+                                case "7":
+                                    setStyle("-fx-text-fill: darkgreen; -fx-font-size: 14; -fx-font-weight: bold;");
+                                    break;
+                                case "3":
+                                    setStyle("-fx-text-fill: darkblue; -fx-font-size: 14; -fx-font-weight: bold;");
+                                    break;
+                                case "4":
+                                    setStyle("-fx-text-fill: saddlebrown; -fx-font-size: 14; -fx-font-weight: bold;");
+                                    break;
+                                default:
+                                    setStyle("-fx-text-fill: black; -fx-font-size: 14; -fx-font-weight: bold;");
+                            }
+                        }
+                    } else {
+                        setStyle("-fx-text-fill: black; -fx-font-size: 14; -fx-font-weight: bold;");
+                    }
+
                     setOnMouseClicked(e -> {
                         if (e.getButton().equals(MouseButton.PRIMARY) && e.getClickCount() == 2) {
                             PassportInfo_Patch.create(item);
