@@ -30,7 +30,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_DECIMALS;
-import static ru.wert.tubus.chogori.images.BtnImages.BTN_DOWN_IMG;
 import static ru.wert.tubus.chogori.images.BtnImages.BTN_EDIT_IMG;
 import static ru.wert.tubus.winform.statics.WinformStatic.WF_MAIN_STAGE;
 import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
@@ -56,9 +55,7 @@ public class RegistrationBookController implements UpdatableTabController {
     @FXML private Button btnPrint;
     @FXML private Accordion accDecimalGroups;
 
-
-    @FXML
-    TextArea taDescriptionESKD;
+    @FXML private TextArea taDescriptionESKD;
 
     // Списки децимальных групп
     @FXML private ListView<Decimal> lvSketches;
@@ -106,14 +103,13 @@ public class RegistrationBookController implements UpdatableTabController {
      */
     @FXML
     public void initialize() {
-        new BtnUp<>(btnUp, lvListOFNumbers, () -> registeredPassportsManager.saveState());
-        new BtnDown<>(btnDown, lvListOFNumbers, () -> registeredPassportsManager.saveState());
-
-
         initializeSelectedPassportsList();
         initializeDecimalGroupsLists();
         setupButtonHandlers();
         setupContextMenus();
+
+        new BtnUp<>(btnUp, lvListOFNumbers, () -> registeredPassportsManager.saveState());
+        new BtnDown<>(btnDown, lvListOFNumbers, () -> registeredPassportsManager.saveState());
 
         // Восстановление состояния
         registeredPassportsManager.restoreState();
@@ -255,7 +251,9 @@ public class RegistrationBookController implements UpdatableTabController {
      * Метод выводит описание децимальной группы по ЕСКД
      */
     private void showDescriptionESKD(Decimal decimal) {
-        taDescriptionESKD.setText(decimal.getDescription());
+        if (taDescriptionESKD != null && decimal != null) {
+            taDescriptionESKD.setText(decimal.getDescription());
+        }
     }
 
     /**
@@ -316,7 +314,7 @@ public class RegistrationBookController implements UpdatableTabController {
      * Открывает вкладку с ПИК-номерами и прокручивает таблицу к последнему элементу.
      */
     private void openPIKTab() {
-        if (passportPIKController != null && cardsBoxController.getTabPIK() != null) {
+        if (passportPIKController != null && cardsBoxController != null && cardsBoxController.getTabPIK() != null) {
             // Активируем вкладку с ПИК-паспортами
             cardsBoxController.getTabPIK().getTabPane().getSelectionModel()
                     .select(cardsBoxController.getTabPIK());
@@ -332,12 +330,12 @@ public class RegistrationBookController implements UpdatableTabController {
      * Открывает вкладку с эскизными номерами (все эскизы, без фильтрации).
      */
     private void openSketchTab() {
-        if (passportSketchController != null && cardsBoxController.getTabSketch() != null) {
+        if (passportSketchController != null && cardsBoxController != null && cardsBoxController.getTabSketch() != null) {
             // Активируем вкладку с эскизами
             cardsBoxController.getTabSketch().getTabPane().getSelectionModel()
                     .select(cardsBoxController.getTabSketch());
             TableView<Passport> tvSketches = passportSketchController.getPassportsTable();
-            if (!tvSketches.getItems().isEmpty()) {
+            if (tvSketches != null && !tvSketches.getItems().isEmpty()) {
                 tvSketches.scrollTo(tvSketches.getItems().size() - 1);
             }
         }
@@ -379,7 +377,8 @@ public class RegistrationBookController implements UpdatableTabController {
                         if (number.startsWith("Э")) {
                             setStyle("-fx-text-fill: #7322a3; -fx-font-size: 14; -fx-font-weight: bold;");
                         } else {
-                            switch (number.substring(0, 1)) {
+                            String firstChar = number.substring(0, 1);
+                            switch (firstChar) {
                                 case "7":
                                     setStyle("-fx-text-fill: darkgreen; -fx-font-size: 14; -fx-font-weight: bold;");
                                     break;
@@ -457,15 +456,19 @@ public class RegistrationBookController implements UpdatableTabController {
         }
         if (btnSave != null) {
             btnSave.setOnAction(e -> exportSelectedListToFile());
-        }if (btnPrint != null) {
-                btnPrint.setOnAction(e -> printList());
-        }if (btnEditDescription != null) {
+        }
+        if (btnLoad != null) {
+            btnLoad.setOnAction(e -> loadSelectedList());
+        }
+        if (btnPrint != null) {
+            btnPrint.setOnAction(e -> printList());
+        }
+        if (btnEditDescription != null) {
             btnEditDescription.setId("patchButton");
             btnEditDescription.setTooltip(new Tooltip("Редактировать описание"));
             btnEditDescription.setGraphic(new ImageView(BTN_EDIT_IMG));
             btnEditDescription.setOnAction(e -> editDescription());
         }
-        
     }
 
     /**
@@ -481,7 +484,7 @@ public class RegistrationBookController implements UpdatableTabController {
     }
 
     /**
-     * Изменение описания децимальное группы. Вызывается полное окно для редактирования Decimal
+     * Изменение описания децимальной группы. Вызывается полное окно для редактирования Decimal
      */
     private void editDescription() {
         // Ищем выбранный Decimal во всех списках
@@ -517,10 +520,6 @@ public class RegistrationBookController implements UpdatableTabController {
             // Устанавливаем данные для редактирования через setDataToEdit
             controller.setDataToEdit(selected);
 
-            // Дополнительно устанавливаем editMode = true через публичный метод
-            // (это нужно, так как setDataToEdit не устанавливает editingDecimal)
-            // В DecimalFormController уже есть метод setDataToEdit, который устанавливает editMode = true
-
             new WindowDecoration("Редактирование описания", parent, false, WF_MAIN_STAGE, true);
 
             if (controller.isAccepted()) {
@@ -543,7 +542,6 @@ public class RegistrationBookController implements UpdatableTabController {
                     }
 
                     log.info("Децимальная группа успешно обновлена: {}", updatedDecimal.toUsefulString());
-
                 }
             }
         } catch (IOException e) {
@@ -762,6 +760,8 @@ public class RegistrationBookController implements UpdatableTabController {
         if (btnAddDecimalGroup != null) btnAddDecimalGroup.setDisable(disable);
         if (btnClear != null) btnClear.setDisable(disable);
         if (btnSave != null) btnSave.setDisable(disable);
+        if (btnLoad != null) btnLoad.setDisable(disable);
+        if (btnPrint != null) btnPrint.setDisable(disable);
         if (btnUp != null) btnUp.setDisable(disable);
         if (btnDown != null) btnDown.setDisable(disable);
         if (btnEditDescription != null) btnEditDescription.setDisable(disable);
@@ -1025,6 +1025,11 @@ public class RegistrationBookController implements UpdatableTabController {
      */
     @FXML
     private void exportSelectedListToFile() {
+        if (fileManager == null) {
+            log.error("FileManager не инициализирован");
+            Warning1.create("ОШИБКА!", "Системная ошибка", "Менеджер файлов не инициализирован");
+            return;
+        }
         fileManager.exportToFile(registeredPassportsManager.getList(), "Новые номера.txt");
     }
 
@@ -1033,6 +1038,11 @@ public class RegistrationBookController implements UpdatableTabController {
      */
     @FXML
     private void loadSelectedList() {
+        if (fileManager == null) {
+            log.error("FileManager не инициализирован");
+            Warning1.create("ОШИБКА!", "Системная ошибка", "Менеджер файлов не инициализирован");
+            return;
+        }
         fileManager.loadFromFile();
     }
 

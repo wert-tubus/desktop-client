@@ -7,17 +7,19 @@ import javafx.scene.control.ButtonType;
 import javafx.stage.FileChooser;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.client.entity.models.Passport;
+import ru.wert.tubus.client.entity.models.Prefix;
+import ru.wert.tubus.client.entity.serviceREST.PrefixService;
 import ru.wert.tubus.winform.warnings.Warning1;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_PASSPORTS;
 import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
 
 /**
@@ -28,11 +30,15 @@ import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
 public class PassportListFileManager {
 
     private final PassportService passportService;
+    private final PrefixService prefixService;
     private final Consumer<Passport> addPassportConsumer;
     private final Runnable clearListRunnable;
     private final Runnable refreshTablesRunnable;
     private final Runnable showLoadingRunnable;
     private final Runnable hideLoadingRunnable;
+
+    // Кэш префиксов для быстрого доступа
+    private Map<String, Prefix> prefixCache;
 
     /**
      * Конструктор менеджера.
@@ -51,11 +57,29 @@ public class PassportListFileManager {
                                    Runnable showLoadingRunnable,
                                    Runnable hideLoadingRunnable) {
         this.passportService = passportService;
+        this.prefixService = PrefixService.getInstance();
         this.addPassportConsumer = addPassportConsumer;
         this.clearListRunnable = clearListRunnable;
         this.refreshTablesRunnable = refreshTablesRunnable;
         this.showLoadingRunnable = showLoadingRunnable;
         this.hideLoadingRunnable = hideLoadingRunnable;
+        initPrefixCache();
+    }
+
+    /**
+     * Инициализация кэша префиксов.
+     */
+    private void initPrefixCache() {
+        prefixCache = new HashMap<>();
+        try {
+            List<Prefix> prefixes = prefixService.findAll();
+            for (Prefix prefix : prefixes) {
+                prefixCache.put(prefix.getName(), prefix);
+            }
+            log.info("Загружено {} префиксов в кэш", prefixCache.size());
+        } catch (Exception e) {
+            log.error("Ошибка при загрузке префиксов", e);
+        }
     }
 
     /**
@@ -100,17 +124,17 @@ public class PassportListFileManager {
             return;
         }
 
-        List<String> passportNumbers = loadPassportNumbersFromFile(selectedFile);
-        if (passportNumbers.isEmpty()) {
+        List<PassportInfo> passportInfos = loadPassportInfosFromFile(selectedFile);
+        if (passportInfos.isEmpty()) {
             Warning1.create($ATTENTION, "Файл пуст или имеет неверный формат",
                     "Не удалось загрузить номера из файла");
             return;
         }
 
         // Показываем диалог выбора действия
-        LoadAction action = showLoadActionDialog(passportNumbers.size());
+        LoadAction action = showLoadActionDialog(passportInfos.size());
         if (action == null) {
-            return; // Пользователь отменил
+            return;
         }
 
         // Показываем индикацию загрузки
@@ -118,7 +142,7 @@ public class PassportListFileManager {
             showLoadingRunnable.run();
         }
 
-        CompletableFuture.supplyAsync(() -> loadPassportsFromDatabase(passportNumbers))
+        CompletableFuture.supplyAsync(() -> loadPassportsFromDatabase(passportInfos))
                 .thenAccept(passports -> {
                     Platform.runLater(() -> {
                         if (hideLoadingRunnable != null) {
@@ -254,6 +278,7 @@ public class PassportListFileManager {
 
     /**
      * Форматирует список паспортов для экспорта в текстовый файл.
+     * Сохраняет в формате "номер" для простоты последующей загрузки.
      */
     private String formatPassportsForExport(List<Passport> passports) {
         StringBuilder content = new StringBuilder();
@@ -263,7 +288,7 @@ public class PassportListFileManager {
 
         for (int i = 0; i < passports.size(); i++) {
             Passport p = passports.get(i);
-            content.append(String.format("%d. %s\n", i + 1, p.toUsefulString()));
+            content.append(String.format("%d. %s\n", i + 1, p.getNumber()));
         }
 
         content.append("\n").append("Всего номеров: ").append(passports.size());
@@ -271,15 +296,18 @@ public class PassportListFileManager {
     }
 
     /**
-     * Загружает номера паспортов из текстового файла.
+     * Загружает информацию о паспортах из текстового файла.
+     *
+     * @param file файл для загрузки
+     * @return список объектов PassportInfo (префикс и номер)
      */
-    private List<String> loadPassportNumbersFromFile(File file) {
-        List<String> passportNumbers = new ArrayList<>();
+    private List<PassportInfo> loadPassportInfosFromFile(File file) {
+        List<PassportInfo> passportInfos = new ArrayList<>();
 
         try {
             if (!file.exists()) {
                 log.error("Файл не существует: {}", file.getAbsolutePath());
-                return passportNumbers;
+                return passportInfos;
             }
 
             List<String> lines = Files.readAllLines(file.toPath());
@@ -294,64 +322,151 @@ public class PassportListFileManager {
                     continue;
                 }
 
-                // Ищем строки с номерами в формате "1. 700-123456"
+                String content = line;
+
+                // Удаляем нумерацию в начале строки "1. "
                 if (line.matches("^\\d+\\..*")) {
                     int dotIndex = line.indexOf('.');
                     if (dotIndex > 0 && dotIndex + 1 < line.length()) {
-                        String number = line.substring(dotIndex + 1).trim();
-                        if (!number.isEmpty()) {
-                            passportNumbers.add(number);
-                        }
+                        content = line.substring(dotIndex + 1).trim();
                     }
                 }
-                // Если файл просто содержит список номеров (по одному в строке)
-                else if (!line.isEmpty() && isValidPassportNumberFormat(line)) {
-                    passportNumbers.add(line);
+
+                if (content.isEmpty()) {
+                    continue;
+                }
+
+                // Извлекаем префикс и номер
+                PassportInfo passportInfo = extractPassportInfo(content);
+                if (passportInfo != null) {
+                    passportInfos.add(passportInfo);
+                    log.debug("Извлечен паспорт: prefix='{}', number='{}' из строки: '{}'",
+                            passportInfo.getPrefixName(), passportInfo.getNumber(), line);
                 }
             }
 
-            log.info("Загружено {} номеров паспортов из файла {}", passportNumbers.size(), file.getAbsolutePath());
+            log.info("Загружено {} паспортов из файла {}", passportInfos.size(), file.getAbsolutePath());
 
         } catch (IOException e) {
             log.error("Ошибка при загрузке номеров из файла", e);
         }
 
-        return passportNumbers;
+        return passportInfos;
     }
 
     /**
-     * Проверка формата номера паспорта.
+     * Извлекает информацию о паспорте из строки.
+     *
+     * Примеры:
+     * "700000.001" -> prefix=null, number="700000.001"
+     * "ПИК.700000.001 Деталь 01" -> prefix="ПИК", number="700000.001"
+     * "Э12345" -> prefix="Э", number="12345"
+     *
+     * @param rawString исходная строка
+     * @return объект PassportInfo или null
      */
-    private boolean isValidPassportNumberFormat(String number) {
-        if (number == null || number.isEmpty()) {
-            return false;
+    private PassportInfo extractPassportInfo(String rawString) {
+        if (rawString == null || rawString.isEmpty()) {
+            return null;
         }
-        // Эскизный номер (начинается с Э)
-        if (number.startsWith("Э") && number.length() > 1) {
-            return true;
-        }
-        // ПИК номер (начинается с цифры)
-        return number.length() > 0 && Character.isDigit(number.charAt(0));
-    }
 
-    /**
-     * Загружает полные объекты Passport из базы данных по номерам.
-     */
-    private List<Passport> loadPassportsFromDatabase(List<String> passportNumbers) {
-        List<Passport> passports = new ArrayList<>();
-        for (String number : passportNumbers) {
-            try {
-                Passport passport = passportService.getPassportByNumber(number);
-                if (passport != null) {
-                    passports.add(passport);
-                } else {
-                    log.warn("Паспорт с номером {} не найден в базе данных", number);
-                }
-            } catch (Exception e) {
-                log.error("Ошибка при загрузке паспорта {}", number, e);
+        // Эскизный номер (начинается с буквы Э)
+        if (rawString.startsWith("Э")) {
+            String numbers = rawString.substring(1).replaceAll("[^0-9]", "");
+            if (!numbers.isEmpty()) {
+                return new PassportInfo("Э", numbers);
+            }
+            return null;
+        }
+
+        // ПИК номер
+        String prefixName = null;
+        String number = null;
+
+        // Удаляем префикс "ПИК." если есть
+        if (rawString.startsWith("ПИК.")) {
+            prefixName = "ПИК";
+            String afterPrefix = rawString.substring(4);
+            // Извлекаем номер (цифры.цифры)
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\d+\\.\\d+)");
+            java.util.regex.Matcher matcher = pattern.matcher(afterPrefix);
+            if (matcher.find()) {
+                number = matcher.group(1);
+            }
+        } else {
+            // Пробуем извлечь номер напрямую (формат "700000.001")
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\d+\\.\\d+)");
+            java.util.regex.Matcher matcher = pattern.matcher(rawString);
+            if (matcher.find()) {
+                number = matcher.group(1);
             }
         }
+
+        if (number != null && !number.isEmpty()) {
+            return new PassportInfo(prefixName, number);
+        }
+
+        log.warn("Не удалось извлечь информацию о паспорте из строки: {}", rawString);
+        return null;
+    }
+
+    /**
+     * Загружает полные объекты Passport из базы данных по информации о префиксе и номере.
+     */
+    private List<Passport> loadPassportsFromDatabase(List<PassportInfo> passportInfos) {
+        List<Passport> passports = new ArrayList<>();
+
+        for (PassportInfo info : passportInfos) {
+            try {
+                Passport passport = null;
+
+                // Если указан префикс, используем findByPrefixIdAndNumber
+                if (info.getPrefixName() != null && !info.getPrefixName().isEmpty()) {
+                    Prefix prefix = prefixCache.get(info.getPrefixName());
+                    if (prefix != null) {
+                        passport = CH_PASSPORTS.findByPrefixIdAndNumber(prefix, info.getNumber());
+                    } else {
+                        log.warn("Префикс {} не найден в кэше", info.getPrefixName());
+                    }
+                }
+
+                // Если префикс не указан или не найден, пробуем найти по номеру
+                if (passport == null) {
+                    // Ищем по номеру через findAllByName или другой метод
+                    // Это зависит от реализации API
+                    passport = findPassportByNumber(info.getNumber());
+                }
+
+                if (passport != null) {
+                    passports.add(passport);
+                    log.debug("Загружен паспорт: {}", passport.getNumber());
+                } else {
+                    log.warn("Паспорт с номером {} не найден в базе данных", info.getNumber());
+                }
+            } catch (Exception e) {
+                log.error("Ошибка при загрузке паспорта {}", info.getNumber(), e);
+            }
+        }
+
         return passports;
+    }
+
+    /**
+     * Поиск паспорта по номеру (без указания префикса).
+     * Пробует найти среди всех префиксов.
+     */
+    private Passport findPassportByNumber(String number) {
+        for (Prefix prefix : prefixCache.values()) {
+            try {
+                Passport passport = CH_PASSPORTS.findByPrefixIdAndNumber(prefix, number);
+                if (passport != null) {
+                    return passport;
+                }
+            } catch (Exception e) {
+                log.debug("Не найден паспорт с префиксом {} и номером {}", prefix.getName(), number);
+            }
+        }
+        return null;
     }
 
     /**
@@ -396,6 +511,32 @@ public class PassportListFileManager {
             return LoadAction.APPEND;
         } else {
             return null;
+        }
+    }
+
+    /**
+     * Внутренний класс для хранения информации о паспорте.
+     */
+    private static class PassportInfo {
+        private final String prefixName;
+        private final String number;
+
+        public PassportInfo(String prefixName, String number) {
+            this.prefixName = prefixName;
+            this.number = number;
+        }
+
+        public String getPrefixName() {
+            return prefixName;
+        }
+
+        public String getNumber() {
+            return number;
+        }
+
+        @Override
+        public String toString() {
+            return (prefixName != null ? prefixName + "." : "") + number;
         }
     }
 
