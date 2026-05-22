@@ -9,6 +9,7 @@ import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -125,14 +126,31 @@ public class RegistrationBookController implements UpdatableTabController {
     /**
      * Настраивает списки децимальных групп для эскизных номеров.
      * Эскизы НЕ фильтруются по decimal, всегда показываются все эскизные номера (маска ЭXXXXX).
-     * Двойной клик - создание эскизного паспорта.
+     * Выделение строки - обновление описания.
+     * Enter или двойной клик - создание эскизного паспорта.
      * Одинарный клик - открытие вкладки с эскизами.
      */
     private void setupSketchListView() {
+        lvSketches.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+            if (newSelection != null) {
+                showDescriptionESKD(newSelection);
+            }
+        });
+
+        // Добавляем обработку нажатия клавиш
+        lvSketches.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER) {
+                Decimal selected = lvSketches.getSelectionModel().getSelectedItem();
+                if (selected != null) {
+                    createSketchPassport(selected);
+                    event.consume();
+                }
+            }
+        });
+
         lvSketches.setOnMouseClicked(event -> {
             Decimal selected = lvSketches.getSelectionModel().getSelectedItem();
             if (selected != null) {
-                showDescriptionESKD(selected);
                 if (event.getClickCount() == 2) {
                     // Двойной клик - создание эскизного паспорта
                     createSketchPassport(selected);
@@ -146,8 +164,9 @@ public class RegistrationBookController implements UpdatableTabController {
 
     /**
      * Настраивает списки децимальных групп для ПИК-номеров.
+     * Выделение строки - обновление описания.
+     * Enter или двойной клик - создание нового паспорта.
      * Одинарный клик - фильтрация таблицы по выбранной decimal.
-     * Двойной клик - создание нового паспорта.
      * Правый клик - открытие контекстного меню для редактирования.
      */
     private void setupPIKListViews() {
@@ -180,15 +199,30 @@ public class RegistrationBookController implements UpdatableTabController {
                 }
             });
             contextMenu.getItems().add(editItem);
-
             listView.setContextMenu(contextMenu);
+
+            // Добавляем слушатель выделения для обновления описания
+            listView.getSelectionModel().selectedItemProperty().addListener((obs, oldSelection, newSelection) -> {
+                if (newSelection != null) {
+                    showDescriptionESKD(newSelection);
+                }
+            });
+
+            // Добавляем обработку нажатия клавиш
+            listView.setOnKeyPressed(event -> {
+                if (event.getCode() == KeyCode.ENTER) {
+                    Decimal selected = listView.getSelectionModel().getSelectedItem();
+                    if (selected != null) {
+                        createPIKPassport(selected);
+                        event.consume();
+                    }
+                }
+            });
 
             // Добавляем обработчик клика мыши для фильтрации таблицы
             listView.setOnMouseClicked(event -> {
                 Decimal selected = listView.getSelectionModel().getSelectedItem();
                 if (selected != null) {
-                    showDescriptionESKD(selected);
-
                     if (event.getClickCount() == 2 && event.getButton().equals(MouseButton.PRIMARY)) {
                         // Двойной клик - создание нового паспорта
                         createPIKPassport(selected);
