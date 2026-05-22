@@ -377,6 +377,9 @@ public class RegistrationBookController implements UpdatableTabController {
         
     }
 
+    /**
+     * Печать списка новых чертежей
+     */
     private void printList() {
         if (registeredPassportsManager.isEmpty()) {
             Warning1.create($ATTENTION, "Список пуст", "Нечего печатать");
@@ -386,7 +389,94 @@ public class RegistrationBookController implements UpdatableTabController {
         printService.printPassportsList(registeredPassportsManager.getList());
     }
 
+    /**
+     * Изменение описания децимальное группы. Вызывается полное окно для редактирования Decimal
+     */
     private void editDescription() {
+        // Ищем выбранный Decimal во всех списках
+        Decimal selected = null;
+        ListView<Decimal> sourceListView = null;
+
+        List<ListView<Decimal>> listViews = Arrays.asList(
+                lvSketches, lvDetails700, lvDetails745, lvAssm300, lvAssm400, lvMedicine, lvOther
+        );
+
+        for (ListView<Decimal> listView : listViews) {
+            Decimal candidate = listView.getSelectionModel().getSelectedItem();
+            if (candidate != null) {
+                selected = candidate;
+                sourceListView = listView;
+                break;
+            }
+        }
+
+        // Проверяем, выбран ли элемент
+        if (selected == null) {
+            Warning1.create($ATTENTION, "Ничего не выбрано",
+                    "Пожалуйста, выберите децимальную группу для редактирования");
+            return;
+        }
+
+        try {
+            FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/cardsBox/decimalsForm.fxml"));
+            Parent parent = loader.load();
+
+            DecimalFormController controller = loader.getController();
+
+            // Устанавливаем данные для редактирования через setDataToEdit
+            controller.setDataToEdit(selected);
+
+            // Дополнительно устанавливаем editMode = true через публичный метод
+            // (это нужно, так как setDataToEdit не устанавливает editingDecimal)
+            // В DecimalFormController уже есть метод setDataToEdit, который устанавливает editMode = true
+
+            new WindowDecoration("Редактирование описания", parent, false, WF_MAIN_STAGE, true);
+
+            if (controller.isAccepted()) {
+                Decimal updatedDecimal = controller.getSavedDecimal();
+                if (updatedDecimal != null) {
+                    // Обновляем элемент в исходном списке
+                    int index = sourceListView.getItems().indexOf(selected);
+                    if (index != -1) {
+                        sourceListView.getItems().set(index, updatedDecimal);
+                        sortDecimalList(sourceListView.getItems());
+                    }
+
+                    // Обновляем отображение описания, если редактируемая группа была выбрана
+                    if (taDescriptionESKD != null) {
+                        // Проверяем, не изменился ли выбранный элемент после редактирования
+                        Decimal currentSelected = getCurrentlySelectedDecimal();
+                        if (currentSelected != null && currentSelected.getId().equals(updatedDecimal.getId())) {
+                            taDescriptionESKD.setText(updatedDecimal.getDescription());
+                        }
+                    }
+
+                    log.info("Децимальная группа успешно обновлена: {}", updatedDecimal.toUsefulString());
+                    Warning1.create("ОТЛИЧНО!", "Описание обновлено",
+                            "Децимальная группа '" + updatedDecimal.getName() + "' успешно обновлена");
+                }
+            }
+        } catch (IOException e) {
+            log.error("Ошибка при открытии формы редактирования децимальной группы", e);
+            Warning1.create("ОШИБКА!", "Не удалось открыть форму редактирования", e.getMessage());
+        }
+    }
+
+    /**
+     * Возвращает текущий выбранный Decimal из любого списка групп.
+     */
+    private Decimal getCurrentlySelectedDecimal() {
+        List<ListView<Decimal>> listViews = Arrays.asList(
+                lvSketches, lvDetails700, lvDetails745, lvAssm300, lvAssm400, lvMedicine, lvOther
+        );
+
+        for (ListView<Decimal> listView : listViews) {
+            Decimal selected = listView.getSelectionModel().getSelectedItem();
+            if (selected != null) {
+                return selected;
+            }
+        }
+        return null;
     }
 
     /**

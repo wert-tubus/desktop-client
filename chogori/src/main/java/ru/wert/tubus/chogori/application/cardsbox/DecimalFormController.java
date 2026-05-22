@@ -212,6 +212,20 @@ public class DecimalFormController extends FormView_ACCController<Decimal> imple
         log.debug("Данные формы инициализированы для создания");
     }
 
+    /**
+     * Установка значений редактируемой децимальной группы
+     * @param decimal редактируемая децимальная группа
+     */
+    public void setDataToEdit(Decimal decimal) {
+        this.editMode = true;
+        this.editingDecimal = decimal;  // <-- ДОБАВИТЬ ЭТУ СТРОКУ
+        this.newDecimal = decimal != null ? decimal : new Decimal();
+        fillFormFields();
+        updateOkButtonState();
+
+        log.debug("Данные формы инициализированы для редактирования");
+    }
+
     // ======================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ========================
 
     /**
@@ -252,7 +266,7 @@ public class DecimalFormController extends FormView_ACCController<Decimal> imple
         // Заполнение поля децимального номера (не редактируется)
         if (editingDecimal.getName() != null) {
             tfName.setText(editingDecimal.getName());
-            tfName.setEditable(false);
+            tfName.setEditable(false);  // Оставляем заблокированным
         }
 
         // Заполнение поля описания
@@ -262,12 +276,13 @@ public class DecimalFormController extends FormView_ACCController<Decimal> imple
             taDescription.clear();
         }
 
-        // Заполнение поля начального номера (не редактируется, так как диапазон не должен меняться)
+        // Заполнение поля начального номера - РАЗРЕШАЕМ РЕДАКТИРОВАНИЕ
         if (editingDecimal.getInitialNumber() != null) {
             tfInitialNumber.setText(String.format("%03d", editingDecimal.getInitialNumber()));
-            tfInitialNumber.setEditable(false);
+            tfInitialNumber.setEditable(true);  // <-- ИЗМЕНИТЬ НА true
         } else {
             tfInitialNumber.clear();
+            tfInitialNumber.setEditable(true);
         }
 
         log.debug("Поля формы заполнены для редактирования: name={}, initialNumber={}",
