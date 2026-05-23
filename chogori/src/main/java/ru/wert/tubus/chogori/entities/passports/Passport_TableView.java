@@ -82,7 +82,7 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
         this(promptText);
         this.previewerController = previewerController;
 
-//        new Passport_Manipulator(this);
+        new Passport_Manipulator(this);
 
         //Создаем контекстное меню
         if (useContextMenu) {

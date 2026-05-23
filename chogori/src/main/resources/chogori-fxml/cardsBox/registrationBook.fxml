@@ -162,11 +162,12 @@
                                     </HBox>
                                  </children>
                               </HBox>
-                                        <ListView fx:id="lvRegisteredPassports" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" VBox.vgrow="ALWAYS">
-                                            <VBox.margin>
-                                                <Insets />
-                                            </VBox.margin>
-                                        </ListView>
+                              <TableView id="registration-book" fx:id="lvRegisteredPassports" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+                                <columns>
+                                  <TableColumn fx:id="colPassport" editable="false" prefWidth="400.0" sortable="false" text="Чертеж" />
+                                  <TableColumn fx:id="colHasDrafts" editable="false" prefWidth="75.0" sortable="false" text="Есть в БД" />
+                                </columns>
+                              </TableView>
                                         <HBox alignment="BOTTOM_RIGHT" VBox.vgrow="NEVER">
                                             <children>
                                     <Button fx:id="btnPrint" mnemonicParsing="false" prefWidth="78.0" text="Печать">

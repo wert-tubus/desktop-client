@@ -20,30 +20,30 @@ import static ru.wert.tubus.winform.statics.WinformStatic.WF_MAIN_STAGE;
 import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
 
 /**
- * Сервис для печати списка чертежей
+ * Сервис для печати списка чертежей с двумя столбцами
  */
 @Slf4j
 public class RegistrationBookPrintService {
 
     private static final String TITLE = "ЖУРНАЛ РЕГИСТРАЦИИ ЧЕРТЕЖЕЙ";
-    private static final String SEPARATOR = "===============================";
+    private static final String SEPARATOR = "=============================================================";
     private static final Font CONTENT_FONT = Font.font("Consolas", 12);
     private static final Font PREVIEW_FONT = Font.font("Consolas", 11);
 
     /**
      * Печать списка чертежей
      *
-     * @param passports список чертежей для печати
+     * @param printItems список элементов для печати (паспорт + статус чертежей)
      */
-    public void printPassportsList(List<Passport> passports) {
-        if (passports == null || passports.isEmpty()) {
+    public void printPassportsList(List<RegisteredPassportPrintItem> printItems) {
+        if (printItems == null || printItems.isEmpty()) {
             Warning1.create($ATTENTION, "Список пуст", "Нечего печатать");
             return;
         }
 
         try {
-            String content = buildPrintContent(passports);
-            showPrintPreview(content, passports.size());
+            String content = buildPrintContent(printItems);
+            showPrintPreview(content, printItems.size());
         } catch (Exception e) {
             log.error("Ошибка при подготовке к печати", e);
             Warning1.create("ОШИБКА!", "Не удалось подготовить данные для печати", e.getMessage());
@@ -51,12 +51,12 @@ public class RegistrationBookPrintService {
     }
 
     /**
-     * Формирует содержимое для печати
+     * Формирует содержимое для печати в виде таблицы с двумя столбцами
      *
-     * @param passports список чертежей
+     * @param printItems список элементов для печати
      * @return отформатированная строка для печати
      */
-    private String buildPrintContent(List<Passport> passports) {
+    private String buildPrintContent(List<RegisteredPassportPrintItem> printItems) {
         StringBuilder content = new StringBuilder();
 
         // Заголовок
@@ -66,18 +66,18 @@ public class RegistrationBookPrintService {
                 .format(new Date())).append("\n");
         content.append(SEPARATOR).append("\n\n");
 
-        // Заголовок колонки
-        content.append(String.format("%-4s %-70s\n", "№", "Новый чертеж"));
+        // Заголовки столбцов
+        content.append(String.format("%-4s %-55s %-12s\n", "№", "Новый чертеж", "Чертежи"));
         content.append(formatTableSeparator());
 
         // Данные
         int counter = 1;
-        for (Passport passport : passports) {
-            content.append(formatTableRow(counter++, passport));
+        for (RegisteredPassportPrintItem item : printItems) {
+            content.append(formatTableRow(counter++, item));
         }
 
         content.append(formatTableSeparator());
-        content.append("\n").append("Всего чертежей: ").append(passports.size());
+        content.append("\n").append("Всего чертежей: ").append(printItems.size());
 
         return content.toString();
     }
@@ -86,21 +86,21 @@ public class RegistrationBookPrintService {
      * Форматирует разделитель таблицы
      */
     private String formatTableSeparator() {
-        return "------------------------------------------------------------------\n";
+        return "----------------------------------------------------------------------\n";
     }
 
     /**
-     * Форматирует строку таблицы
+     * Форматирует строку таблицы с двумя столбцами
      *
      * @param number   порядковый номер
-     * @param passport чертеж
-     * @return строка в том же формате, что и в lvListOFNumbers
+     * @param item     элемент для печати (паспорт + статус чертежей)
+     * @return отформатированная строка
      */
-    private String formatTableRow(int number, Passport passport) {
-        // Используем тот же формат, что и в ListView
-        String displayString = passport.toUsefulString();
+    private String formatTableRow(int number, RegisteredPassportPrintItem item) {
+        String displayString = item.getPassport().toUsefulString();
+        String draftsSymbol = item.getDraftsSymbol();
 
-        return String.format("%-4d %-70s\n", number, displayString);
+        return String.format("%-4d %-55s %-12s\n", number, displayString, draftsSymbol);
     }
 
     /**
@@ -146,7 +146,7 @@ public class RegistrationBookPrintService {
         buttonBar.getChildren().addAll(btnPrint, btnPrintWithSettings, btnCancel);
 
         // Основная панель
-        mainPane.setPrefSize(600.0, 800.0);
+        mainPane.setPrefSize(650.0, 800.0);
         mainPane.setPadding(new Insets(10));
         VBox.setVgrow(textArea, javafx.scene.layout.Priority.ALWAYS);
         mainPane.getChildren().addAll(textArea, buttonBar);
@@ -229,7 +229,7 @@ public class RegistrationBookPrintService {
         textNode.setFont(CONTENT_FONT);
 
         // Оборачиваем текст, чтобы он не выходил за границы страницы
-        textNode.wrappingWidthProperty().set(500);
+        textNode.wrappingWidthProperty().set(600);
 
         VBox vbox = new VBox(textNode);
         vbox.setPadding(new Insets(20));

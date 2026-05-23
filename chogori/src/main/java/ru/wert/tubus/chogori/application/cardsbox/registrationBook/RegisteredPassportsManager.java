@@ -8,6 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
+import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_DRAFTS;
 
 /**
  * Менеджер для управления списком недавно зарегистрированных номеров
@@ -15,12 +18,27 @@ import java.util.Map;
 @Slf4j
 public class RegisteredPassportsManager {
 
-    private final ObservableList<Passport> registeredPassports;
+    private final ObservableList<RegisteredPassportItem> registeredItems;
     private final RegistrationService registrationService;
 
-    public RegisteredPassportsManager(ObservableList<Passport> registeredPassports, RegistrationService registrationService) {
-        this.registeredPassports = registeredPassports;
+    public RegisteredPassportsManager(ObservableList<RegisteredPassportItem> registeredItems, RegistrationService registrationService) {
+        this.registeredItems = registeredItems;
         this.registrationService = registrationService;
+    }
+
+    /**
+     * Проверяет, есть ли чертежи для паспорта
+     */
+    private boolean checkDraftsExist(Passport passport) {
+        if (passport == null || passport.getId() == null) {
+            return false;
+        }
+        try {
+            return !CH_DRAFTS.findByPassport(passport).isEmpty();
+        } catch (Exception e) {
+            log.error("Ошибка при проверке наличия чертежей для паспорта {}", passport.getNumber(), e);
+            return false;
+        }
     }
 
     /**
@@ -32,24 +50,54 @@ public class RegisteredPassportsManager {
             return;
         }
 
-        boolean exists = registeredPassports.stream()
-                .anyMatch(p -> p.getNumber() != null && p.getNumber().equals(passport.getNumber()));
+        // Проверяем наличие чертежей (асинхронно)
+        CompletableFuture.supplyAsync(() -> checkDraftsExist(passport))
+                .thenAccept(hasDrafts -> {
+                    RegisteredPassportItem newItem = new RegisteredPassportItem(passport, hasDrafts);
 
-        if (!exists) {
-            registeredPassports.add(passport);
-            saveState();
-            log.info("Паспорт {} добавлен в список выбранных", passport.getNumber());
-        } else {
-            log.debug("Паспорт {} уже существует в списке", passport.getNumber());
-        }
+                    javafx.application.Platform.runLater(() -> {
+                        boolean exists = registeredItems.stream()
+                                .anyMatch(item -> {
+                                    Passport p = item.getPassport();
+                                    return p != null && p.getNumber() != null &&
+                                            p.getNumber().equals(passport.getNumber());
+                                });
+
+                        if (!exists) {
+                            registeredItems.add(newItem);
+                            saveState();
+                            log.info("Паспорт {} добавлен в список выбранных (чертежи: {})",
+                                    passport.getNumber(), hasDrafts);
+                        } else {
+                            log.debug("Паспорт {} уже существует в списке", passport.getNumber());
+                        }
+                    });
+                })
+                .exceptionally(ex -> {
+                    log.error("Ошибка при проверке чертежей для паспорта {}", passport.getNumber(), ex);
+                    javafx.application.Platform.runLater(() -> {
+                        RegisteredPassportItem newItem = new RegisteredPassportItem(passport, false);
+                        boolean exists = registeredItems.stream()
+                                .anyMatch(item -> {
+                                    Passport p = item.getPassport();
+                                    return p != null && p.getNumber() != null &&
+                                            p.getNumber().equals(passport.getNumber());
+                                });
+                        if (!exists) {
+                            registeredItems.add(newItem);
+                            saveState();
+                        }
+                    });
+                    return null;
+                });
     }
 
     /**
      * Очистка списка
      */
     public void clear() {
-        if (!registeredPassports.isEmpty()) {
-            registeredPassports.clear();
+        if (!registeredItems.isEmpty()) {
+            registeredItems.clear();
             saveState();
             log.info("Список выбранных паспортов очищен");
         }
@@ -60,29 +108,40 @@ public class RegisteredPassportsManager {
      * Оптимизированная версия с использованием прямых запросов
      */
     public void refresh() {
-        if (registeredPassports.isEmpty()) {
+        if (registeredItems.isEmpty()) {
             return;
         }
 
-        List<Passport> validPassports = new ArrayList<>();
-        List<Passport> invalidPassports = new ArrayList<>();
+        List<RegisteredPassportItem> validItems = new ArrayList<>();
+        List<RegisteredPassportItem> invalidItems = new ArrayList<>();
 
-        for (Passport passport : registeredPassports) {
+        for (RegisteredPassportItem item : registeredItems) {
+            Passport passport = item.getPassport();
+            if (passport == null || passport.getNumber() == null) {
+                invalidItems.add(item);
+                continue;
+            }
+
             // Используем быстрый поиск вместо загрузки всех паспортов
             Passport freshPassport = registrationService.findPassportByNumberFast(passport.getNumber());
             if (freshPassport != null) {
-                validPassports.add(freshPassport);
+                // Обновляем паспорт и проверяем наличие чертежей
+                item.setPassport(freshPassport);
+                CompletableFuture.runAsync(() -> {
+                    boolean hasDrafts = checkDraftsExist(freshPassport);
+                    javafx.application.Platform.runLater(() -> item.setHasDrafts(hasDrafts));
+                });
+                validItems.add(item);
             } else {
-                invalidPassports.add(passport);
+                invalidItems.add(item);
                 log.warn("Паспорт {} не найден в БД, удаляем из списка выбранных", passport.getNumber());
             }
         }
 
-        if (!invalidPassports.isEmpty()) {
-            registeredPassports.clear();
-            registeredPassports.addAll(validPassports);
+        if (!invalidItems.isEmpty()) {
+            registeredItems.removeAll(invalidItems);
             saveState();
-            log.info("Удалено {} неактуальных паспортов из списка выбранных", invalidPassports.size());
+            log.info("Удалено {} неактуальных паспортов из списка выбранных", invalidItems.size());
         }
     }
 
@@ -95,14 +154,22 @@ public class RegisteredPassportsManager {
             return;
         }
 
-        int index = registeredPassports.indexOf(oldPassport);
-        if (index >= 0) {
-            registeredPassports.set(index, updatedPassport);
-            saveState();
-            log.info("Паспорт {} обновлен на {}", oldPassport.getNumber(), updatedPassport.getNumber());
-        } else {
-            log.debug("Паспорт {} не найден в списке для обновления", oldPassport.getNumber());
+        for (RegisteredPassportItem item : registeredItems) {
+            Passport p = item.getPassport();
+            if (p != null && p.getNumber() != null && p.getNumber().equals(oldPassport.getNumber())) {
+                item.setPassport(updatedPassport);
+                // Проверяем наличие чертежей для обновленного паспорта
+                CompletableFuture.runAsync(() -> {
+                    boolean hasDrafts = checkDraftsExist(updatedPassport);
+                    javafx.application.Platform.runLater(() -> item.setHasDrafts(hasDrafts));
+                });
+                saveState();
+                log.info("Паспорт {} обновлен на {}", oldPassport.getNumber(), updatedPassport.getNumber());
+                return;
+            }
         }
+
+        log.debug("Паспорт {} не найден в списке для обновления", oldPassport.getNumber());
     }
 
     /**
@@ -121,13 +188,15 @@ public class RegisteredPassportsManager {
         // Используем оптимизированную массовую загрузку
         Map<String, Passport> passportMap = registrationService.loadPassportsByNumbersMap(savedNumbers);
 
-        List<Passport> restored = new ArrayList<>();
+        List<RegisteredPassportItem> restored = new ArrayList<>();
         List<String> notFoundNumbers = new ArrayList<>();
 
         for (String number : savedNumbers) {
             Passport passport = passportMap.get(number);
             if (passport != null) {
-                restored.add(passport);
+                // Проверяем наличие чертежей для каждого паспорта
+                boolean hasDrafts = checkDraftsExist(passport);
+                restored.add(new RegisteredPassportItem(passport, hasDrafts));
             } else {
                 notFoundNumbers.add(number);
                 log.warn("Паспорт с номером {} не найден в БД", number);
@@ -135,7 +204,7 @@ public class RegisteredPassportsManager {
         }
 
         if (!restored.isEmpty()) {
-            registeredPassports.setAll(restored);
+            registeredItems.setAll(restored);
             log.info("Восстановлено {} выбранных паспортов", restored.size());
 
             // Если какие-то номера не найдены, сохраняем только валидные
@@ -153,9 +222,13 @@ public class RegisteredPassportsManager {
      * Сохранение состояния
      */
     public void saveState() {
-        if (!registeredPassports.isEmpty()) {
-            RegisteredPassportsStorage.saveRegisteredPassports(registeredPassports);
-            log.debug("Сохранено {} паспортов", registeredPassports.size());
+        if (!registeredItems.isEmpty()) {
+            List<Passport> passports = new ArrayList<>();
+            for (RegisteredPassportItem item : registeredItems) {
+                passports.add(item.getPassport());
+            }
+            RegisteredPassportsStorage.saveRegisteredPassports(passports);
+            log.debug("Сохранено {} паспортов", passports.size());
         } else {
             RegisteredPassportsStorage.clearSavedState();
             log.debug("Список пуст, состояние очищено");
@@ -163,24 +236,24 @@ public class RegisteredPassportsManager {
     }
 
     /**
-     * Получение списка паспортов
+     * Получение списка элементов паспортов
      */
-    public ObservableList<Passport> getList() {
-        return registeredPassports;
+    public ObservableList<RegisteredPassportItem> getList() {
+        return registeredItems;
     }
 
     /**
      * Проверка, пуст ли список
      */
     public boolean isEmpty() {
-        return registeredPassports.isEmpty();
+        return registeredItems.isEmpty();
     }
 
     /**
      * Размер списка
      */
     public int size() {
-        return registeredPassports.size();
+        return registeredItems.size();
     }
 
     /**
@@ -188,8 +261,9 @@ public class RegisteredPassportsManager {
      */
     public boolean contains(String number) {
         if (number == null) return false;
-        return registeredPassports.stream()
-                .anyMatch(p -> p.getNumber() != null && p.getNumber().equals(number));
+        return registeredItems.stream()
+                .map(RegisteredPassportItem::getPassport)
+                .anyMatch(p -> p != null && p.getNumber() != null && p.getNumber().equals(number));
     }
 
     /**
@@ -198,13 +272,16 @@ public class RegisteredPassportsManager {
     public boolean remove(String number) {
         if (number == null) return false;
 
-        Passport toRemove = registeredPassports.stream()
-                .filter(p -> p.getNumber() != null && p.getNumber().equals(number))
+        RegisteredPassportItem toRemove = registeredItems.stream()
+                .filter(item -> {
+                    Passport p = item.getPassport();
+                    return p != null && p.getNumber() != null && p.getNumber().equals(number);
+                })
                 .findFirst()
                 .orElse(null);
 
         if (toRemove != null) {
-            boolean removed = registeredPassports.remove(toRemove);
+            boolean removed = registeredItems.remove(toRemove);
             if (removed) {
                 saveState();
                 log.info("Паспорт {} удален из списка", number);
@@ -215,4 +292,37 @@ public class RegisteredPassportsManager {
         return false;
     }
 
+    /**
+     * Обновление статуса наличия чертежей для всех элементов
+     */
+    public void updateAllDraftsStatus() {
+        for (RegisteredPassportItem item : registeredItems) {
+            Passport passport = item.getPassport();
+            if (passport != null) {
+                CompletableFuture.runAsync(() -> {
+                    boolean hasDrafts = checkDraftsExist(passport);
+                    javafx.application.Platform.runLater(() -> item.setHasDrafts(hasDrafts));
+                });
+            }
+        }
+        log.debug("Обновлен статус чертежей для {} элементов", registeredItems.size());
+    }
+
+    /**
+     * Обновление статуса наличия чертежей для конкретного паспорта
+     */
+    public void updateDraftsStatusForPassport(Passport passport) {
+        if (passport == null || passport.getNumber() == null) return;
+
+        for (RegisteredPassportItem item : registeredItems) {
+            Passport p = item.getPassport();
+            if (p != null && p.getNumber() != null && p.getNumber().equals(passport.getNumber())) {
+                CompletableFuture.runAsync(() -> {
+                    boolean hasDrafts = checkDraftsExist(passport);
+                    javafx.application.Platform.runLater(() -> item.setHasDrafts(hasDrafts));
+                });
+                return;
+            }
+        }
+    }
 }

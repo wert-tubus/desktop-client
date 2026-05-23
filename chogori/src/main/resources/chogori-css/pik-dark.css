@@ -645,5 +645,23 @@
     -fx-background-color: lightgrey;
 }
 
+/*======ТАБЛИЦА ЖУРНАЛА РЕГИСТРАЦИИ==============*/
+       /*убираем заголовок таблицы*/
 
+#stpRegistrationBook .column-header-background {
+    visibility: hidden;
+    -fx-pref-height: 0;
+    -fx-max-height: 0;
+}
+
+#stpRegistrationBook .filler {
+    visibility: hidden;
+}
+
+#stpRegistrationBook .column-header {
+    -fx-pref-height: 0;
+    -fx-max-height: 0;
+    visibility: hidden;
+}
+/*===============================================*/
 

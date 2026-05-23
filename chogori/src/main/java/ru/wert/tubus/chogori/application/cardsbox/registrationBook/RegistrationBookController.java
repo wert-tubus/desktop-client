@@ -1,22 +1,31 @@
 package ru.wert.tubus.chogori.application.cardsbox.registrationBook;
 
 import javafx.application.Platform;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
+import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
+import javafx.scene.layout.VBox;
+import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.application.cardsbox.*;
 import ru.wert.tubus.chogori.components.BtnDown;
+import ru.wert.tubus.chogori.components.BtnDownForTable;
 import ru.wert.tubus.chogori.components.BtnUp;
+import ru.wert.tubus.chogori.components.BtnUpForTable;
 import ru.wert.tubus.chogori.entities.passports.PassportInfo_Patch;
+import ru.wert.tubus.chogori.entities.passports.Passport_Manipulator;
 import ru.wert.tubus.chogori.entities.passports.Passport_PatchController;
 import ru.wert.tubus.chogori.entities.passports.Passport_TableView;
 import ru.wert.tubus.client.entity.models.Decimal;
@@ -31,6 +40,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_DECIMALS;
+import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_DRAFTS;
 import static ru.wert.tubus.chogori.images.BtnImages.BTN_EDIT_IMG;
 import static ru.wert.tubus.winform.statics.WinformStatic.WF_MAIN_STAGE;
 import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
@@ -46,9 +56,21 @@ import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
 @Slf4j
 public class RegistrationBookController {
 
+    // ======================== КОНСТАНТЫ ========================
+    private static final Image DRAFTS_EXIST_IMG = new Image(
+            RegistrationBookController.class.getResourceAsStream("/chogori-pics/btns/view(32x32).png"),
+            20, 20, true, true
+    );
+    private static final Image NO_DRAFTS_IMG = new Image(
+            RegistrationBookController.class.getResourceAsStream("/chogori-pics/btns/close.png"),
+            20, 20, true, true
+    );
+
     // ======================== FXML КОМПОНЕНТЫ ========================
 
-    @FXML private ListView<Passport> lvRegisteredPassports; //Список зарегистрированных чертежей
+    @FXML @Getter private TableView<RegisteredPassportItem> lvRegisteredPassports; // Таблица зарегистрированных чертежей
+    @FXML private TableColumn<RegisteredPassportItem, Passport> colPassport;
+    @FXML private TableColumn<RegisteredPassportItem, Boolean> colHasDrafts;
     @FXML private Button btnAddDecimalGroup;
     @FXML private Button btnClear;
     @FXML private Button btnSave;
@@ -84,7 +106,7 @@ public class RegistrationBookController {
     // ======================== СЕРВИСЫ И МЕНЕДЖЕРЫ ========================
 
     private final RegistrationService registrationService = new RegistrationService();
-    private RegisteredPassportsManager registeredPassportsManager;
+    @Getter private RegisteredPassportsManager registeredPassportsManager;
     private final Map<DecimalGroupingService.DecimalGroup, ListView<Decimal>> groupToListViewMap = new EnumMap<>(DecimalGroupingService.DecimalGroup.class);
     private final RegistrationBookPrintService printService = new RegistrationBookPrintService();
     private PassportListFileManager fileManager;
@@ -104,13 +126,13 @@ public class RegistrationBookController {
      */
     @FXML
     public void initialize() {
-        initializeRegisteredPassportsList();
+        initializeRegisteredPassportsTable();
         initializeDecimalGroupsLists();
         setupButtonHandlers();
         setupContextMenus();
 
-        new BtnUp<>(btnUp, lvRegisteredPassports, () -> registeredPassportsManager.saveState());
-        new BtnDown<>(btnDown, lvRegisteredPassports, () -> registeredPassportsManager.saveState());
+        new BtnUpForTable(btnUp, lvRegisteredPassports, () -> registeredPassportsManager.saveState());
+        new BtnDownForTable(btnDown, lvRegisteredPassports, () -> registeredPassportsManager.saveState());
 
         // Восстановление состояния
         registeredPassportsManager.restoreState();
@@ -120,6 +142,129 @@ public class RegistrationBookController {
             setupPIKListViews();
             expandGroup745();
         });
+
+        new RegistrationBookManipulator(this);
+    }
+
+    /**
+     * Инициализация таблицы зарегистрированных паспортов.
+     * Настраивает колонки и обработчики двойного клика.
+     */
+    private void initializeRegisteredPassportsTable() {
+        ObservableList<RegisteredPassportItem> registeredItems = FXCollections.observableArrayList();
+        lvRegisteredPassports.setItems(registeredItems);
+        registeredPassportsManager = new RegisteredPassportsManager(registeredItems, registrationService);
+
+        // Инициализация менеджера файлов
+        fileManager = new PassportListFileManager(
+                registrationService,
+                passport -> registeredPassportsManager.addPassport(passport),
+                () -> registeredPassportsManager.clear(),
+                () -> refreshTablesPreservingState(),
+                this::showLoadingCursorAndDisableControls,
+                this::hideLoadingCursorAndEnableControls
+        );
+
+        // Настройка колонки с паспортом
+        colPassport.setCellValueFactory(cellData -> new SimpleObjectProperty<>(cellData.getValue().getPassport()));
+        colPassport.setCellFactory(column -> new TableCell<RegisteredPassportItem, Passport>() {
+            @Override
+            protected void updateItem(Passport item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setStyle(null);
+                    setGraphic(null);
+                } else {
+                    setText(item.toUsefulString());
+
+                    // Устанавливаем цвет в зависимости от типа чертежа
+                    String number = item.getNumber();
+                    if (number != null && !number.isEmpty()) {
+                        if (number.startsWith("Э")) {
+                            setStyle("-fx-text-fill: #7322a3; -fx-font-size: 14; -fx-font-weight: bold;");
+                        } else {
+                            String firstChar = number.substring(0, 1);
+                            switch (firstChar) {
+                                case "7":
+                                    setStyle("-fx-text-fill: darkgreen; -fx-font-size: 14; -fx-font-weight: bold;");
+                                    break;
+                                case "3":
+                                    setStyle("-fx-text-fill: darkblue; -fx-font-size: 14; -fx-font-weight: bold;");
+                                    break;
+                                case "4":
+                                    setStyle("-fx-text-fill: saddlebrown; -fx-font-size: 14; -fx-font-weight: bold;");
+                                    break;
+                                default:
+                                    setStyle("-fx-text-fill: black; -fx-font-size: 14; -fx-font-weight: bold;");
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Настройка колонки с наличием чертежей
+        colHasDrafts.setCellValueFactory(cellData -> new SimpleBooleanProperty(cellData.getValue().hasDrafts()));
+        colHasDrafts.setCellFactory(column -> new TableCell<RegisteredPassportItem, Boolean>() {
+            private final ImageView imageView = new ImageView();
+
+            {
+                imageView.setFitWidth(20);
+                imageView.setFitHeight(20);
+                imageView.setPreserveRatio(true);
+            }
+
+            @Override
+            protected void updateItem(Boolean hasDrafts, boolean empty) {
+                super.updateItem(hasDrafts, empty);
+                if (empty || hasDrafts == null) {
+                    setGraphic(null);
+                    setText(null);
+                } else {
+                    imageView.setImage(hasDrafts ? DRAFTS_EXIST_IMG : NO_DRAFTS_IMG);
+                    setGraphic(imageView);
+                    setText(null);
+                    // Добавляем всплывающую подсказку
+                    setTooltip(new Tooltip(hasDrafts ? "Есть чертежи" : "Нет чертежей"));
+                }
+            }
+        });
+        colHasDrafts.setStyle("-fx-alignment: CENTER;");
+
+        // Устанавливаем фиксированную ширину для колонки с иконкой
+        colHasDrafts.setPrefWidth(50);
+        colHasDrafts.setMaxWidth(50);
+        colHasDrafts.setMinWidth(50);
+
+        // Добавляем обработчик двойного клика
+        lvRegisteredPassports.setOnMouseClicked(e -> {
+            if (e.getButton().equals(MouseButton.PRIMARY) && e.getClickCount() == 2) {
+                RegisteredPassportItem selected = lvRegisteredPassports.getSelectionModel().getSelectedItem();
+                if (selected != null && selected.getPassport() != null) {
+                    PassportInfo_Patch.create(selected.getPassport());
+                }
+            }
+        });
+
+        // Добавляем возможность перемещения с помощью стрелок
+        lvRegisteredPassports.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.UP || event.getCode() == KeyCode.DOWN) {
+                // Стрелки уже обрабатываются стандартным поведением
+                // Просто сохраняем состояние после изменения выделения
+                Platform.runLater(() -> registeredPassportsManager.saveState());
+            }
+        });
+
+        // Сохраняем состояние при изменении порядка (после перетаскивания)
+        lvRegisteredPassports.getColumns().addListener((javafx.collections.ListChangeListener.Change<? extends TableColumn<RegisteredPassportItem, ?>> change) -> {
+            while (change.next()) {
+                if (change.wasReplaced()) {
+                    registeredPassportsManager.saveState();
+                }
+            }
+        });
+
     }
 
     /**
@@ -342,70 +487,7 @@ public class RegistrationBookController {
         }
     }
 
-    /**
-     * Инициализация списка зарегистрированных паспортов.
-     * Настраивает отображение элементов и обработчики двойного клика.
-     */
-    private void initializeRegisteredPassportsList() {
-        ObservableList<Passport> registeredList = FXCollections.observableArrayList();
-        lvRegisteredPassports.setItems(registeredList);
-        registeredPassportsManager = new RegisteredPassportsManager(registeredList, registrationService);
-
-        // Инициализация менеджера файлов
-        fileManager = new PassportListFileManager(
-                registrationService,
-                passport -> registeredPassportsManager.addPassport(passport),
-                () -> registeredPassportsManager.clear(),
-                () -> refreshTablesPreservingState(),
-                this::showLoadingCursorAndDisableControls,
-                this::hideLoadingCursorAndEnableControls
-        );
-
-        lvRegisteredPassports.setCellFactory(lv -> new ListCell<Passport>() {
-            @Override
-            protected void updateItem(Passport item, boolean empty) {
-                super.updateItem(item, empty);
-                if (empty || item == null) {
-                    setText(null);
-                    setStyle(null);
-                } else {
-                    setText(item.toUsefulString());
-
-                    // Устанавливаем цвет в зависимости от типа чертежа или первой цифры номера
-                    String number = item.getNumber();
-                    if (number != null && !number.isEmpty()) {
-                        // Проверка на эскизный номер (начинается с буквы Э)
-                        if (number.startsWith("Э")) {
-                            setStyle("-fx-text-fill: #7322a3; -fx-font-size: 14; -fx-font-weight: bold;");
-                        } else {
-                            String firstChar = number.substring(0, 1);
-                            switch (firstChar) {
-                                case "7":
-                                    setStyle("-fx-text-fill: darkgreen; -fx-font-size: 14; -fx-font-weight: bold;");
-                                    break;
-                                case "3":
-                                    setStyle("-fx-text-fill: darkblue; -fx-font-size: 14; -fx-font-weight: bold;");
-                                    break;
-                                case "4":
-                                    setStyle("-fx-text-fill: saddlebrown; -fx-font-size: 14; -fx-font-weight: bold;");
-                                    break;
-                                default:
-                                    setStyle("-fx-text-fill: black; -fx-font-size: 14; -fx-font-weight: bold;");
-                            }
-                        }
-                    } else {
-                        setStyle("-fx-text-fill: black; -fx-font-size: 14; -fx-font-weight: bold;");
-                    }
-
-                    setOnMouseClicked(e -> {
-                        if (e.getButton().equals(MouseButton.PRIMARY) && e.getClickCount() == 2) {
-                            PassportInfo_Patch.create(item);
-                        }
-                    });
-                }
-            }
-        });
-    }
+    // ======================== НАСТРОЙКА КОМПОНЕНТОВ ========================
 
     /**
      * Инициализация списков децимальных групп.
@@ -481,7 +563,15 @@ public class RegistrationBookController {
             return;
         }
 
-        printService.printPassportsList(registeredPassportsManager.getList());
+        // Получаем список RegisteredPassportItem и преобразуем в список для печати
+        List<RegisteredPassportPrintItem> printItems = registeredPassportsManager.getList().stream()
+                .map(item -> new RegisteredPassportPrintItem(
+                        item.getPassport(),
+                        item.hasDrafts()
+                ))
+                .collect(java.util.stream.Collectors.toList());
+
+        printService.printPassportsList(printItems);
     }
 
     /**
@@ -575,14 +665,14 @@ public class RegistrationBookController {
     }
 
     /**
-     * Настройка контекстного меню для списка выбранных паспортов.
+     * Настройка контекстного меню для таблицы выбранных паспортов.
      */
     private void setupContextMenus() {
         PassportContextMenu contextMenu = new PassportContextMenu(
-                lvRegisteredPassports,
+                lvRegisteredPassports,  // теперь это TableView<RegisteredPassportItem>
                 this::editPassport,
                 this::refreshPassportTables,
-                () -> registeredPassportsManager.refresh()
+                () -> registeredPassportsManager.saveState()  // сохраняем состояние после изменений
         );
         contextMenu.setOnDeleteCallback(this::refreshAfterDelete);
     }
@@ -734,7 +824,7 @@ public class RegistrationBookController {
     /**
      * Показывает курсор загрузки и блокирует все контролы на форме
      */
-    private void showLoadingCursorAndDisableControls() {
+    public void showLoadingCursorAndDisableControls() {
         if (WF_MAIN_STAGE != null && WF_MAIN_STAGE.getScene() != null) {
             Scene scene = WF_MAIN_STAGE.getScene();
             scene.setCursor(javafx.scene.Cursor.WAIT);
@@ -747,7 +837,7 @@ public class RegistrationBookController {
     /**
      * Скрывает курсор загрузки и разблокирует все контролы на форме
      */
-    private void hideLoadingCursorAndEnableControls() {
+    public void hideLoadingCursorAndEnableControls() {
         if (WF_MAIN_STAGE != null && WF_MAIN_STAGE.getScene() != null) {
             Scene scene = WF_MAIN_STAGE.getScene();
             scene.setCursor(javafx.scene.Cursor.DEFAULT);
@@ -772,6 +862,9 @@ public class RegistrationBookController {
         if (btnUp != null) btnUp.setDisable(disable);
         if (btnDown != null) btnDown.setDisable(disable);
         if (btnEditDescription != null) btnEditDescription.setDisable(disable);
+
+        // Таблица зарегистрированных паспортов
+        if (lvRegisteredPassports != null) lvRegisteredPassports.setDisable(disable);
 
         // Списки децимальных групп
         if (lvSketches != null) lvSketches.setDisable(disable);
@@ -1072,7 +1165,13 @@ public class RegistrationBookController {
             Warning1.create("ОШИБКА!", "Системная ошибка", "Менеджер файлов не инициализирован");
             return;
         }
-        fileManager.exportToFile(registeredPassportsManager.getList(), "Новые номера.txt");
+
+        // Получаем список паспортов для экспорта
+        List<Passport> passports = registeredPassportsManager.getList().stream()
+                .map(RegisteredPassportItem::getPassport)
+                .collect(java.util.stream.Collectors.toList());
+
+        fileManager.exportToFile(passports, "Новые номера.txt");
     }
 
     /**
@@ -1088,6 +1187,27 @@ public class RegistrationBookController {
         fileManager.loadFromFile();
     }
 
+    /**
+     * Обновление информации о наличии чертежей для всех элементов в таблице.
+     * Вызывается при обновлении вкладки или после изменений.
+     */
+    public void updateDraftsStatus() {
+        if (registeredPassportsManager != null) {
+            registeredPassportsManager.updateAllDraftsStatus();
+        }
+    }
+
+    /**
+     * Обновление информации о наличии чертежей для конкретного паспорта.
+     *
+     * @param passport паспорт, для которого нужно обновить статус
+     */
+    public void updateDraftsStatusForPassport(Passport passport) {
+        if (registeredPassportsManager != null) {
+            registeredPassportsManager.updateDraftsStatusForPassport(passport);
+        }
+    }
+
     // ======================== ОБНОВЛЕНИЕ ВКЛАДКИ ========================
 
     /**
@@ -1100,6 +1220,9 @@ public class RegistrationBookController {
 
         // Восстанавливаем состояние выбранных паспортов
         registeredPassportsManager.restoreState();
+
+        // Обновляем статус чертежей
+        updateDraftsStatus();
 
         // Обновляем таблицы с сохранением текущих фильтров
         refreshTablesPreservingState();
