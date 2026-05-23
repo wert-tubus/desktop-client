@@ -23,6 +23,7 @@ import ru.wert.tubus.client.entity.models.Decimal;
 import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.client.interfaces.UpdatableTabController;
 import ru.wert.tubus.winform.warnings.Warning1;
+import ru.wert.tubus.winform.warnings.Warning2;
 import ru.wert.tubus.winform.window_decoration.WindowDecoration;
 
 import java.io.IOException;
@@ -1009,13 +1010,12 @@ public class RegistrationBookController implements UpdatableTabController {
             return;
         }
 
-        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmAlert.setTitle("Подтверждение очистки");
-        confirmAlert.setHeaderText("Очистка списка выбранных паспортов");
-        confirmAlert.setContentText("Вы действительно хотите очистить весь список?\n" +
-                "Всего паспортов в списке: " + registeredPassportsManager.size());
+        boolean confirmed = Warning2.create("Подтверждение очистки",
+                "Очистка списка выбранных чертежей",
+                "Вы действительно хотите очистить весь список?\n" +
+                        "Всего чертежей в списке: " + registeredPassportsManager.size());
 
-        if (confirmAlert.showAndWait().orElse(ButtonType.CANCEL) == ButtonType.OK) {
+        if (confirmed) {
             registeredPassportsManager.clear();
         }
     }
