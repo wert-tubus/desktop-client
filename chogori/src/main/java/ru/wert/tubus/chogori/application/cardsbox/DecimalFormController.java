@@ -8,6 +8,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.StackPane;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.common.commands.ItemCommands;
 import ru.wert.tubus.chogori.common.contextMenuACC.FormView_ACCController;
@@ -35,10 +36,10 @@ public class DecimalFormController extends FormView_ACCController<Decimal> imple
 
     // ======================== FXML КОМПОНЕНТЫ ========================
 
-    @FXML
+    @FXML@Getter
     private TextField tfName;              // Поле для децимального номера (6 цифр)
 
-    @FXML
+    @FXML@Getter
     private TextArea taDescription;        // Поле для описания
 
     @FXML

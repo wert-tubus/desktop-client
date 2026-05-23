@@ -520,6 +520,12 @@ public class RegistrationBookController implements UpdatableTabController {
 
             // Устанавливаем данные для редактирования через setDataToEdit
             controller.setDataToEdit(selected);
+            Platform.runLater(()->{
+                controller.getTfName().setEditable(false);
+                controller.getTfName().setStyle("-fx-background-color: #d4d2d2");
+                controller.getTaDescription().selectAll();
+                controller.getTaDescription().requestFocus();
+            });
 
             new WindowDecoration("Редактирование описания", parent, false, WF_MAIN_STAGE, true);
 
