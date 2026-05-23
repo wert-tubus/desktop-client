@@ -329,7 +329,6 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
 
     /**
      * Устанавливает выделенный на данный момент элемент
-     * @param modifyingItem Product или Folder
      */
     public void setModifyingItem(Object modifyingItem) {
         this.modifyingItem = modifyingItem;
@@ -372,28 +371,6 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
         this.accController = (Passport_ACCController) accController;
     }
 
-    /**
-     * Обновить контекстное меню (вызывается при изменении выделения)
-     */
-    public void updateContextMenu() {
-        if (contextMenu != null) {
-            contextMenu.createMainMenuItems();
-        }
-    }
-
-    /**
-     * Принудительное обновление таблицы с очисткой кэша.
-     */
-    public void forceRefresh() {
-        log.debug("Принудительное обновление таблицы паспортов, тип: {}", passportType);
-
-        // Сбрасываем фильтры и выделения
-        setSelectedFolders(null);
-        setModifyingItem(null);
-
-        // Обновляем таблицу
-        updateTableView();
-    }
 
     /**
      * Устанавливает внешний фильтр по децимальной группе и обновляет таблицу
@@ -403,5 +380,27 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
         this.externalFilterDecimal = decimal;
         refreshPreservingType();
         log.debug("Установлен внешний фильтр: {}", decimal != null ? decimal.getName() : "null");
+    }
+
+    public void showAllPassportsOfType() {
+        log.debug("showAllPassportsOfType() - тип: {}", passportType);
+
+        // Получаем базовый список в зависимости от modifyingClass
+        List<Passport> baseList;
+
+
+        baseList = ChogoriServices.CH_QUICK_PASSPORTS.findAll();
+        log.debug("Загружены все паспорта, всего: {}", baseList.size());
+
+        // Применяем фильтрацию по типу паспорта
+        List<Passport> filteredList = filterPassportsByType(baseList);
+
+        // Сортируем список
+        filteredList.sort(passportsComparator());
+
+        // Обновляем таблицу
+        getItems().setAll(filteredList);
+
+        log.debug("После фильтрации отображается {} паспортов", filteredList.size());
     }
 }

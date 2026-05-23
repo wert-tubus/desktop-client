@@ -44,7 +44,7 @@ import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
  * без использования кэшированных списков, чтобы избежать рассинхронизации.
  */
 @Slf4j
-public class RegistrationBookController implements UpdatableTabController {
+public class RegistrationBookController {
 
     // ======================== FXML КОМПОНЕНТЫ ========================
 
@@ -1094,8 +1094,7 @@ public class RegistrationBookController implements UpdatableTabController {
      * Обновление содержимого вкладки при её активации.
      * Загружает свежие данные из базы данных, но сохраняет текущие фильтры.
      */
-    @Override
-    public void updateTab() {
+    public void updateRegistrationBook() {
         // Обновляем списки децимальных групп
         loadAndDistributeDecimalGroups();
 

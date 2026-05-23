@@ -3,6 +3,7 @@ package ru.wert.tubus.chogori.application.cardsbox;
 
 import javafx.application.Platform;
 import javafx.fxml.FXML;
+import javafx.scene.Node;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.Tab;
@@ -15,14 +16,11 @@ import ru.wert.tubus.chogori.entities.passports.PassportType;
 import ru.wert.tubus.chogori.entities.passports.Passport_Patch;
 import ru.wert.tubus.chogori.entities.passports.Passport_PatchController;
 import ru.wert.tubus.chogori.entities.passports.Passport_TableView;
-import ru.wert.tubus.chogori.search.SearchField;
-import ru.wert.tubus.client.entity.models.Folder;
+import ru.wert.tubus.chogori.tabs.AppTab;
 import ru.wert.tubus.client.entity.models.Passport;
-import ru.wert.tubus.client.interfaces.Item;
+import ru.wert.tubus.client.interfaces.ITabController;
 import ru.wert.tubus.client.interfaces.SearchableTab;
 import ru.wert.tubus.client.interfaces.UpdatableTabController;
-
-import java.util.*;
 
 import static ru.wert.tubus.chogori.setteings.ChogoriSettings.CH_DEFAULT_PREFIX;
 import static ru.wert.tubus.chogori.statics.UtilStaticNodes.CH_SEARCH_FIELD;
@@ -170,7 +168,7 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
         if (registrationBookPatch != null) {
             RegistrationBookController registrationBookController = registrationBookPatch.getRegistrationBookController();
             if (registrationBookController != null) {
-                registrationBookController.updateTab();
+                registrationBookController.updateRegistrationBook();
                 log.debug("Журнал регистрации обновлен");
             }
         }

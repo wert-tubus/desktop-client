@@ -11,6 +11,7 @@ import lombok.Getter;
 import ru.wert.tubus.client.interfaces.ITabController;
 import ru.wert.tubus.client.interfaces.SearchableTab;
 import ru.wert.tubus.chogori.popups.HintPopup;
+import ru.wert.tubus.client.interfaces.UpdatableTabController;
 
 import java.util.Iterator;
 import java.util.List;
@@ -80,7 +81,11 @@ public class MainTabPane extends TabPane {
                     hideSearchPane();
             });
 
+            AppTab finalTab = tab;
             tab.setOnSelectionChanged(e->{
+                if(finalTab.getTabController() instanceof UpdatableTabController){
+                    ((UpdatableTabController) finalTab.getTabController()).updateTab();
+                }
                 if(searchableTabController instanceof SearchableTab) {
                     ((SearchableTab) searchableTabController).tuneSearching();
                     showSearchPane();

@@ -97,7 +97,7 @@ public class Passport_PatchController {
             CH_SEARCH_FIELD.setText("");
             passportsTable.setSearchedText("");
             passportsTable.setModifyingItem(null);
-            passportsTable.updateView();
+            passportsTable.showAllPassportsOfType();
         });
 
 
