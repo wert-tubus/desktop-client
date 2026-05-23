@@ -29,7 +29,7 @@ import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
 @Slf4j
 public class PassportListFileManager {
 
-    private final PassportService passportService;
+    private final RegistrationService registrationService;
     private final PrefixService prefixService;
     private final Consumer<Passport> addPassportConsumer;
     private final Runnable clearListRunnable;
@@ -43,20 +43,20 @@ public class PassportListFileManager {
     /**
      * Конструктор менеджера.
      *
-     * @param passportService      сервис для работы с паспортами
+     * @param registrationService      сервис для работы с паспортами
      * @param addPassportConsumer  функция добавления паспорта в список
      * @param clearListRunnable    функция очистки списка
      * @param refreshTablesRunnable функция обновления таблиц
      * @param showLoadingRunnable  функция показа индикации загрузки
      * @param hideLoadingRunnable  функция скрытия индикации загрузки
      */
-    public PassportListFileManager(PassportService passportService,
+    public PassportListFileManager(RegistrationService registrationService,
                                    Consumer<Passport> addPassportConsumer,
                                    Runnable clearListRunnable,
                                    Runnable refreshTablesRunnable,
                                    Runnable showLoadingRunnable,
                                    Runnable hideLoadingRunnable) {
-        this.passportService = passportService;
+        this.registrationService = registrationService;
         this.prefixService = PrefixService.getInstance();
         this.addPassportConsumer = addPassportConsumer;
         this.clearListRunnable = clearListRunnable;

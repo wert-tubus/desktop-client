@@ -6,7 +6,6 @@ import ru.wert.tubus.client.entity.models.Passport;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -16,11 +15,11 @@ import java.util.List;
 public class RegisteredPassportsManager {
 
     private final ObservableList<Passport> registeredPassports;
-    private final PassportService passportService;
+    private final RegistrationService registrationService;
 
-    public RegisteredPassportsManager(ObservableList<Passport> registeredPassports, PassportService passportService) {
+    public RegisteredPassportsManager(ObservableList<Passport> registeredPassports, RegistrationService registrationService) {
         this.registeredPassports = registeredPassports;
-        this.passportService = passportService;
+        this.registrationService = registrationService;
     }
 
     /**
@@ -54,7 +53,7 @@ public class RegisteredPassportsManager {
         List<Passport> invalidPassports = new ArrayList<>();
 
         for (Passport passport : registeredPassports) {
-            Passport freshPassport = passportService.getPassportByNumber(passport.getNumber());
+            Passport freshPassport = registrationService.getPassportByNumber(passport.getNumber());
             if (freshPassport != null) {
                 validPassports.add(freshPassport);
             } else {
@@ -94,7 +93,7 @@ public class RegisteredPassportsManager {
 
         List<Passport> restored = new ArrayList<>();
         for (String number : savedNumbers) {
-            Passport passport = passportService.getPassportByNumber(number);
+            Passport passport = registrationService.getPassportByNumber(number);
             if (passport != null) {
                 restored.add(passport);
             } else {

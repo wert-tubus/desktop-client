@@ -15,7 +15,7 @@ import static ru.wert.tubus.chogori.setteings.ChogoriSettings.CH_DEFAULT_PREFIX;
  * Сервис для операций с паспортами (поиск номеров, форматирование и т.д.)
  */
 @Slf4j
-public class PassportService {
+public class RegistrationService {
 
     private static final String SKETCH_NAME = "Эскиз";
     private static final String PIK_PREFIX = "ПИК";

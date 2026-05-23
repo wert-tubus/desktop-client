@@ -1,4 +1,4 @@
-package ru.wert.tubus.chogori.application.app_window.test;
+package ru.wert.tubus.chogori.application.app_window.temp;
 
 import javafx.application.Platform;
 import javafx.concurrent.Task;

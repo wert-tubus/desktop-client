@@ -82,7 +82,7 @@ public class RegistrationBookController implements UpdatableTabController {
 
     // ======================== СЕРВИСЫ И МЕНЕДЖЕРЫ ========================
 
-    private final PassportService passportService = new PassportService();
+    private final RegistrationService registrationService = new RegistrationService();
     private RegisteredPassportsManager registeredPassportsManager;
     private final Map<DecimalGroupingService.DecimalGroup, ListView<Decimal>> groupToListViewMap = new EnumMap<>(DecimalGroupingService.DecimalGroup.class);
     private final RegistrationBookPrintService printService = new RegistrationBookPrintService();
@@ -348,11 +348,11 @@ public class RegistrationBookController implements UpdatableTabController {
     private void initializeSelectedPassportsList() {
         ObservableList<Passport> selectedList = FXCollections.observableArrayList();
         lvListOFNumbers.setItems(selectedList);
-        registeredPassportsManager = new RegisteredPassportsManager(selectedList, passportService);
+        registeredPassportsManager = new RegisteredPassportsManager(selectedList, registrationService);
 
         // Инициализация менеджера файлов
         fileManager = new PassportListFileManager(
-                passportService,
+                registrationService,
                 passport -> registeredPassportsManager.addPassport(passport),
                 () -> registeredPassportsManager.clear(),
                 () -> refreshTablesPreservingState(),
@@ -657,7 +657,7 @@ public class RegistrationBookController implements UpdatableTabController {
 
         CompletableFuture.supplyAsync(() -> {
             try {
-                return passportService.getNextPIKNumber(decimal);
+                return registrationService.getNextPIKNumber(decimal);
             } catch (Exception e) {
                 log.error("Ошибка при получении следующего номера ПИК", e);
                 return null;
@@ -696,7 +696,7 @@ public class RegistrationBookController implements UpdatableTabController {
 
         CompletableFuture.supplyAsync(() -> {
             try {
-                return passportService.getNextSketchNumber(decimal);
+                return registrationService.getNextSketchNumber(decimal);
             } catch (Exception e) {
                 log.error("Ошибка при получении следующего эскизного номера", e);
                 return null;
@@ -809,7 +809,7 @@ public class RegistrationBookController implements UpdatableTabController {
                     refreshAfterPassportCreation(savedPassport, decimal);
                 }
             } else if (controller.isCancelled() && controller.isNumberReserved()) {
-                passportService.rollbackLastNumber(decimal, controller.getReservedNumber());
+                registrationService.rollbackLastNumber(decimal, controller.getReservedNumber());
             }
         } catch (IOException ex) {
             log.error("Ошибка при открытии формы создания паспорта", ex);
@@ -840,7 +840,7 @@ public class RegistrationBookController implements UpdatableTabController {
      */
     private void editPassport(Passport passport) {
         try {
-            Passport freshPassport = passportService.getPassportByNumber(passport.getNumber());
+            Passport freshPassport = registrationService.getPassportByNumber(passport.getNumber());
             if (freshPassport == null) {
                 Warning1.create("ОШИБКА!", "Номер не найден в базе данных", "Появится после перезагрузки");
                 registeredPassportsManager.refresh();
