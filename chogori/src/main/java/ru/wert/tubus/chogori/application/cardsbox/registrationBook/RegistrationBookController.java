@@ -47,7 +47,7 @@ public class RegistrationBookController implements UpdatableTabController {
 
     // ======================== FXML КОМПОНЕНТЫ ========================
 
-    @FXML private ListView<Passport> lvListOFNumbers;
+    @FXML private ListView<Passport> lvRegisteredPassports; //Список зарегистрированных чертежей
     @FXML private Button btnAddDecimalGroup;
     @FXML private Button btnClear;
     @FXML private Button btnSave;
@@ -103,13 +103,13 @@ public class RegistrationBookController implements UpdatableTabController {
      */
     @FXML
     public void initialize() {
-        initializeSelectedPassportsList();
+        initializeRegisteredPassportsList();
         initializeDecimalGroupsLists();
         setupButtonHandlers();
         setupContextMenus();
 
-        new BtnUp<>(btnUp, lvListOFNumbers, () -> registeredPassportsManager.saveState());
-        new BtnDown<>(btnDown, lvListOFNumbers, () -> registeredPassportsManager.saveState());
+        new BtnUp<>(btnUp, lvRegisteredPassports, () -> registeredPassportsManager.saveState());
+        new BtnDown<>(btnDown, lvRegisteredPassports, () -> registeredPassportsManager.saveState());
 
         // Восстановление состояния
         registeredPassportsManager.restoreState();
@@ -342,13 +342,13 @@ public class RegistrationBookController implements UpdatableTabController {
     }
 
     /**
-     * Инициализация списка выбранных паспортов.
+     * Инициализация списка зарегистрированных паспортов.
      * Настраивает отображение элементов и обработчики двойного клика.
      */
-    private void initializeSelectedPassportsList() {
-        ObservableList<Passport> selectedList = FXCollections.observableArrayList();
-        lvListOFNumbers.setItems(selectedList);
-        registeredPassportsManager = new RegisteredPassportsManager(selectedList, registrationService);
+    private void initializeRegisteredPassportsList() {
+        ObservableList<Passport> registeredList = FXCollections.observableArrayList();
+        lvRegisteredPassports.setItems(registeredList);
+        registeredPassportsManager = new RegisteredPassportsManager(registeredList, registrationService);
 
         // Инициализация менеджера файлов
         fileManager = new PassportListFileManager(
@@ -360,7 +360,7 @@ public class RegistrationBookController implements UpdatableTabController {
                 this::hideLoadingCursorAndEnableControls
         );
 
-        lvListOFNumbers.setCellFactory(lv -> new ListCell<Passport>() {
+        lvRegisteredPassports.setCellFactory(lv -> new ListCell<Passport>() {
             @Override
             protected void updateItem(Passport item, boolean empty) {
                 super.updateItem(item, empty);
@@ -452,13 +452,13 @@ public class RegistrationBookController implements UpdatableTabController {
             btnAddDecimalGroup.setOnAction(e -> addDecimalGroup());
         }
         if (btnClear != null) {
-            btnClear.setOnAction(e -> clearSelectedList());
+            btnClear.setOnAction(e -> clearRegisteredList());
         }
         if (btnSave != null) {
-            btnSave.setOnAction(e -> exportSelectedListToFile());
+            btnSave.setOnAction(e -> exportRegisteredListToFile());
         }
         if (btnLoad != null) {
-            btnLoad.setOnAction(e -> loadSelectedList());
+            btnLoad.setOnAction(e -> loadRegisteredList());
         }
         if (btnPrint != null) {
             btnPrint.setOnAction(e -> printList());
@@ -572,7 +572,7 @@ public class RegistrationBookController implements UpdatableTabController {
      */
     private void setupContextMenus() {
         PassportContextMenu contextMenu = new PassportContextMenu(
-                lvListOFNumbers,
+                lvRegisteredPassports,
                 this::editPassport,
                 this::refreshPassportTables,
                 () -> registeredPassportsManager.refresh()
@@ -1003,7 +1003,7 @@ public class RegistrationBookController implements UpdatableTabController {
      * Показывает диалог подтверждения перед очисткой.
      */
     @FXML
-    private void clearSelectedList() {
+    private void clearRegisteredList() {
         if (registeredPassportsManager.isEmpty()) {
             Warning1.create($ATTENTION, "Список уже пуст", "Нечего очищать");
             return;
@@ -1024,7 +1024,7 @@ public class RegistrationBookController implements UpdatableTabController {
      * Экспорт списка выбранных паспортов в файл.
      */
     @FXML
-    private void exportSelectedListToFile() {
+    private void exportRegisteredListToFile() {
         if (fileManager == null) {
             log.error("FileManager не инициализирован");
             Warning1.create("ОШИБКА!", "Системная ошибка", "Менеджер файлов не инициализирован");
@@ -1037,7 +1037,7 @@ public class RegistrationBookController implements UpdatableTabController {
      * Загрузка списка выбранных паспортов из файла.
      */
     @FXML
-    private void loadSelectedList() {
+    private void loadRegisteredList() {
         if (fileManager == null) {
             log.error("FileManager не инициализирован");
             Warning1.create("ОШИБКА!", "Системная ошибка", "Менеджер файлов не инициализирован");

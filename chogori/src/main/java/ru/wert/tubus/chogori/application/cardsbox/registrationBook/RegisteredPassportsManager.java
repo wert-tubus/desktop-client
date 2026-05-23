@@ -215,11 +215,4 @@ public class RegisteredPassportsManager {
         return false;
     }
 
-    /**
-     * Очистка кэша паспортов в сервисе
-     */
-    public void clearCache() {
-        registrationService.clearPassportCache();
-        log.debug("Кэш паспортов очищен");
-    }
 }

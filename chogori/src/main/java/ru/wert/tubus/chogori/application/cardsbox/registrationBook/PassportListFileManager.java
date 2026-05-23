@@ -1,15 +1,20 @@
 package ru.wert.tubus.chogori.application.cardsbox.registrationBook;
 
 import javafx.application.Platform;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonBar;
-import javafx.scene.control.ButtonType;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
+import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
+import ru.wert.tubus.chogori.setteings.ChogoriSettings;
 import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.client.entity.models.Prefix;
 import ru.wert.tubus.client.entity.serviceREST.PrefixService;
 import ru.wert.tubus.winform.warnings.Warning1;
+import ru.wert.tubus.winform.window_decoration.WindowDecoration;
 
 import java.io.File;
 import java.io.IOException;
@@ -384,8 +389,8 @@ public class PassportListFileManager {
         String number = null;
 
         // Удаляем префикс "ПИК." если есть
-        if (rawString.startsWith("ПИК.")) {
-            prefixName = "ПИК";
+        if (rawString.startsWith(ChogoriSettings.CH_DEFAULT_PREFIX.getName() + ".")) {
+            prefixName = ChogoriSettings.CH_DEFAULT_PREFIX.getName();
             String afterPrefix = rawString.substring(4);
             // Извлекаем номер (цифры.цифры)
             java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\d+\\.\\d+)");
@@ -486,32 +491,77 @@ public class PassportListFileManager {
         log.info("Загружено {} паспортов (действие: {})", added, action);
     }
 
-    /**
-     * Показывает диалог выбора действия при загрузке.
-     *
-     * @return выбранное действие или null, если пользователь отменил
-     */
     private LoadAction showLoadActionDialog(int count) {
-        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmAlert.setTitle("Подтверждение загрузки");
-        confirmAlert.setHeaderText("Загрузка списка паспортов");
-        confirmAlert.setContentText("Найдено " + count + " номеров.\n\nВыберите действие:");
+        // Создаем панель для диалога
+        VBox dialogPane = new VBox(15);
+        dialogPane.setPadding(new Insets(20));
+        dialogPane.setStyle("-fx-background-color: #2d2d2d; -fx-border-color: #555; -fx-border-radius: 5; -fx-background-radius: 5;");
 
-        ButtonType replaceButton = new ButtonType("Заменить текущий список");
-        ButtonType appendButton = new ButtonType("Добавить к текущему списку");
-        ButtonType cancelButton = new ButtonType("Отмена", ButtonBar.ButtonData.CANCEL_CLOSE);
+        // Заголовок
+        Label headerLabel = new Label("Загрузка списка паспортов");
+        headerLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
 
-        confirmAlert.getButtonTypes().setAll(replaceButton, appendButton, cancelButton);
+        // Разделитель
+        Separator separator = new Separator();
+        separator.setStyle("-fx-background-color: #555;");
 
-        ButtonType result = confirmAlert.showAndWait().orElse(cancelButton);
+        // Текст содержания
+        Label contentLabel = new Label("Найдено " + count + " номеров.\n\nВыберите действие:");
+        contentLabel.setStyle("-fx-text-fill: #ddd; -fx-font-size: 14px;");
+        contentLabel.setWrapText(true);
 
-        if (result == replaceButton) {
-            return LoadAction.REPLACE;
-        } else if (result == appendButton) {
-            return LoadAction.APPEND;
-        } else {
-            return null;
-        }
+        // Контейнер для результата
+        final LoadAction[] result = {null};
+
+        // Кнопки
+        Button replaceButton = new Button("Заменить текущий список");
+        replaceButton.setStyle("-fx-background-color: #4a4a4a; -fx-text-fill: white; -fx-font-size: 13px; -fx-padding: 8 15;");
+        replaceButton.setOnMouseEntered(e -> replaceButton.setStyle("-fx-background-color: #5a5a5a; -fx-text-fill: white; -fx-font-size: 13px; -fx-padding: 8 15;"));
+        replaceButton.setOnMouseExited(e -> replaceButton.setStyle("-fx-background-color: #4a4a4a; -fx-text-fill: white; -fx-font-size: 13px; -fx-padding: 8 15;"));
+        replaceButton.setOnAction(e -> {
+            result[0] = LoadAction.REPLACE;
+            dialogPane.getScene().getWindow().hide();
+        });
+
+        Button appendButton = new Button("Добавить к текущему списку");
+        appendButton.setStyle("-fx-background-color: #4a4a4a; -fx-text-fill: white; -fx-font-size: 13px; -fx-padding: 8 15;");
+        appendButton.setOnMouseEntered(e -> appendButton.setStyle("-fx-background-color: #5a5a5a; -fx-text-fill: white; -fx-font-size: 13px; -fx-padding: 8 15;"));
+        appendButton.setOnMouseExited(e -> appendButton.setStyle("-fx-background-color: #4a4a4a; -fx-text-fill: white; -fx-font-size: 13px; -fx-padding: 8 15;"));
+        appendButton.setOnAction(e -> {
+            result[0] = LoadAction.APPEND;
+            dialogPane.getScene().getWindow().hide();
+        });
+
+        Button cancelButton = new Button("Отмена");
+        cancelButton.setStyle("-fx-background-color: #6d2e2e; -fx-text-fill: white; -fx-font-size: 13px; -fx-padding: 8 15;");
+        cancelButton.setOnMouseEntered(e -> cancelButton.setStyle("-fx-background-color: #8a3a3a; -fx-text-fill: white; -fx-font-size: 13px; -fx-padding: 8 15;"));
+        cancelButton.setOnMouseExited(e -> cancelButton.setStyle("-fx-background-color: #6d2e2e; -fx-text-fill: white; -fx-font-size: 13px; -fx-padding: 8 15;"));
+        cancelButton.setOnAction(e -> {
+            result[0] = null;
+            dialogPane.getScene().getWindow().hide();
+        });
+
+        // Панель кнопок
+        HBox buttonBar = new HBox(10);
+        buttonBar.setAlignment(Pos.CENTER);
+        buttonBar.getChildren().addAll(replaceButton, appendButton, cancelButton);
+
+        // Собираем основную панель
+        dialogPane.getChildren().addAll(headerLabel, separator, contentLabel, buttonBar);
+
+        // Создаем окно с модальным режимом
+        WindowDecoration windowDecoration = new WindowDecoration("Подтверждение загрузки", dialogPane, false, null, true);
+        Stage dialogStage = windowDecoration.getWindow();
+
+        // Ссылка на окно для закрытия
+        Runnable closeWindow = () -> dialogStage.close();
+
+        // Закрываем окно при клике на крестик
+        dialogStage.setOnCloseRequest(e -> {
+            result[0] = null;
+        });
+
+        return result[0];
     }
 
     /**
