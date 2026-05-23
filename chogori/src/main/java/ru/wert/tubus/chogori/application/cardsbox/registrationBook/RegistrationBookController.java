@@ -887,6 +887,9 @@ public class RegistrationBookController implements UpdatableTabController {
      * Открывает форму создания и добавляет группу в соответствующий список.
      */
     private void addDecimalGroup() {
+        // Блокируем контролы перед операцией
+        showLoadingCursorAndDisableControls();
+
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/cardsBox/decimalsForm.fxml"));
             Parent parent = loader.load();
@@ -894,17 +897,50 @@ public class RegistrationBookController implements UpdatableTabController {
             DecimalFormController controller = loader.getController();
             controller.setData(null);
 
+            // Закрываем окно загрузки перед открытием формы
+            hideLoadingCursorAndEnableControls();
+
             new WindowDecoration("Добавление", parent, false, WF_MAIN_STAGE, true);
 
             if (controller.isAccepted()) {
                 Decimal savedDecimal = controller.getSavedDecimal();
                 if (savedDecimal != null) {
-                    addDecimalToAppropriateList(savedDecimal);
-                    log.info("Децимальная группа успешно добавлена: {}", savedDecimal.toUsefulString());
+                    // Снова блокируем контролы для операции добавления в БД
+                    showLoadingCursorAndDisableControls();
+
+                    // Выполняем добавление в отдельном потоке
+                    CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> {
+                        try {
+                            // Сохраняем в БД через сервис
+                            Decimal result = CH_DECIMALS.save(savedDecimal);
+                            return result != null;
+                        } catch (Exception e) {
+                            log.error("Ошибка при сохранении децимальной группы в БД", e);
+                            return false;
+                        }
+                    });
+
+                    future.thenAcceptAsync(success -> {
+                        if (success) {
+                            addDecimalToAppropriateList(savedDecimal);
+                            log.info("Децимальная группа успешно добавлена: {}", savedDecimal.toUsefulString());
+                            Warning1.create("УСПЕШНО!", "Децимальная группа добавлена",
+                                    savedDecimal.getName() + " успешно добавлена");
+                        } else {
+                            Warning1.create("ОШИБКА!", "Не удалось сохранить децимальную группу",
+                                    "Проверьте подключение к базе данных");
+                        }
+                        hideLoadingCursorAndEnableControls();
+                    }, Platform::runLater);
+                } else {
+                    hideLoadingCursorAndEnableControls();
                 }
+            } else {
+                hideLoadingCursorAndEnableControls();
             }
         } catch (IOException e) {
             log.error("Ошибка при открытии формы добавления децимальной группы", e);
+            hideLoadingCursorAndEnableControls();
             Warning1.create("ОШИБКА!", "Не удалось открыть форму добавления", e.getMessage());
         }
     }
