@@ -1,6 +1,7 @@
 package ru.wert.tubus.chogori.setteings;
 
 import javafx.scene.input.KeyCode;
+import ru.wert.tubus.chogori.application.services.ChogoriServices;
 import ru.wert.tubus.client.entity.models.AppSettings;
 import ru.wert.tubus.client.entity.models.Prefix;
 import ru.wert.tubus.client.entity.models.User;
@@ -24,6 +25,7 @@ public class ChogoriSettings {
     public static boolean CH_OPEN_DRAFTS_TAB_ON_START; //Открывать вкладку ЧЕРТЕЖИ на старте
     public static boolean CH_VALIDATE_DEC_NUMBERS; //Показывать префикс
     public static Prefix CH_DEFAULT_PREFIX; //Префикс предприятия
+    public static Prefix CH_EMPTY_PREFIX = ChogoriServices.CH_PREFIXES.findByName("-");; //Префикс пустой
 
     //НАСТРАИВАЕМЫЕ ПЕРЕМЕННЫЕ
     public static String CH_DEFAULT_MAT_TYPE = "Листовой"; //Расчетный тип материала

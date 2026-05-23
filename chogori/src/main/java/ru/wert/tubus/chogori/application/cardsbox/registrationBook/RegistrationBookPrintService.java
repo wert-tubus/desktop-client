@@ -1,19 +1,12 @@
 package ru.wert.tubus.chogori.application.cardsbox.registrationBook;
 
 import javafx.geometry.Insets;
-import javafx.print.PageLayout;
-import javafx.print.PageOrientation;
-import javafx.print.Paper;
-import javafx.print.Printer;
-import javafx.print.PrinterJob;
-import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.print.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
-import javafx.stage.Modality;
-import javafx.stage.Stage;
-import javafx.stage.StageStyle;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.winform.warnings.Warning1;
@@ -27,20 +20,20 @@ import static ru.wert.tubus.winform.statics.WinformStatic.WF_MAIN_STAGE;
 import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
 
 /**
- * Сервис для печати списка паспортов
+ * Сервис для печати списка чертежей
  */
 @Slf4j
 public class RegistrationBookPrintService {
 
-    private static final String TITLE = "ЖУРНАЛ РЕГИСТРАЦИИ ПАСПОРТОВ";
+    private static final String TITLE = "ЖУРНАЛ РЕГИСТРАЦИИ ЧЕРТЕЖЕЙ";
     private static final String SEPARATOR = "===============================";
     private static final Font CONTENT_FONT = Font.font("Consolas", 12);
     private static final Font PREVIEW_FONT = Font.font("Consolas", 11);
 
     /**
-     * Печать списка паспортов
+     * Печать списка чертежей
      *
-     * @param passports список паспортов для печати
+     * @param passports список чертежей для печати
      */
     public void printPassportsList(List<Passport> passports) {
         if (passports == null || passports.isEmpty()) {
@@ -60,7 +53,7 @@ public class RegistrationBookPrintService {
     /**
      * Формирует содержимое для печати
      *
-     * @param passports список паспортов
+     * @param passports список чертежей
      * @return отформатированная строка для печати
      */
     private String buildPrintContent(List<Passport> passports) {
@@ -100,7 +93,7 @@ public class RegistrationBookPrintService {
      * Форматирует строку таблицы
      *
      * @param number   порядковый номер
-     * @param passport паспорт
+     * @param passport чертеж
      * @return строка в том же формате, что и в lvListOFNumbers
      */
     private String formatTableRow(int number, Passport passport) {
@@ -114,7 +107,7 @@ public class RegistrationBookPrintService {
      * Показывает диалог предварительного просмотра
      *
      * @param content    содержимое для печати
-     * @param totalCount общее количество паспортов
+     * @param totalCount общее количество чертежей
      */
     private void showPrintPreview(String content, int totalCount) {
         VBox mainPane = new VBox();
@@ -126,22 +119,22 @@ public class RegistrationBookPrintService {
         textArea.setStyle("-fx-control-inner-background: white;");
 
         // Кнопки управления
-        Button printButton = new Button("Печать");
-        printButton.setStyle("-fx-font-size: 12px; -fx-padding: 5px 15px;");
-        printButton.setOnAction(e -> {
+        Button btnPrintWithSettings = new Button("Печать с настройками");
+        btnPrintWithSettings.setStyle("-fx-font-size: 12px; -fx-padding: 5px 15px;");
+        btnPrintWithSettings.setOnAction(e -> {
             performPrint(content);
             mainPane.getScene().getWindow().hide();
         });
 
-        Button cancelButton = new Button("Отмена");
-        cancelButton.setStyle("-fx-font-size: 12px; -fx-padding: 5px 15px;");
-        cancelButton.setOnAction(e -> {
+        Button btnCancel = new Button("Отмена");
+        btnCancel.setStyle("-fx-font-size: 12px; -fx-padding: 5px 15px;");
+        btnCancel.setOnAction(e -> {
             mainPane.getScene().getWindow().hide();
         });
 
-        Button printDirectButton = new Button("Печать без просмотра");
-        printDirectButton.setStyle("-fx-font-size: 12px; -fx-padding: 5px 15px;");
-        printDirectButton.setOnAction(e -> {
+        Button btnPrint = new Button("Печать");
+        btnPrint.setStyle("-fx-font-size: 12px; -fx-padding: 5px 15px;");
+        btnPrint.setOnAction(e -> {
             printDirect(content);
             mainPane.getScene().getWindow().hide();
         });
@@ -150,7 +143,7 @@ public class RegistrationBookPrintService {
         javafx.scene.layout.HBox buttonBar = new javafx.scene.layout.HBox(10);
         buttonBar.setPadding(new Insets(10));
         buttonBar.setStyle("-fx-background-color: #f0f0f0;");
-        buttonBar.getChildren().addAll(printButton, printDirectButton, cancelButton);
+        buttonBar.getChildren().addAll(btnPrint, btnPrintWithSettings, btnCancel);
 
         // Основная панель
         mainPane.setPrefSize(600.0, 800.0);
@@ -266,26 +259,6 @@ public class RegistrationBookPrintService {
         } catch (Exception e) {
             log.error("Ошибка при печати", e);
             printerJob.cancelJob();
-            Warning1.create("ОШИБКА!", "Не удалось выполнить печать", e.getMessage());
-        }
-    }
-
-    /**
-     * Простая печать без предварительного просмотра
-     *
-     * @param passports список паспортов
-     */
-    public void printSimple(List<Passport> passports) {
-        if (passports == null || passports.isEmpty()) {
-            Warning1.create($ATTENTION, "Список пуст", "Нечего печатать");
-            return;
-        }
-
-        try {
-            String content = buildPrintContent(passports);
-            performPrint(content);
-        } catch (Exception e) {
-            log.error("Ошибка при печати", e);
             Warning1.create("ОШИБКА!", "Не удалось выполнить печать", e.getMessage());
         }
     }

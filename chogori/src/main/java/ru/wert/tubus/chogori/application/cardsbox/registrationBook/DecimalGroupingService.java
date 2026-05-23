@@ -61,10 +61,4 @@ public class DecimalGroupingService {
         return DecimalGroup.OTHER;
     }
 
-    /**
-     * Проверяет, является ли децимальный номер эскизом
-     */
-    public static boolean isSketch(Decimal decimal) {
-        return DecimalGroup.SKETCH.matches(decimal);
-    }
 }
