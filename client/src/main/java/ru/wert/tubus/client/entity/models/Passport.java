@@ -16,12 +16,12 @@ import java.util.List;
 @EqualsAndHashCode(of = {"prefix", "number"}, callSuper = false)
 public class Passport extends _BaseEntity implements Item  {
 
-    private Prefix prefix;
-    private String number;
-    private String name; // Изделие
-    private String note;
-    private String userName;
-    private String date;
+    private Prefix prefix; //Префикс ПИК
+    private String number; //Номер 745222.001
+    private String name; // Наименование
+    private String note; //Примечание - где используется изначально
+    private String userName; //Пользователь, который добавил паспорт
+    private String date; //Когда добавил
 
     transient private List<Long> draftIds = new ArrayList<>(0);
 
