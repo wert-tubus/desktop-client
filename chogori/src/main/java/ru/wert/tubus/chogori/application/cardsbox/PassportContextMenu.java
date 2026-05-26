@@ -93,38 +93,23 @@ public class PassportContextMenu {
             }
         });
 
-        // Пункт меню "Обновить статус чертежей" (только для выбранного)
-        MenuItem refreshDraftsStatusItem = new MenuItem("Обновить статус чертежей");
-        refreshDraftsStatusItem.setOnAction(event -> {
+        MenuItem copyToClipboard = new MenuItem("Копировать наименование (Ctrl-C)");
+        copyToClipboard.setOnAction(event -> {
             RegisteredPassportItem selectedItem = tableView.getSelectionModel().getSelectedItem();
             if (selectedItem != null && selectedItem.getPassport() != null) {
-                // Вызываем обновление статуса через колбэк
-                // Обновление статуса происходит асинхронно через RegisteredPassportsManager
-                if (refreshCallback != null) {
-                    refreshCallback.run();
-                }
-                log.info("Запрошено обновление статуса чертежей для паспорта {}",
-                        selectedItem.getPassport().getNumber());
-            } else {
-                Warning1.create($ATTENTION, "Ничего не выбрано",
-                        "Выберите паспорт для обновления статуса чертежей");
+                String strToCopy = selectedItem.getPassport().toUsefulString();
+
+                // Копирование в системный буфер обмена
+                javafx.scene.input.Clipboard clipboard = javafx.scene.input.Clipboard.getSystemClipboard();
+                javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
+                content.putString(strToCopy);
+                clipboard.setContent(content);
             }
         });
 
-        // Пункт меню "Обновить все статусы чертежей"
-        MenuItem refreshAllDraftsStatusItem = new MenuItem("Обновить все статусы чертежей");
-        refreshAllDraftsStatusItem.setOnAction(event -> {
-            if (refreshCallback != null) {
-                refreshCallback.run();
-            }
-            log.info("Запрошено обновление статусов чертежей для всех паспортов");
-        });
-
-        contextMenu.getItems().addAll(editItem, removeItem, deleteFromDbItem);
+        contextMenu.getItems().addAll(editItem, removeItem, deleteFromDbItem, copyToClipboard);
         contextMenu.getItems().add(new SeparatorMenuItem());
         contextMenu.getItems().add(showInfo);
-        contextMenu.getItems().add(new SeparatorMenuItem());
-        contextMenu.getItems().addAll(refreshDraftsStatusItem, refreshAllDraftsStatusItem);
 
         tableView.setContextMenu(contextMenu);
     }
