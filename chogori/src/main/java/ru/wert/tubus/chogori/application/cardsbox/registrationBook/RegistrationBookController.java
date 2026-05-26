@@ -7,7 +7,6 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
-import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -15,22 +14,20 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
-import javafx.scene.layout.VBox;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import ru.wert.tubus.chogori.application.cardsbox.*;
-import ru.wert.tubus.chogori.components.BtnDown;
+import ru.wert.tubus.chogori.application.cardsbox.CardsBoxController;
+import ru.wert.tubus.chogori.application.cardsbox.DecimalFormController;
+import ru.wert.tubus.chogori.application.cardsbox.PassportContextMenu;
+import ru.wert.tubus.chogori.application.cardsbox.RegistrationFormController;
 import ru.wert.tubus.chogori.components.BtnDownForTable;
-import ru.wert.tubus.chogori.components.BtnUp;
 import ru.wert.tubus.chogori.components.BtnUpForTable;
 import ru.wert.tubus.chogori.entities.passports.PassportInfo_Patch;
-import ru.wert.tubus.chogori.entities.passports.Passport_Manipulator;
 import ru.wert.tubus.chogori.entities.passports.Passport_PatchController;
 import ru.wert.tubus.chogori.entities.passports.Passport_TableView;
 import ru.wert.tubus.client.entity.models.Decimal;
 import ru.wert.tubus.client.entity.models.Passport;
-import ru.wert.tubus.client.interfaces.UpdatableTabController;
 import ru.wert.tubus.winform.warnings.Warning1;
 import ru.wert.tubus.winform.warnings.Warning2;
 import ru.wert.tubus.winform.window_decoration.WindowDecoration;
@@ -40,7 +37,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_DECIMALS;
-import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_DRAFTS;
 import static ru.wert.tubus.chogori.images.BtnImages.BTN_EDIT_IMG;
 import static ru.wert.tubus.winform.statics.WinformStatic.WF_MAIN_STAGE;
 import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
@@ -110,6 +106,7 @@ public class RegistrationBookController {
     private final Map<DecimalGroupingService.DecimalGroup, ListView<Decimal>> groupToListViewMap = new EnumMap<>(DecimalGroupingService.DecimalGroup.class);
     private final RegistrationBookPrintService printService = new RegistrationBookPrintService();
     private PassportListFileManager fileManager;
+    private PassportContextMenu passportContextMenu;
 
     @Setter private Passport_PatchController passportPIKController;
     @Setter private Passport_PatchController passportSketchController;
@@ -247,12 +244,19 @@ public class RegistrationBookController {
             }
         });
 
-        // Добавляем возможность перемещения с помощью стрелок
+        // Добавляем возможность перемещения с помощью стрелок и копирование в буфер обмена
         lvRegisteredPassports.setOnKeyPressed(event -> {
             if (event.getCode() == KeyCode.UP || event.getCode() == KeyCode.DOWN) {
                 // Стрелки уже обрабатываются стандартным поведением
-                // Просто сохраняем состояние после изменения выделения
                 Platform.runLater(() -> registeredPassportsManager.saveState());
+            } else if (event.isControlDown() && event.getCode() == KeyCode.C) {
+                // Ctrl+C для копирования
+                if (passportContextMenu != null) {
+                    boolean copied = passportContextMenu.copyPassportNameToClipboard();
+                    if (copied) {
+                        event.consume();
+                    }
+                }
             }
         });
 
@@ -264,7 +268,6 @@ public class RegistrationBookController {
                 }
             }
         });
-
     }
 
     /**
@@ -668,13 +671,13 @@ public class RegistrationBookController {
      * Настройка контекстного меню для таблицы выбранных паспортов.
      */
     private void setupContextMenus() {
-        PassportContextMenu contextMenu = new PassportContextMenu(
-                lvRegisteredPassports,  // теперь это TableView<RegisteredPassportItem>
+        passportContextMenu = new PassportContextMenu(
+                lvRegisteredPassports,
                 this::editPassport,
                 this::refreshPassportTables,
-                () -> registeredPassportsManager.saveState()  // сохраняем состояние после изменений
+                () -> registeredPassportsManager.saveState()
         );
-        contextMenu.setOnDeleteCallback(this::refreshAfterDelete);
+        passportContextMenu.setOnDeleteCallback(this::refreshAfterDelete);
     }
 
     // ======================== ЗАГРУЗКА ДАННЫХ ========================

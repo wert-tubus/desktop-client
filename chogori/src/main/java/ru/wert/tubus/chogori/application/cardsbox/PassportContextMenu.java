@@ -1,6 +1,7 @@
 package ru.wert.tubus.chogori.application.cardsbox;
 
 import javafx.scene.control.*;
+import javafx.scene.input.KeyCode;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.application.cardsbox.registrationBook.RegisteredPassportItem;
@@ -94,24 +95,48 @@ public class PassportContextMenu {
         });
 
         MenuItem copyToClipboard = new MenuItem("Копировать наименование (Ctrl-C)");
-        copyToClipboard.setOnAction(event -> {
-            RegisteredPassportItem selectedItem = tableView.getSelectionModel().getSelectedItem();
-            if (selectedItem != null && selectedItem.getPassport() != null) {
-                String strToCopy = selectedItem.getPassport().toUsefulString();
-
-                // Копирование в системный буфер обмена
-                javafx.scene.input.Clipboard clipboard = javafx.scene.input.Clipboard.getSystemClipboard();
-                javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
-                content.putString(strToCopy);
-                clipboard.setContent(content);
-            }
-        });
+        copyToClipboard.setOnAction(event -> copyPassportNameToClipboard());
 
         contextMenu.getItems().addAll(editItem, removeItem, deleteFromDbItem, copyToClipboard);
         contextMenu.getItems().add(new SeparatorMenuItem());
         contextMenu.getItems().add(showInfo);
 
         tableView.setContextMenu(contextMenu);
+    }
+
+    /**
+     * Копирует наименование выбранного паспорта в системный буфер обмена.
+     *
+     * @return true если копирование выполнено успешно, false если элемент не выбран
+     */
+    public boolean copyPassportNameToClipboard() {
+        RegisteredPassportItem selectedItem = tableView.getSelectionModel().getSelectedItem();
+        if (selectedItem != null && selectedItem.getPassport() != null) {
+            String strToCopy = selectedItem.getPassport().toUsefulString();
+
+            // Копирование в системный буфер обмена
+            javafx.scene.input.Clipboard clipboard = javafx.scene.input.Clipboard.getSystemClipboard();
+            javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
+            content.putString(strToCopy);
+            clipboard.setContent(content);
+
+            log.debug("Скопировано в буфер обмена: {}", strToCopy);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Настраивает глобальную горячую клавишу Ctrl+C для таблицы.
+     */
+    public void setupCopyShortcut() {
+        tableView.setOnKeyPressed(event -> {
+            if (event.isControlDown() && event.getCode() == KeyCode.C) {
+                if (copyPassportNameToClipboard()) {
+                    event.consume();
+                }
+            }
+        });
     }
 
     /**
