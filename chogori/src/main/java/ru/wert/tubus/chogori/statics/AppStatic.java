@@ -470,4 +470,30 @@ public class AppStatic {
         return firstChar + input.substring(1);
     }
 
+    /**
+     * Копирует указанный текст в системный буфер обмена.
+     *
+     * @param text текст для копирования
+     * @return true если копирование выполнено успешно, false если текст null или пустой
+     */
+    public static boolean copyTextToClipboard(String text) {
+        if (text == null || text.isEmpty()) {
+            log.debug("Попытка скопировать пустой или null текст в буфер обмена");
+            return false;
+        }
+
+        try {
+            javafx.scene.input.Clipboard clipboard = javafx.scene.input.Clipboard.getSystemClipboard();
+            javafx.scene.input.ClipboardContent content = new javafx.scene.input.ClipboardContent();
+            content.putString(text);
+            clipboard.setContent(content);
+
+            log.debug("Скопировано в буфер обмена: {}", text);
+            return true;
+        } catch (Exception e) {
+            log.error("Ошибка при копировании текста в буфер обмена: {}", e.getMessage());
+            return false;
+        }
+    }
+
 }

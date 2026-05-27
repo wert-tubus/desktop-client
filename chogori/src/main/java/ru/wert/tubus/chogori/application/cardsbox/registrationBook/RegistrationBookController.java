@@ -19,7 +19,7 @@ import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.application.cardsbox.CardsBoxController;
 import ru.wert.tubus.chogori.application.cardsbox.DecimalFormController;
-import ru.wert.tubus.chogori.application.cardsbox.PassportContextMenu;
+import ru.wert.tubus.chogori.application.cardsbox.RegistrationBookContextMenu;
 import ru.wert.tubus.chogori.application.cardsbox.RegistrationFormController;
 import ru.wert.tubus.chogori.components.BtnDownForTable;
 import ru.wert.tubus.chogori.components.BtnUpForTable;
@@ -106,7 +106,7 @@ public class RegistrationBookController {
     private final Map<DecimalGroupingService.DecimalGroup, ListView<Decimal>> groupToListViewMap = new EnumMap<>(DecimalGroupingService.DecimalGroup.class);
     private final RegistrationBookPrintService printService = new RegistrationBookPrintService();
     private PassportListFileManager fileManager;
-    private PassportContextMenu passportContextMenu;
+    private RegistrationBookContextMenu registrationBookContextMenu;
 
     @Setter private Passport_PatchController passportPIKController;
     @Setter private Passport_PatchController passportSketchController;
@@ -251,8 +251,8 @@ public class RegistrationBookController {
                 Platform.runLater(() -> registeredPassportsManager.saveState());
             } else if (event.isControlDown() && event.getCode() == KeyCode.C) {
                 // Ctrl+C для копирования
-                if (passportContextMenu != null) {
-                    boolean copied = passportContextMenu.copyPassportNameToClipboard();
+                if (registrationBookContextMenu != null) {
+                    boolean copied = registrationBookContextMenu.copyPassportNameToClipboard();
                     if (copied) {
                         event.consume();
                     }
@@ -671,13 +671,13 @@ public class RegistrationBookController {
      * Настройка контекстного меню для таблицы выбранных паспортов.
      */
     private void setupContextMenus() {
-        passportContextMenu = new PassportContextMenu(
+        registrationBookContextMenu = new RegistrationBookContextMenu(
                 lvRegisteredPassports,
                 this::editPassport,
                 this::refreshPassportTables,
                 () -> registeredPassportsManager.saveState()
         );
-        passportContextMenu.setOnDeleteCallback(this::refreshAfterDelete);
+        registrationBookContextMenu.setOnDeleteCallback(this::refreshAfterDelete);
     }
 
     // ======================== ЗАГРУЗКА ДАННЫХ ========================
