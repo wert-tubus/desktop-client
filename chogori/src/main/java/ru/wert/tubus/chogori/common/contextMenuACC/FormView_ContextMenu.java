@@ -94,6 +94,7 @@ public abstract class FormView_ContextMenu<P extends Item> extends ContextMenu {
     }
 
     private void delete(Event event){
+        if(isShowing()) hide();
         List<P> items = formView.getAllSelectedItems();
         commands.delete(event, items);
     }

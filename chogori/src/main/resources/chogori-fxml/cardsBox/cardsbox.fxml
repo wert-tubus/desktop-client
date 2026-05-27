@@ -9,32 +9,40 @@
 <?import javafx.scene.layout.*?>
 
 <AnchorPane prefHeight="400.0" prefWidth="600.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="ru.wert.tubus.chogori.application.cardsbox.CardsBoxController">
-   <children>
-      <VBox prefHeight="200.0" prefWidth="100.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-         <children>
-            <SplitPane fx:id="sppHorizontal" dividerPositions="0.6" VBox.vgrow="ALWAYS">
-              <items>
-                  <StackPane fx:id="stpRegistrationBook" prefHeight="150.0" prefWidth="200.0" />
-                  <StackPane fx:id="spPassports" prefHeight="150.0" prefWidth="200.0">
-                     <children>
-                        <TabPane fx:id="tabPane" prefHeight="200.0" prefWidth="200.0" side="BOTTOM" style="-fx-tab-min-width: 90; -fx-font-size: 14;" tabClosingPolicy="UNAVAILABLE">
-                          <tabs>
-                            <Tab fx:id="tabPIK" text="ПИК">
-                                 <content>
-                                    <StackPane fx:id="spPIK" prefHeight="150.0" prefWidth="200.0" />
-                                 </content>
-                            </Tab>
-                            <Tab fx:id="tabSketch" text="Эскиз">
-                                 <content>
-                                    <StackPane fx:id="spSketch" prefHeight="150.0" prefWidth="200.0" />
-                                 </content>
-                            </Tab>
-                          </tabs>
-                        </TabPane>
-                     </children></StackPane>
-              </items>
-            </SplitPane>
-         </children>
-      </VBox>
-   </children>
+    <children>
+        <VBox prefHeight="200.0" prefWidth="100.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <children>
+                <SplitPane fx:id="sppHorizontal" dividerPositions="0.6" VBox.vgrow="ALWAYS">
+                    <items>
+                        <StackPane fx:id="stpRegistrationBook" prefHeight="150.0" prefWidth="200.0" />
+                        <StackPane fx:id="spPassports" prefHeight="150.0" prefWidth="200.0">
+                            <children>
+                                <TabPane fx:id="tabPane" prefHeight="200.0" prefWidth="200.0" side="BOTTOM" style="-fx-tab-min-width: 90; -fx-font-size: 14;" tabClosingPolicy="UNAVAILABLE">
+                                    <tabs>
+                                        <Tab fx:id="tabPIK" text="ПИК">
+                                            <content>
+                                                <StackPane fx:id="spPIK" prefHeight="150.0" prefWidth="200.0">
+                                                    <children>
+                                                        <ProgressIndicator fx:id="progressbarPIK" maxHeight="50.0" maxWidth="50.0" visible="false" StackPane.alignment="CENTER" />
+                                                    </children>
+                                                </StackPane>
+                                            </content>
+                                        </Tab>
+                                        <Tab fx:id="tabSketch" text="Эскиз">
+                                            <content>
+                                                <StackPane fx:id="spSketch" prefHeight="150.0" prefWidth="200.0">
+                                                    <children>
+                                                        <ProgressIndicator fx:id="progressbarSketch" maxHeight="50.0" maxWidth="50.0" visible="false" StackPane.alignment="CENTER" />
+                                                    </children>
+                                                </StackPane>
+                                            </content>
+                                        </Tab>
+                                    </tabs>
+                                </TabPane>
+                            </children></StackPane>
+                    </items>
+                </SplitPane>
+            </children>
+        </VBox>
+    </children>
 </AnchorPane>

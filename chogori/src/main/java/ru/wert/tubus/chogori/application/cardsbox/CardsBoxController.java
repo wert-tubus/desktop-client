@@ -4,10 +4,7 @@ package ru.wert.tubus.chogori.application.cardsbox;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.control.SplitPane;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
+import javafx.scene.control.*;
 import javafx.scene.layout.StackPane;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -54,6 +51,11 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
     @FXML@Getter
     private TabPane tabPane;
 
+    @FXML@Getter
+    private ProgressIndicator progressbarPIK;
+
+    @FXML@Getter
+    private ProgressIndicator progressbarSketch;
 
     private Passport_TableView tvPIK;
     private Passport_Patch passportsPIKPatch;
@@ -96,10 +98,13 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
         tvPIK.setPassportType(PassportType.PIK);
         tvPIK.setShowPrefix(false);
 
-        //Инструментальную панель инициируем в последнюю очередь
+        passportPatchController.getPassportsTable().setCardsBoxController(this);
+
+        // Инструментальную панель инициируем в последнюю очередь
         passportPatchController.initPassportsToolBar(true, true);
 
-        spPIK.getChildren().add(passportsPIKPatch.getParent());
+        // ВАЖНО: Добавляем таблицу в StackPane ПЕРВОЙ (индекс 0), чтобы ProgressIndicator был поверх
+        spPIK.getChildren().add(0, passportsPIKPatch.getParent());
 
     }
 
@@ -118,10 +123,11 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
         tvSketch.setPassportType(PassportType.SKETCHES);
         tvSketch.setShowPrefix(false);
 
-        //Инструментальную панель инициируем в последнюю очередь
+        // Инструментальную панель инициируем в последнюю очередь
         passportPatchController.initPassportsToolBar(false, true);
 
-        spSketch.getChildren().add(passportsSketchPatch.getParent());
+        // ВАЖНО: Добавляем таблицу в StackPane ПЕРВОЙ (индекс 0), чтобы ProgressIndicator был поверх
+        spSketch.getChildren().add(0, passportsSketchPatch.getParent());
 
     }
 

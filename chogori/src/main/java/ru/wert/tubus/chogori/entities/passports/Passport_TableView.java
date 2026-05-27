@@ -2,13 +2,16 @@ package ru.wert.tubus.chogori.entities.passports;
 
 import javafx.application.Platform;
 import javafx.scene.control.Label;
+import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import ru.wert.tubus.chogori.application.cardsbox.CardsBoxController;
 import ru.wert.tubus.chogori.statics.AppStatic;
 import ru.wert.tubus.client.entity.models.Decimal;
 import ru.wert.tubus.client.entity.models.Draft;
@@ -53,8 +56,11 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
     @Getter@Setter private Decimal externalFilterDecimal = null;
 
     // Паттерны для фильтрации (аналогичны CardsBoxController)
+
+    @Getter@Setter private CardsBoxController cardsBoxController;
     private static final Pattern PIK_PATTERN = Pattern.compile("\\d{6}\\.\\d{3}");
     private static final Pattern SKETCH_PATTERN = Pattern.compile("Э\\d{5}");
+
 
     // Контекстное меню
     private Passport_ContextMenu contextMenu;
