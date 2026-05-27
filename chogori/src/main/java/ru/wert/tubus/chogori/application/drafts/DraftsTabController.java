@@ -32,7 +32,7 @@ import static ru.wert.tubus.winform.statics.WinformStatic.clearTempDir;
 
 
 @Slf4j
-public class DraftsEditorController implements SearchableTab, UpdatableTabController {
+public class DraftsTabController implements SearchableTab, UpdatableTabController {
 
 
     @FXML

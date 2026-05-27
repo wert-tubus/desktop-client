@@ -3,7 +3,7 @@ package ru.wert.tubus.chogori.chat.socketwork.recievedMessageHandlers;
 import com.google.gson.Gson;
 import javafx.scene.control.Tab;
 import lombok.extern.slf4j.Slf4j;
-import ru.wert.tubus.chogori.application.drafts.DraftsEditorController;
+import ru.wert.tubus.chogori.application.drafts.DraftsTabController;
 import ru.wert.tubus.chogori.tabs.AppTab;
 import ru.wert.tubus.client.entity.models.Draft;
 import ru.wert.tubus.client.entity.models.Message;
@@ -53,8 +53,8 @@ public class DraftMessageHandler {
             LOADED_DRAFTS.add(draft);
 
         for(Tab tab: CH_TAB_PANE.getTabs()){
-            if(((AppTab)tab).getTabController() instanceof DraftsEditorController){
-                ((DraftsEditorController)((AppTab)tab).getTabController()).updateTab();
+            if(((AppTab)tab).getTabController() instanceof DraftsTabController){
+                ((DraftsTabController)((AppTab)tab).getTabController()).updateTab();
             }
         }
     }
@@ -84,8 +84,8 @@ public class DraftMessageHandler {
 
         // Обновляем все открытые вкладки редактора чертежей
         for(Tab tab: CH_TAB_PANE.getTabs()) {
-            if(((AppTab)tab).getTabController() instanceof DraftsEditorController) {
-                ((DraftsEditorController)((AppTab)tab).getTabController()).updateTab();
+            if(((AppTab)tab).getTabController() instanceof DraftsTabController) {
+                ((DraftsTabController)((AppTab)tab).getTabController()).updateTab();
             }
         }
     }
@@ -101,8 +101,8 @@ public class DraftMessageHandler {
 
         // Обновляем все открытые вкладки редактора чертежей
         for(Tab tab: CH_TAB_PANE.getTabs()) {
-            if(((AppTab)tab).getTabController() instanceof DraftsEditorController) {
-                ((DraftsEditorController)((AppTab)tab).getTabController()).updateTab();
+            if(((AppTab)tab).getTabController() instanceof DraftsTabController) {
+                ((DraftsTabController)((AppTab)tab).getTabController()).updateTab();
             }
         }
     }

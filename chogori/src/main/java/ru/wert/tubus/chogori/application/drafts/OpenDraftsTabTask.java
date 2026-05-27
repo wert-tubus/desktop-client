@@ -12,12 +12,12 @@ import java.io.IOException;
 import static ru.wert.tubus.chogori.statics.UtilStaticNodes.CH_TAB_PANE;
 
 @Slf4j
-public class OpenDraftsEditorTask extends Task<DraftsEditorController> {
+public class OpenDraftsTabTask extends Task<DraftsTabController> {
 
-    DraftsEditorController controller = null;
+    DraftsTabController controller = null;
 
     @Override
-    public DraftsEditorController call() throws InterruptedException {
+    public DraftsTabController call() throws InterruptedException {
 
         if (isCancelled()) return null;
 

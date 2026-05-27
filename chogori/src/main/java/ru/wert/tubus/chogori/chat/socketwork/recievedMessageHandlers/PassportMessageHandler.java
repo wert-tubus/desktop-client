@@ -4,18 +4,15 @@ import com.google.gson.Gson;
 import javafx.application.Platform;
 import javafx.scene.control.Tab;
 import lombok.extern.slf4j.Slf4j;
-import ru.wert.tubus.chogori.application.drafts.DraftsEditorController;
+import ru.wert.tubus.chogori.application.drafts.DraftsTabController;
 import ru.wert.tubus.chogori.tabs.AppTab;
-import ru.wert.tubus.client.entity.models.Draft;
 import ru.wert.tubus.client.entity.models.Message;
 import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.client.entity.serviceQUICK.DraftQuickService;
-import ru.wert.tubus.client.entity.serviceQUICK.PassportQuickService;
 import ru.wert.tubus.client.retrofit.GsonConfiguration;
 import ru.wert.tubus.client.utils.MessageType;
 
 import static ru.wert.tubus.chogori.statics.UtilStaticNodes.CH_TAB_PANE;
-import static ru.wert.tubus.client.entity.serviceQUICK.DraftQuickService.LOADED_DRAFTS;
 import static ru.wert.tubus.client.entity.serviceQUICK.PassportQuickService.LOADED_PASSPORTS;
 
 /**
@@ -59,9 +56,9 @@ public class PassportMessageHandler {
 
         // Обновляем все открытые вкладки редактора чертежей
         for(Tab tab: CH_TAB_PANE.getTabs()) {
-            if(((AppTab)tab).getTabController() instanceof DraftsEditorController) {
+            if(((AppTab)tab).getTabController() instanceof DraftsTabController) {
                 Platform.runLater(()->{
-                    ((DraftsEditorController)((AppTab)tab).getTabController()).updateTab();
+                    ((DraftsTabController)((AppTab)tab).getTabController()).updateTab();
                 });
 
             }

@@ -3,7 +3,7 @@ package ru.wert.tubus.chogori.chat.dialog.dialogController;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
 import lombok.extern.slf4j.Slf4j;
-import ru.wert.tubus.chogori.application.drafts.OpenDraftsEditorTask;
+import ru.wert.tubus.chogori.application.drafts.OpenDraftsTabTask;
 import ru.wert.tubus.chogori.images.BtnImages;
 
 @Slf4j
@@ -50,7 +50,7 @@ public class ButtonsManager {
         controller.getBtnAddDraft().setTooltip(new Tooltip("Добавить чертеж"));
         controller.getBtnAddDraft().setOnAction(e -> {
             // Запуск задачи для открытия редактора чертежей
-            Thread t = new Thread(new OpenDraftsEditorTask());
+            Thread t = new Thread(new OpenDraftsTabTask());
             t.setDaemon(true);
             t.start();
             log.debug("Запущена задача для открытия редактора чертежей");

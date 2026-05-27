@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.StartChogori;
 import ru.wert.tubus.chogori.application.app_window.temp.FillDecimals;
 import ru.wert.tubus.chogori.application.app_window.temp.FillPassports;
-import ru.wert.tubus.chogori.application.drafts.OpenDraftsEditorTask;
+import ru.wert.tubus.chogori.application.drafts.OpenDraftsTabTask;
 import ru.wert.tubus.chogori.application.excel.ExcelChooser;
 import ru.wert.tubus.chogori.application.passports.OpenPassportsEditorTask;
 import ru.wert.tubus.chogori.chat.dialog.dialogListCell.DialogListCell;
@@ -377,7 +377,7 @@ public class AppMenuController {
      */
     public void openDrafts(Event event) {
 
-        Thread t = new Thread(new OpenDraftsEditorTask());
+        Thread t = new Thread(new OpenDraftsTabTask());
         t.setDaemon(true);
         t.start();
     }

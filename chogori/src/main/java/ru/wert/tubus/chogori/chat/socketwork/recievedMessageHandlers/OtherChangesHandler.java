@@ -2,7 +2,7 @@ package ru.wert.tubus.chogori.chat.socketwork.recievedMessageHandlers;
 
 import javafx.scene.control.Tab;
 import lombok.extern.slf4j.Slf4j;
-import ru.wert.tubus.chogori.application.drafts.DraftsEditorController;
+import ru.wert.tubus.chogori.application.drafts.DraftsTabController;
 import ru.wert.tubus.chogori.tabs.AppTab;
 
 import static ru.wert.tubus.chogori.statics.UtilStaticNodes.CH_TAB_PANE;
@@ -22,8 +22,8 @@ public class OtherChangesHandler {
     public static void handle() {
 
         for (Tab tab : CH_TAB_PANE.getTabs()) {
-            if (((AppTab) tab).getTabController() instanceof DraftsEditorController) {
-                ((DraftsEditorController) ((AppTab) tab).getTabController()).updateTab();
+            if (((AppTab) tab).getTabController() instanceof DraftsTabController) {
+                ((DraftsTabController) ((AppTab) tab).getTabController()).updateTab();
             }
         }
     }

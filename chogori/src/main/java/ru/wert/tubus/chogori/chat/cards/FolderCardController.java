@@ -7,8 +7,8 @@ import javafx.scene.control.Tab;
 import javafx.scene.input.MouseButton;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.VBox;
-import ru.wert.tubus.chogori.application.drafts.DraftsEditorController;
-import ru.wert.tubus.chogori.application.drafts.OpenDraftsEditorTask;
+import ru.wert.tubus.chogori.application.drafts.DraftsTabController;
+import ru.wert.tubus.chogori.application.drafts.OpenDraftsTabTask;
 import ru.wert.tubus.chogori.tabs.AppTab;
 import ru.wert.tubus.client.entity.models.Folder;
 import ru.wert.tubus.chogori.application.services.ChogoriServices;
@@ -49,17 +49,17 @@ public class FolderCardController {
 
                 AppTab pane = CH_TAB_PANE.tabIsAvailable("Чертежи");
                 if(pane != null){
-                    DraftsEditorController controller = (DraftsEditorController) pane.getTabController();
+                    DraftsTabController controller = (DraftsTabController) pane.getTabController();
                     controller.openFolderByName(folder, null);
                     for(Tab t : CH_TAB_PANE.getTabs()){
                         if(t.getId().equals("Чертежи") && !t.isSelected())
                             CH_TAB_PANE.getSelectionModel().select(t);
                     }
                 } else {
-                    OpenDraftsEditorTask openDraftsTask = new OpenDraftsEditorTask();
+                    OpenDraftsTabTask openDraftsTask = new OpenDraftsTabTask();
                     openDraftsTask.addEventHandler(WorkerStateEvent.WORKER_STATE_SUCCEEDED,
                             t -> {
-                                DraftsEditorController controller = openDraftsTask.getValue();
+                                DraftsTabController controller = openDraftsTask.getValue();
                                 controller.openFolderByName(folder, null);
                             });
 

@@ -3,7 +3,7 @@ package ru.wert.tubus.chogori.chat.socketwork.recievedMessageHandlers;
 import com.google.gson.Gson;
 import javafx.scene.control.Tab;
 import lombok.extern.slf4j.Slf4j;
-import ru.wert.tubus.chogori.application.drafts.DraftsEditorController;
+import ru.wert.tubus.chogori.application.drafts.DraftsTabController;
 import ru.wert.tubus.chogori.tabs.AppTab;
 import ru.wert.tubus.client.entity.models.Product;
 import ru.wert.tubus.client.entity.models.Message;
@@ -116,8 +116,8 @@ public class ProductMessageHandler {
      */
     private static void updateDraftsEditorTab() {
         for(Tab tab: CH_TAB_PANE.getTabs()){
-            if(((AppTab)tab).getTabController() instanceof DraftsEditorController){
-                ((DraftsEditorController)((AppTab)tab).getTabController()).updateTab();
+            if(((AppTab)tab).getTabController() instanceof DraftsTabController){
+                ((DraftsTabController)((AppTab)tab).getTabController()).updateTab();
             }
         }
     }

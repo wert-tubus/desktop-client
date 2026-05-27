@@ -3,7 +3,7 @@ package ru.wert.tubus.chogori.tabs;
 import javafx.scene.Node;
 import javafx.scene.control.Tab;
 import lombok.Getter;
-import ru.wert.tubus.chogori.application.drafts.DraftsEditorController;
+import ru.wert.tubus.chogori.application.drafts.DraftsTabController;
 import ru.wert.tubus.client.interfaces.ITabController;
 import ru.wert.tubus.client.interfaces.SearchableTab;
 import ru.wert.tubus.client.interfaces.UpdatableTabController;
@@ -28,8 +28,8 @@ public class AppTab extends Tab {
             if(tabController instanceof UpdatableTabController){
                 ((UpdatableTabController)tabController).updateTab();
             }
-            if(tabController instanceof DraftsEditorController){
-                CH_SEARCH_FIELD.changeSearchedTableView(((DraftsEditorController) tabController).getDraftsTable(), "ЧЕРТЕЖ");
+            if(tabController instanceof DraftsTabController){
+                CH_SEARCH_FIELD.changeSearchedTableView(((DraftsTabController) tabController).getDraftsTable(), "ЧЕРТЕЖ");
             }
 
             if(tabController instanceof SearchableTab){

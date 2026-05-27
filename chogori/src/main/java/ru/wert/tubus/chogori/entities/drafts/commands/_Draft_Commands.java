@@ -5,8 +5,7 @@ import javafx.event.Event;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import lombok.extern.slf4j.Slf4j;
-import ru.wert.tubus.chogori.application.drafts.DraftsEditorController;
-import ru.wert.tubus.chogori.previewer.PreviewerPatchController;
+import ru.wert.tubus.chogori.application.drafts.DraftsTabController;
 import ru.wert.tubus.chogori.tabs.AppTab;
 import ru.wert.tubus.client.entity.models.Draft;
 import ru.wert.tubus.client.entity.models.Folder;
@@ -141,7 +140,7 @@ public class _Draft_Commands implements ItemCommands<Draft> {
         Draft selectedDraft = tableView.getSelectionModel().getSelectedItems().get(0);
         Folder folder = selectedDraft.getFolder();
         AppTab pane = CH_TAB_PANE.tabIsAvailable("Чертежи");
-        DraftsEditorController controller = (DraftsEditorController) pane.getTabController();
+        DraftsTabController controller = (DraftsTabController) pane.getTabController();
         controller.openFolderByName(folder, selectedDraft);
     }
 }
