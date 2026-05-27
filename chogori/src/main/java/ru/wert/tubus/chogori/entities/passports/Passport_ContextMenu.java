@@ -1,8 +1,10 @@
 package ru.wert.tubus.chogori.entities.passports;
 
 import javafx.scene.control.MenuItem;
+import ru.wert.tubus.chogori.application.cardsbox.registrationBook.RegisteredPassportItem;
 import ru.wert.tubus.chogori.common.contextMenuACC.FormView_ContextMenu;
 import ru.wert.tubus.chogori.entities.passports.commands._Passport_Commands;
+import ru.wert.tubus.chogori.statics.AppStatic;
 import ru.wert.tubus.client.entity.models.Passport;
 
 import java.util.Arrays;
@@ -63,6 +65,24 @@ public class Passport_ContextMenu extends FormView_ContextMenu<Passport> {
     public List<MenuItem> createExtraItems() {
         MenuItem info = new MenuItem("Инфо");
         info.setOnAction(event -> PassportInfo_Patch.create(tableView.getSelectionModel().getSelectedItem()));
-        return Collections.singletonList(info);
+
+        MenuItem copyToClipboard = new MenuItem("Копировать наименование (Ctrl-C)");
+        copyToClipboard.setOnAction(event -> copyPassportNameToClipboard());
+
+        return Arrays.asList(copyToClipboard, info);
+    }
+
+    /**
+     * Копирует наименование выбранного паспорта в системный буфер обмена.
+     *
+     * @return true если копирование выполнено успешно, false если элемент не выбран
+     */
+    public boolean copyPassportNameToClipboard() {
+        Passport selectedItem = tableView.getSelectionModel().getSelectedItem();
+        if (selectedItem != null) {
+            String strToCopy = selectedItem.toUsefulString();
+            return AppStatic.copyTextToClipboard(strToCopy);
+        }
+        return false;
     }
 }

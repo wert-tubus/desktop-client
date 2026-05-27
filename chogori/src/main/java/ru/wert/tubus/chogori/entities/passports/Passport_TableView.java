@@ -1,12 +1,15 @@
 package ru.wert.tubus.chogori.entities.passports;
 
+import javafx.application.Platform;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableRow;
+import javafx.scene.input.KeyCode;
 import javafx.scene.layout.HBox;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
+import ru.wert.tubus.chogori.statics.AppStatic;
 import ru.wert.tubus.client.entity.models.Decimal;
 import ru.wert.tubus.client.entity.models.Draft;
 import ru.wert.tubus.client.entity.models.Folder;
@@ -96,6 +99,20 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
         });
 
         setupDoubleClickHandler();
+
+        // Добавляем возможность копированиz в буфер обмена Ctrl+C
+        setOnKeyPressed(event -> {
+            if (event.isControlDown() && event.getCode() == KeyCode.C) {
+                // Ctrl+C для копирования
+                Passport selectedPassport = getSelectionModel().getSelectedItem();
+                if (selectedPassport != null) {
+                    boolean copied = AppStatic.copyTextToClipboard(selectedPassport.toUsefulString());
+                    if (copied) {
+                        event.consume();
+                    }
+                }
+            }
+        });
 
     }
 
