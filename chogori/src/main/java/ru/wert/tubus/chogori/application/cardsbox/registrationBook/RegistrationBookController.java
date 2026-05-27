@@ -943,7 +943,7 @@ public class RegistrationBookController {
      */
     private void editPassport(Passport passport) {
         try {
-            Passport freshPassport = registrationService.getPassportByNumber(passport.getNumber());
+            Passport freshPassport = registrationService.findPassportByNumberFast(passport.getNumber());
             if (freshPassport == null) {
                 Warning1.create("ОШИБКА!", "Номер не найден в базе данных", "Появится после перезагрузки");
                 registeredPassportsManager.refresh();

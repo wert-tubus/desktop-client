@@ -13,6 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_DECIMALS;
+import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_PASSPORTS;
 import static ru.wert.tubus.chogori.setteings.ChogoriSettings.CH_DEFAULT_PREFIX;
 import static ru.wert.tubus.chogori.setteings.ChogoriSettings.CH_EMPTY_PREFIX;
 
@@ -50,9 +51,32 @@ public class RegistrationService {
 
         if (defaultPrefixCache == null) {
             log.error("Префикс по умолчанию '{}' не найден в БД", CH_DEFAULT_PREFIX);
+            // Пробуем загрузить префикс из БД по имени
+            try {
+                if (CH_DEFAULT_PREFIX != null && CH_DEFAULT_PREFIX.getName() != null) {
+                    defaultPrefixCache = prefixService.findByName(CH_DEFAULT_PREFIX.getName());
+                    if (defaultPrefixCache != null) {
+                        log.info("Префикс по умолчанию загружен из БД: {}", defaultPrefixCache.getName());
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Не удалось загрузить префикс по умолчанию из БД", e);
+            }
         }
+
         if (emptyPrefixCache == null) {
             log.error("Пустой префикс '{}' не найден в БД", CH_EMPTY_PREFIX);
+            // Пробуем загрузить пустой префикс из БД по имени
+            try {
+                if (CH_EMPTY_PREFIX != null && CH_EMPTY_PREFIX.getName() != null) {
+                    emptyPrefixCache = prefixService.findByName(CH_EMPTY_PREFIX.getName());
+                    if (emptyPrefixCache != null) {
+                        log.info("Пустой префикс загружен из БД: {}", emptyPrefixCache.getName());
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Не удалось загрузить пустой префикс из БД", e);
+            }
         }
     }
 
@@ -72,26 +96,36 @@ public class RegistrationService {
 
         Passport passport = null;
 
-        // Определяем тип номера
-        if (number.startsWith("Э")) {
-            // Эскизный номер
-            if (emptyPrefixCache != null) {
-                passport = passportService.findByPrefixIdAndNumber(emptyPrefixCache, number);
-            }
-        } else if (number.contains(".")) {
-            // ПИК номер (например, 745222.001)
-            if (defaultPrefixCache != null) {
-                passport = passportService.findByPrefixIdAndNumber(defaultPrefixCache, number);
-            }
-        } else {
-            // Неизвестный формат - пробуем оба варианта
-            if (defaultPrefixCache != null) {
-                passport = passportService.findByPrefixIdAndNumber(defaultPrefixCache, number);
-            }
+        try {
+            // Определяем тип номера
+            if (number.startsWith("Э")) {
+                // Эскизный номер
+                if (emptyPrefixCache != null && emptyPrefixCache.getId() != null) {
+                    passport = passportService.findByPrefixIdAndNumber(emptyPrefixCache, number);
+                } else {
+                    log.warn("emptyPrefixCache is null or has null ID, cannot find sketch passport: {}", number);
+                }
+            } else if (number.contains(".")) {
+                // ПИК номер (например, 745222.001)
+                if (defaultPrefixCache != null && defaultPrefixCache.getId() != null) {
+                    passport = passportService.findByPrefixIdAndNumber(defaultPrefixCache, number);
+                } else {
+                    log.warn("defaultPrefixCache is null or has null ID, cannot find PIK passport: {}", number);
+                }
+            } else {
+                // Неизвестный формат - пробуем оба варианта
+                if (defaultPrefixCache != null && defaultPrefixCache.getId() != null) {
+                    passport = passportService.findByPrefixIdAndNumber(defaultPrefixCache, number);
+                }
 
-            if (passport == null && emptyPrefixCache != null) {
-                passport = passportService.findByPrefixIdAndNumber(emptyPrefixCache, number);
+                if (passport == null && emptyPrefixCache != null && emptyPrefixCache.getId() != null) {
+                    passport = passportService.findByPrefixIdAndNumber(emptyPrefixCache, number);
+                }
             }
+        } catch (Exception e) {
+            log.error("Ошибка при поиске паспорта {}: {}", number, e.getMessage());
+            // Не сохраняем null в кэш при ошибке, чтобы можно было повторить попытку
+            return null;
         }
 
         // Сохраняем в кэш (даже null, чтобы не повторять запросы)
@@ -119,9 +153,16 @@ public class RegistrationService {
 
         // Загружаем каждый паспорт через быстрый метод (с кэшированием)
         for (String number : numbers) {
-            Passport passport = findPassportByNumberFast(number);
-            if (passport != null) {
-                result.put(number, passport);
+            try {
+                Passport passport = findPassportByNumberFast(number);
+                if (passport != null) {
+                    result.put(number, passport);
+                } else {
+                    log.warn("Паспорт с номером {} не найден в БД, он будет пропущен при восстановлении", number);
+                }
+            } catch (Exception e) {
+                log.error("Ошибка при загрузке паспорта {}: {}", number, e.getMessage());
+                // Продолжаем загрузку остальных паспортов
             }
         }
 
@@ -130,17 +171,10 @@ public class RegistrationService {
     }
 
     /**
-     * Очистка кэша паспортов (при обновлении/удалении)
-     */
-    public void clearPassportCache() {
-        passportCache.clear();
-        log.debug("Кэш паспортов очищен");
-    }
-
-    /**
      * Получение следующего доступного номера для паспорта ПИК
      */
     public String getNextPIKNumber(Decimal decimal) {
+        // ... остальной код без изменений ...
         Decimal freshDecimal = CH_DECIMALS.findById(decimal.getId());
         if (freshDecimal == null) {
             throw new RuntimeException("Децимальная группа не найдена");
@@ -170,6 +204,7 @@ public class RegistrationService {
      * Получение следующего доступного номера для эскизного паспорта
      */
     public String getNextSketchNumber(Decimal decimal) {
+        // ... остальной код без изменений ...
         Decimal freshDecimal = CH_DECIMALS.findById(decimal.getId());
         if (freshDecimal == null) {
             throw new RuntimeException("Децимальная группа не найдена");
@@ -199,6 +234,7 @@ public class RegistrationService {
      * Поиск свободного номера ПИК в диапазоне
      */
     private Integer findFreePIKNumber(String decimalName, List<Passport> allPassports, int start, int end) {
+        // ... остальной код без изменений ...
         Set<Integer> usedNumbers = allPassports.stream()
                 .filter(p -> p.getPrefix() != null && PIK_PREFIX.equals(p.getPrefix().getName()))
                 .filter(p -> p.getNumber() != null && p.getNumber().startsWith(decimalName + "."))
@@ -228,6 +264,7 @@ public class RegistrationService {
      * Поиск свободного номера эскиза в диапазоне
      */
     private Integer findFreeSketchNumber(List<Passport> allPassports, int start, int end) {
+        // ... остальной код без изменений ...
         Set<Integer> usedNumbers = allPassports.stream()
                 .filter(p -> (p.getPrefix() == null || p.getPrefix().getName() == null || "-".equals(p.getPrefix().getName())))
                 .filter(p -> p.getNumber() != null && p.getNumber().startsWith("Э"))
@@ -262,26 +299,10 @@ public class RegistrationService {
      */
     private List<Passport> getAllPassports() {
         try {
-            return passportService.findAll();
+            return CH_PASSPORTS.findAll();
         } catch (Exception e) {
             log.error("Ошибка при загрузке паспортов из БД", e);
             return new ArrayList<>();
-        }
-    }
-
-    /**
-     * @deprecated Используйте findPassportByNumberFast для производительности
-     */
-    @Deprecated
-    public Passport getPassportByNumber(String number) {
-        try {
-            return getAllPassports().stream()
-                    .filter(p -> p.getNumber() != null && p.getNumber().equals(number))
-                    .findFirst()
-                    .orElse(null);
-        } catch (Exception e) {
-            log.error("Ошибка при поиске паспорта по номеру {}", number, e);
-            return null;
         }
     }
 
