@@ -166,6 +166,7 @@
                                 <columns>
                                   <TableColumn fx:id="colPassport" editable="false" prefWidth="400.0" sortable="false" text="Чертеж" />
                                   <TableColumn fx:id="colHasDrafts" editable="false" prefWidth="75.0" sortable="false" text="Есть в БД" />
+                                    <TableColumn fx:id="colNote" editable="false" prefWidth="400.0" sortable="false" text="Изделие" />
                                 </columns>
                               </TableView>
                                         <HBox alignment="BOTTOM_RIGHT" VBox.vgrow="NEVER">

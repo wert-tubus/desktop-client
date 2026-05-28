@@ -3,6 +3,7 @@ package ru.wert.tubus.chogori.application.cardsbox.registrationBook;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.fxml.FXML;
@@ -69,6 +70,7 @@ public class RegistrationBookController {
     @FXML @Getter private TableView<RegisteredPassportItem> lvRegisteredPassports; // Таблица зарегистрированных чертежей
     @FXML private TableColumn<RegisteredPassportItem, Passport> colPassport;
     @FXML private TableColumn<RegisteredPassportItem, Boolean> colHasDrafts;
+    @FXML private TableColumn<RegisteredPassportItem, String> colNote;
     @FXML private Button btnAddDecimalGroup;
     @FXML private Button btnClear;
     @FXML private Button btnSave;
@@ -237,6 +239,34 @@ public class RegistrationBookController {
         colHasDrafts.setPrefWidth(50);
         colHasDrafts.setMaxWidth(50);
         colHasDrafts.setMinWidth(50);
+
+        // Настройка колонки с описанием (note)
+        colNote.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getPassport().getNote()));
+        colNote.setCellFactory(column -> new TableCell<RegisteredPassportItem, String>() {
+            @Override
+            protected void updateItem(String note, boolean empty) {
+                super.updateItem(note, empty);
+                if (empty || note == null || note.isEmpty()) {
+                    setText(null);  // Для пустых строк не показываем ничего
+                    setGraphic(null);
+                    setStyle("");
+                } else {
+                    setText(note);
+                    setStyle("-fx-font-size: 13;");
+                }
+            }
+        });
+        colNote.setStyle("-fx-alignment: CENTER-LEFT;");
+
+        // Настройка растяжения колонки описания на все свободное место
+        colPassport.prefWidthProperty().bind(lvRegisteredPassports.widthProperty().multiply(0.35));
+        colHasDrafts.prefWidthProperty().bind(lvRegisteredPassports.widthProperty().multiply(0.05));
+        colNote.prefWidthProperty().bind(lvRegisteredPassports.widthProperty().multiply(0.60));
+
+        // Установка минимальных ширин
+        colPassport.setMinWidth(150);
+        colHasDrafts.setMinWidth(50);
+        colNote.setMinWidth(100);
 
         // Добавляем обработчик двойного клика
         lvRegisteredPassports.setOnMouseClicked(e -> {
