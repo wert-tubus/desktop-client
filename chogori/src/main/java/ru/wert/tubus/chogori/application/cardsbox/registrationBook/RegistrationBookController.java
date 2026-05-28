@@ -240,15 +240,18 @@ public class RegistrationBookController {
         colHasDrafts.setMaxWidth(50);
         colHasDrafts.setMinWidth(50);
 
-        // Настройка колонки с описанием (note)
-        colNote.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getPassport().getNote()));
+// Настройка колонки с описанием (note) - используем noteProperty из RegisteredPassportItem
+        colNote.setCellValueFactory(cellData -> cellData.getValue().noteProperty());
         colNote.setCellFactory(column -> new TableCell<RegisteredPassportItem, String>() {
             @Override
             protected void updateItem(String note, boolean empty) {
                 super.updateItem(note, empty);
-                if (empty || note == null || note.isEmpty()) {
-                    setText(null);  // Для пустых строк не показываем ничего
+                if (empty) {
+                    setText(null);
                     setGraphic(null);
+                    setStyle("");
+                } else if (note == null || note.isEmpty()) {
+                    setText(null);
                     setStyle("");
                 } else {
                     setText(note);

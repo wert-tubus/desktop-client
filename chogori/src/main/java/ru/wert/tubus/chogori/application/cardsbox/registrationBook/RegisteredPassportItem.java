@@ -3,20 +3,27 @@ package ru.wert.tubus.chogori.application.cardsbox.registrationBook;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import ru.wert.tubus.client.entity.models.Passport;
 
-/**
- * Обертка для паспорта в таблице зарегистрированных паспортов.
- * Содержит паспорт и информацию о наличии чертежей.
- */
 public class RegisteredPassportItem {
 
     private final SimpleObjectProperty<Passport> passport;
     private final BooleanProperty hasDrafts;
+    private final StringProperty note;
 
     public RegisteredPassportItem(Passport passport, boolean hasDrafts) {
         this.passport = new SimpleObjectProperty<>(passport);
         this.hasDrafts = new SimpleBooleanProperty(hasDrafts);
+        this.note = new SimpleStringProperty(passport != null ? passport.getNote() : "");
+
+        // Слушаем изменения паспорта и обновляем note
+        this.passport.addListener((obs, oldVal, newVal) -> {
+            if (newVal != null) {
+                note.set(newVal.getNote());
+            }
+        });
     }
 
     public Passport getPassport() {
@@ -25,6 +32,9 @@ public class RegisteredPassportItem {
 
     public void setPassport(Passport passport) {
         this.passport.set(passport);
+        if (passport != null) {
+            this.note.set(passport.getNote());
+        }
     }
 
     public SimpleObjectProperty<Passport> passportProperty() {
@@ -41,6 +51,18 @@ public class RegisteredPassportItem {
 
     public BooleanProperty hasDraftsProperty() {
         return hasDrafts;
+    }
+
+    public String getNote() {
+        return note.get();
+    }
+
+    public void setNote(String note) {
+        this.note.set(note);
+    }
+
+    public StringProperty noteProperty() {
+        return note;
     }
 
     @Override
