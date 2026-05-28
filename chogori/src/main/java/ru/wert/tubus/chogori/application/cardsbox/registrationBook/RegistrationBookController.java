@@ -101,6 +101,8 @@ public class RegistrationBookController {
     @FXML private Button btnDown;
     @FXML private Button btnEditDescription;
 
+    private final Map<TitledPane, ListView<Decimal>> paneToListViewMap = new HashMap<>();
+
     // ======================== СЕРВИСЫ И МЕНЕДЖЕРЫ ========================
 
     private final RegistrationService registrationService = new RegistrationService();
@@ -342,7 +344,7 @@ public class RegistrationBookController {
             ContextMenu contextMenu = new ContextMenu();
             MenuItem editItem = new MenuItem("Изменить");
             editItem.setOnAction(event -> {
-                Decimal selected = listView.getSelectionModel().getSelectedItem();
+                Decimal selected = getSelectedDecimal();
                 if (selected != null) {
                     editDescription();
                 }
@@ -350,7 +352,7 @@ public class RegistrationBookController {
 
             MenuItem deleteItem = new MenuItem("Удалить");
             deleteItem.setOnAction(event -> {
-                Decimal selected = listView.getSelectionModel().getSelectedItem();
+                Decimal selected = getSelectedDecimal();
                 if (selected != null) {
                     deleteDecimalGroup();
                 }
@@ -643,6 +645,15 @@ public class RegistrationBookController {
         groupToListViewMap.put(DecimalGroupingService.DecimalGroup.MEDICINE, lvMedicine);
         groupToListViewMap.put(DecimalGroupingService.DecimalGroup.OTHER, lvOther);
 
+        // Инициализация маппинга панелей к спискам
+        paneToListViewMap.put(tpSketches, lvSketches);
+        paneToListViewMap.put(tpDetails700, lvDetails700);
+        paneToListViewMap.put(tpDetails745, lvDetails745);
+        paneToListViewMap.put(tpAssm300, lvAssm300);
+        paneToListViewMap.put(tpAssm400, lvAssm400);
+        paneToListViewMap.put(tpMedicine, lvMedicine);
+        paneToListViewMap.put(tpOther, lvOther);
+
         // Настройка отображения для всех списков
         for (ListView<Decimal> listView : groupToListViewMap.values()) {
             setupDecimalListView(listView);
@@ -665,6 +676,27 @@ public class RegistrationBookController {
                 setText((empty || item == null) ? null : item.getName());
             }
         });
+    }
+
+    /**
+     * Возвращает выбранный Decimal из открытой (развернутой) панели аккордеона.
+     */
+    public Decimal getSelectedDecimal() {
+        if (accDecimalGroups == null || paneToListViewMap.isEmpty()) {
+            return null;
+        }
+
+        TitledPane expandedPane = accDecimalGroups.getExpandedPane();
+        if (expandedPane == null) {
+            return null;
+        }
+
+        ListView<Decimal> targetListView = paneToListViewMap.get(expandedPane);
+        if (targetListView == null) {
+            return null;
+        }
+
+        return targetListView.getSelectionModel().getSelectedItem();
     }
 
     /**
@@ -718,22 +750,8 @@ public class RegistrationBookController {
      * Изменение описания децимальной группы. Вызывается полное окно для редактирования Decimal
      */
     private void editDescription() {
-        // Ищем выбранный Decimal во всех списках
-        Decimal selected = null;
-        ListView<Decimal> sourceListView = null;
-
-        List<ListView<Decimal>> listViews = Arrays.asList(
-                lvSketches, lvDetails700, lvDetails745, lvAssm300, lvAssm400, lvMedicine, lvOther
-        );
-
-        for (ListView<Decimal> listView : listViews) {
-            Decimal candidate = listView.getSelectionModel().getSelectedItem();
-            if (candidate != null) {
-                selected = candidate;
-                sourceListView = listView;
-                break;
-            }
-        }
+        // Получаем выбранный Decimal из открытой панели аккордеона
+        Decimal selected = getSelectedDecimal();
 
         // Проверяем, выбран ли элемент
         if (selected == null) {
@@ -741,6 +759,28 @@ public class RegistrationBookController {
                     "Пожалуйста, выберите децимальную группу для редактирования");
             return;
         }
+
+        // Находим ListView, в котором находится выбранный элемент
+        ListView<Decimal> sourceListView = null;
+        TitledPane expandedPane = accDecimalGroups.getExpandedPane();
+        if (expandedPane != null) {
+            sourceListView = paneToListViewMap.get(expandedPane);
+        }
+
+        // Если не нашли через открытую панель (страховочный вариант), ищем по всем спискам
+        if (sourceListView == null) {
+            List<ListView<Decimal>> listViews = Arrays.asList(
+                    lvSketches, lvDetails700, lvDetails745, lvAssm300, lvAssm400, lvMedicine, lvOther
+            );
+            for (ListView<Decimal> listView : listViews) {
+                if (listView.getSelectionModel().getSelectedItem() != null) {
+                    sourceListView = listView;
+                    break;
+                }
+            }
+        }
+
+        final ListView<Decimal> finalSourceListView = sourceListView;
 
         try {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/chogori-fxml/cardsBox/decimalsForm.fxml"));
@@ -750,7 +790,7 @@ public class RegistrationBookController {
 
             // Устанавливаем данные для редактирования через setDataToEdit
             controller.setDataToEdit(selected);
-            Platform.runLater(()->{
+            Platform.runLater(() -> {
                 controller.getTfName().setEditable(false);
                 controller.getTfName().setStyle("-fx-background-color: #d4d2d2");
                 controller.getTaDescription().selectAll();
@@ -763,16 +803,22 @@ public class RegistrationBookController {
                 Decimal updatedDecimal = controller.getSavedDecimal();
                 if (updatedDecimal != null) {
                     // Обновляем элемент в исходном списке
-                    int index = sourceListView.getItems().indexOf(selected);
-                    if (index != -1) {
-                        sourceListView.getItems().set(index, updatedDecimal);
-                        sortDecimalList(sourceListView.getItems());
+                    if (finalSourceListView != null) {
+                        int index = finalSourceListView.getItems().indexOf(selected);
+                        if (index != -1) {
+                            finalSourceListView.getItems().set(index, updatedDecimal);
+                            sortDecimalList(finalSourceListView.getItems());
+                        }
+                    } else {
+                        // Если список не найден, обновляем все списки перезагрузкой
+                        log.warn("Не удалось найти исходный список для обновления Decimal, выполняем перезагрузку");
+                        loadAndDistributeDecimalGroups();
                     }
 
                     // Обновляем отображение описания, если редактируемая группа была выбрана
                     if (taDescriptionESKD != null) {
                         // Проверяем, не изменился ли выбранный элемент после редактирования
-                        Decimal currentSelected = getCurrentlySelectedDecimal();
+                        Decimal currentSelected = getSelectedDecimal();
                         if (currentSelected != null && currentSelected.getId().equals(updatedDecimal.getId())) {
                             taDescriptionESKD.setText(updatedDecimal.getDescription());
                         }
@@ -1334,17 +1380,6 @@ public class RegistrationBookController {
     public void updateDraftsStatus() {
         if (registeredPassportsManager != null) {
             registeredPassportsManager.updateAllDraftsStatus();
-        }
-    }
-
-    /**
-     * Обновление информации о наличии чертежей для конкретного паспорта.
-     *
-     * @param passport паспорт, для которого нужно обновить статус
-     */
-    public void updateDraftsStatusForPassport(Passport passport) {
-        if (registeredPassportsManager != null) {
-            registeredPassportsManager.updateDraftsStatusForPassport(passport);
         }
     }
 
