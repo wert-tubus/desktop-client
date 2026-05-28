@@ -26,6 +26,7 @@ import ru.wert.tubus.chogori.components.BtnUpForTable;
 import ru.wert.tubus.chogori.entities.passports.PassportInfo_Patch;
 import ru.wert.tubus.chogori.entities.passports.Passport_PatchController;
 import ru.wert.tubus.chogori.entities.passports.Passport_TableView;
+import ru.wert.tubus.chogori.setteings.ChogoriSettings;
 import ru.wert.tubus.client.entity.models.Decimal;
 import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.winform.warnings.Warning1;
@@ -37,6 +38,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_DECIMALS;
+import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_PASSPORTS;
 import static ru.wert.tubus.chogori.images.BtnImages.BTN_EDIT_IMG;
 import static ru.wert.tubus.winform.statics.WinformStatic.WF_MAIN_STAGE;
 import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
@@ -345,7 +347,15 @@ public class RegistrationBookController {
                     editDescription();
                 }
             });
-            contextMenu.getItems().add(editItem);
+
+            MenuItem deleteItem = new MenuItem("Удалить");
+            deleteItem.setOnAction(event -> {
+                Decimal selected = listView.getSelectionModel().getSelectedItem();
+                if (selected != null) {
+                    deleteDecimalGroup();
+                }
+            });
+            contextMenu.getItems().addAll(editItem, deleteItem);
             listView.setContextMenu(contextMenu);
 
             // Добавляем слушатель выделения для обновления описания
@@ -383,6 +393,133 @@ public class RegistrationBookController {
                 }
             });
         }
+    }
+
+    /**
+     * Удаление выбранной децимальной группы.
+     * Проверяет наличие связанных паспортов перед удалением.
+     */
+    private void deleteDecimalGroup() {
+        // Ищем выбранный Decimal во всех списках
+        Decimal selected = null;
+        ListView<Decimal> sourceListView = null;
+
+        List<ListView<Decimal>> listViews = Arrays.asList(
+                lvSketches, lvDetails700, lvDetails745, lvAssm300, lvAssm400, lvMedicine, lvOther
+        );
+
+        for (ListView<Decimal> listView : listViews) {
+            Decimal candidate = listView.getSelectionModel().getSelectedItem();
+            if (candidate != null) {
+                selected = candidate;
+                sourceListView = listView;
+                break;
+            }
+        }
+
+        // Проверяем, выбран ли элемент
+        if (selected == null) {
+            Warning1.create($ATTENTION, "Ничего не выбрано",
+                    "Пожалуйста, выберите децимальную группу для удаления");
+            return;
+        }
+
+        // Проверяем наличие связанных паспортов
+        if (hasLinkedPassports(selected)) {
+            Warning1.create($ATTENTION, "Невозможно удалить децимальную группу",
+                    String.format("Децимальная группа '%s' не может быть удалена,\n" +
+                            "так как с ней связаны существующие паспорта.", selected.getName()));
+            log.warn("Попытка удаления Decimal {} отклонена: существуют связанные паспорта", selected.getName());
+            return;
+        }
+
+        // Подтверждение удаления
+        boolean confirmed = Warning2.create("Подтверждение удаления",
+                "Удаление децимальной группы",
+                String.format("Вы действительно хотите удалить децимальную группу '%s'?\n\n" +
+                        "ВНИМАНИЕ: Операция необратима!", selected.getName()));
+
+        if (!confirmed) {
+            return;
+        }
+
+        // Блокируем контролы перед операцией
+        showLoadingCursorAndDisableControls();
+
+        // Выполняем удаление в отдельном потоке
+        Decimal finalSelected = selected;
+        CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> {
+            try {
+                // Удаляем через сервис
+                boolean deleted = CH_DECIMALS.delete(finalSelected);
+                if (deleted) {
+                    log.info("Децимальная группа успешно удалена: {}", finalSelected.toUsefulString());
+                    return true;
+                } else {
+                    log.error("Не удалось удалить децимальную группу: {}", finalSelected.getName());
+                    return false;
+                }
+            } catch (Exception e) {
+                log.error("Ошибка при удалении децимальной группы {}: {}", finalSelected.getName(), e.getMessage(), e);
+                return false;
+            }
+        });
+
+        Decimal finalSelected1 = selected;
+        ListView<Decimal> finalSourceListView = sourceListView;
+        future.thenAcceptAsync(success -> {
+            Platform.runLater(() -> {
+                hideLoadingCursorAndEnableControls();
+
+                if (success) {
+                    // Удаляем из списка
+                    if (finalSourceListView != null) {
+                        finalSourceListView.getItems().remove(finalSelected1);
+                        log.debug("Децимальная группа {} удалена из списка", finalSelected1.getName());
+                    }
+
+                    // Очищаем описание, если удалена выбранная группа
+                    if (taDescriptionESKD != null && getCurrentlySelectedDecimal() == null) {
+                        taDescriptionESKD.clear();
+                    }
+
+                    Warning1.create("УСПЕШНО!", "Децимальная группа удалена",
+                            String.format("Группа '%s' успешно удалена", finalSelected1.getName()));
+                } else {
+                    Warning1.create("ОШИБКА!", "Не удалось удалить децимальную группу",
+                            "Проверьте подключение к базе данных и повторите попытку");
+                }
+            });
+        }, Platform::runLater);
+    }
+
+    /**
+     * Проверяет, есть ли у Decimal связанные Passport с префиксом по умолчанию.
+     *
+     * @param decimal проверяемый десятичный классификатор
+     * @return true - если есть хотя бы один связанный Passport, false - если нет
+     */
+    private boolean hasLinkedPassports(Decimal decimal) {
+        String decimalName = decimal.getName(); // Например "745222"
+
+        // Ищем все паспорта, содержащие в номере этот decimal
+        List<Passport> passports = CH_PASSPORTS.findAllByText(decimalName);
+
+        if (passports == null || passports.isEmpty()) {
+            return false;
+        }
+
+        // Проверяем, есть ли паспорт с нужным префиксом и номером, начинающимся с decimalName
+        for (Passport passport : passports) {
+            if (passport.getPrefix() != null &&
+                    passport.getNumber() != null &&
+                    ChogoriSettings.CH_DEFAULT_PREFIX.equals(passport.getPrefix()) &&
+                    passport.getNumber().startsWith(decimalName + ".")) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -675,7 +812,9 @@ public class RegistrationBookController {
                 lvRegisteredPassports,
                 this::editPassport,
                 this::refreshPassportTables,
-                () -> registeredPassportsManager.saveState()
+                () -> registeredPassportsManager.saveState(),
+                this::showLoadingCursorAndDisableControls,
+                this::hideLoadingCursorAndEnableControls
         );
         registrationBookContextMenu.setOnDeleteCallback(this::refreshAfterDelete);
     }

@@ -1,5 +1,6 @@
 package ru.wert.tubus.chogori.application.cardsbox;
 
+import javafx.application.Platform;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import lombok.Setter;
@@ -9,7 +10,9 @@ import ru.wert.tubus.chogori.entities.passports.PassportInfo_Patch;
 import ru.wert.tubus.chogori.statics.AppStatic;
 import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.winform.warnings.Warning1;
+import ru.wert.tubus.winform.warnings.Warning2;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
@@ -25,6 +28,8 @@ public class RegistrationBookContextMenu {
     private final Consumer<Passport> editCallback;
     private final Runnable refreshCallback;
     private final Runnable refreshSelectedCallback;
+    private final Runnable disableControlsCallback;
+    private final Runnable enableControlsCallback;
 
     @Setter
     private Runnable onDeleteCallback;  // Колбэк после успешного удаления
@@ -40,11 +45,15 @@ public class RegistrationBookContextMenu {
     public RegistrationBookContextMenu(TableView<RegisteredPassportItem> tableView,
                                        Consumer<Passport> editCallback,
                                        Runnable refreshCallback,
-                                       Runnable refreshSelectedCallback) {
+                                       Runnable refreshSelectedCallback,
+                                       Runnable disableControlsCallback,   // НОВЫЙ ПАРАМЕТР
+                                       Runnable enableControlsCallback) {  // НОВЫЙ ПАРАМЕТР
         this.tableView = tableView;
         this.editCallback = editCallback;
         this.refreshCallback = refreshCallback;
         this.refreshSelectedCallback = refreshSelectedCallback;
+        this.disableControlsCallback = disableControlsCallback;
+        this.enableControlsCallback = enableControlsCallback;
 
         setupContextMenu();
     }
@@ -105,6 +114,18 @@ public class RegistrationBookContextMenu {
         tableView.setContextMenu(contextMenu);
     }
 
+    private void showLoadingCursorAndDisableControls() {
+        if (disableControlsCallback != null) {
+            disableControlsCallback.run();
+        }
+    }
+
+    private void hideLoadingCursorAndEnableControls() {
+        if (enableControlsCallback != null) {
+            enableControlsCallback.run();
+        }
+    }
+
     /**
      * Копирует наименование выбранного паспорта в системный буфер обмена.
      *
@@ -127,25 +148,49 @@ public class RegistrationBookContextMenu {
      */
     private void deletePassportFromDatabase(Passport passport, RegisteredPassportItem selectedItem) {
         // Подтверждение удаления
-        Alert confirmAlert = new Alert(Alert.AlertType.CONFIRMATION);
-        confirmAlert.setTitle("Подтверждение удаления");
-        confirmAlert.setHeaderText("Удаление паспорта из базы данных");
-        confirmAlert.setContentText("Вы действительно хотите удалить паспорт?\n" +
-                passport.toUsefulString() + "\n\nЭто действие необратимо!");
+        boolean confirmed = Warning2.create("Подтверждение удаления",
+                "Удаление чертежа из базы данных",
+                String.format("Вы действительно хотите удалить чертеж '%s'?\n\n" +
+                        "ВНИМАНИЕ: Операция необратима!", passport.getName()));
 
-        if (confirmAlert.showAndWait().orElse(ButtonType.CANCEL) != ButtonType.OK) {
+        if (!confirmed) {
             return;
         }
 
-        try {
-            // Вызов сервиса удаления
-            boolean deleted = ru.wert.tubus.chogori.application.services.ChogoriServices.CH_QUICK_PASSPORTS.delete(passport);
+        // БЛОКИРУЕМ КОНТРОЛЫ ПЕРЕД ОПЕРАЦИЕЙ УДАЛЕНИЯ
+        showLoadingCursorAndDisableControls();
 
-            if (deleted) {
-                log.info("Паспорт {} успешно удален из базы данных", passport.getNumber());
+        // Сохраняем ссылки для использования в асинхронном блоке
+        Passport finalPassport = passport;
+        RegisteredPassportItem finalSelectedItem = selectedItem;
 
+        // Выполняем удаление в отдельном потоке
+        CompletableFuture<Boolean> future = CompletableFuture.supplyAsync(() -> {
+            try {
+                // Вызов сервиса удаления
+                boolean deleted = ru.wert.tubus.chogori.application.services.ChogoriServices.CH_QUICK_PASSPORTS.delete(finalPassport);
+
+                if (deleted) {
+                    log.info("Паспорт {} успешно удален из базы данных", finalPassport.getNumber());
+                    return true;
+                } else {
+                    log.error("Не удалось удалить паспорт: {}", finalPassport.getNumber());
+                    return false;
+                }
+            } catch (Exception e) {
+                log.error("Ошибка при удалении паспорта {}: {}", finalPassport.getNumber(), e.getMessage(), e);
+                return false;
+            }
+        });
+
+        // Обработка результата в UI потоке
+        future.thenAcceptAsync(success -> Platform.runLater(() -> {
+            // РАЗБЛОКИРУЕМ КОНТРОЛЫ ПОСЛЕ ОПЕРАЦИИ
+            hideLoadingCursorAndEnableControls();
+
+            if (success) {
                 // Удаление из таблицы
-                tableView.getItems().remove(selectedItem);
+                tableView.getItems().remove(finalSelectedItem);
 
                 // Вызов колбэков для обновления
                 if (refreshCallback != null) {
@@ -158,19 +203,14 @@ public class RegistrationBookContextMenu {
                     onDeleteCallback.run();
                 }
 
-                Warning1.create($ATTENTION,
+                Warning1.create("УСПЕШНО!",
                         "Паспорт успешно удален",
-                        passport.toUsefulString());
+                        finalPassport.toUsefulString());
             } else {
                 Warning1.create($ATTENTION,
                         "Не удалось удалить паспорт",
                         "Попробуйте позже или обратитесь к администратору");
             }
-        } catch (Exception e) {
-            log.error("Ошибка при удалении паспорта", e);
-            Warning1.create($ATTENTION,
-                    "Ошибка при удалении паспорта",
-                    e.getMessage());
-        }
+        }), Platform::runLater);
     }
 }
