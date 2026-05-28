@@ -1,5 +1,8 @@
 package ru.wert.tubus.chogori.application.cardsbox.registrationBook;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -19,6 +22,7 @@ import ru.wert.tubus.winform.window_decoration.WindowDecoration;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -28,10 +32,6 @@ import java.util.stream.Collectors;
 import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_PASSPORTS;
 import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
 
-/**
- * Менеджер для загрузки и сохранения списка паспортов в файл.
- * Обеспечивает асинхронную работу с файловой системой и базой данных.
- */
 @Slf4j
 public class PassportListFileManager {
 
@@ -43,19 +43,10 @@ public class PassportListFileManager {
     private final Runnable showLoadingRunnable;
     private final Runnable hideLoadingRunnable;
 
-    // Кэш префиксов для быстрого доступа
     private Map<String, Prefix> prefixCache;
+    private static final ObjectMapper objectMapper = new ObjectMapper()
+            .enable(SerializationFeature.INDENT_OUTPUT);
 
-    /**
-     * Конструктор менеджера.
-     *
-     * @param registrationService      сервис для работы с паспортами
-     * @param addPassportConsumer  функция добавления паспорта в список
-     * @param clearListRunnable    функция очистки списка
-     * @param refreshTablesRunnable функция обновления таблиц
-     * @param showLoadingRunnable  функция показа индикации загрузки
-     * @param hideLoadingRunnable  функция скрытия индикации загрузки
-     */
     public PassportListFileManager(RegistrationService registrationService,
                                    Consumer<Passport> addPassportConsumer,
                                    Runnable clearListRunnable,
@@ -72,9 +63,6 @@ public class PassportListFileManager {
         initPrefixCache();
     }
 
-    /**
-     * Инициализация кэша префиксов.
-     */
     private void initPrefixCache() {
         prefixCache = new HashMap<>();
         try {
@@ -88,13 +76,6 @@ public class PassportListFileManager {
         }
     }
 
-    /**
-     * Экспорт списка паспортов в файл.
-     *
-     * @param passports список паспортов для экспорта
-     * @param initialFileName начальное имя файла
-     * @return true если экспорт успешен
-     */
     public boolean exportToFile(List<Passport> passports, String initialFileName) {
         if (passports == null || passports.isEmpty()) {
             Warning1.create($ATTENTION, "Список пуст", "Нечего экспортировать");
@@ -108,8 +89,21 @@ public class PassportListFileManager {
         }
 
         try {
-            String content = formatPassportsForExport(passports);
-            Files.write(exportFile.toPath(), content.getBytes());
+            List<String> lines = new ArrayList<>();
+            lines.add("Список зарегистрированных номеров");
+            lines.add("=================================");
+            lines.add("Дата экспорта: " + new Date());
+            lines.add("");
+
+            int counter = 1;
+            for (Passport passport : passports) {
+                lines.add(String.format("%d. %s", counter++, passport.getNumber()));
+            }
+
+            lines.add("");
+            lines.add("Всего номеров: " + passports.size());
+
+            Files.write(exportFile.toPath(), lines, StandardCharsets.UTF_8);
             log.info("Экспортировано {} паспортов в файл {}", passports.size(), exportFile.getAbsolutePath());
             Warning1.create("ОТЛИЧНО!", "Экспорт выполнен", "Список успешно сохранен в файл!");
             return true;
@@ -120,42 +114,36 @@ public class PassportListFileManager {
         }
     }
 
-    /**
-     * Загрузка списка паспортов из файла.
-     * Асинхронно загружает данные из БД и обновляет список.
-     */
     public void loadFromFile() {
         File selectedFile = chooseFileToLoad();
         if (selectedFile == null) {
             return;
         }
 
-        List<PassportInfo> passportInfos = loadPassportInfosFromFile(selectedFile);
-        if (passportInfos.isEmpty()) {
+        List<String> numbers = loadPassportNumbersFromFile(selectedFile);
+        if (numbers.isEmpty()) {
             Warning1.create($ATTENTION, "Файл пуст или имеет неверный формат",
                     "Не удалось загрузить номера из файла");
             return;
         }
 
-        // Показываем диалог выбора действия
-        LoadAction action = showLoadActionDialog(passportInfos.size());
+        LoadAction action = showLoadActionDialog(numbers.size());
         if (action == null) {
             return;
         }
 
-        // Показываем индикацию загрузки
         if (showLoadingRunnable != null) {
             showLoadingRunnable.run();
         }
 
-        CompletableFuture.supplyAsync(() -> loadPassportsFromDatabase(passportInfos))
+        CompletableFuture.supplyAsync(() -> loadPassportsByNumbers(numbers))
                 .thenAccept(passports -> {
                     Platform.runLater(() -> {
                         if (hideLoadingRunnable != null) {
                             hideLoadingRunnable.run();
                         }
 
-                        if (passports == null) {
+                        if (passports == null || passports.isEmpty()) {
                             Warning1.create("ОШИБКА!", "Не удалось загрузить паспорта",
                                     "Проверьте подключение к базе данных");
                             return;
@@ -185,12 +173,6 @@ public class PassportListFileManager {
                 });
     }
 
-    /**
-     * Сохраняет текущее состояние выбранных паспортов в JSON файл (автосохранение).
-     *
-     * @param passports список паспортов для автосохранения
-     * @param storageFile файл для сохранения
-     */
     public static void autoSave(List<Passport> passports, File storageFile) {
         if (storageFile == null) return;
 
@@ -200,9 +182,6 @@ public class PassportListFileManager {
                     .filter(number -> number != null && !number.isEmpty())
                     .collect(Collectors.toList());
 
-            com.fasterxml.jackson.databind.ObjectMapper objectMapper =
-                    new com.fasterxml.jackson.databind.ObjectMapper();
-            objectMapper.enable(com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT);
             objectMapper.writeValue(storageFile, passportNumbers);
             log.info("Автосохранение: сохранено {} номеров", passportNumbers.size());
         } catch (IOException e) {
@@ -210,33 +189,19 @@ public class PassportListFileManager {
         }
     }
 
-    /**
-     * Загружает номера из JSON файла автосохранения.
-     *
-     * @param storageFile файл с автосохранением
-     * @return список номеров паспортов
-     */
     public static List<String> autoLoad(File storageFile) {
         if (storageFile == null || !storageFile.exists()) {
             return new ArrayList<>();
         }
 
         try {
-            com.fasterxml.jackson.databind.ObjectMapper objectMapper =
-                    new com.fasterxml.jackson.databind.ObjectMapper();
-            return objectMapper.readValue(storageFile,
-                    new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {});
+            return objectMapper.readValue(storageFile, new TypeReference<List<String>>() {});
         } catch (IOException e) {
             log.error("Не удалось загрузить автосохранение", e);
             return new ArrayList<>();
         }
     }
 
-    // ======================== ПРИВАТНЫЕ МЕТОДЫ ========================
-
-    /**
-     * Открывает диалог выбора файла для сохранения.
-     */
     private File chooseFileToSave(String initialFileName) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Сохранить список номеров");
@@ -249,11 +214,9 @@ public class PassportListFileManager {
         fileChooser.getExtensionFilters().addAll(txtFilter, allFilesFilter);
         fileChooser.setSelectedExtensionFilter(txtFilter);
 
-        // Получаем директорию из настроек
         String registeredDraftsPath = AppPropsSettings.getInstance().getRegisteredDraftsPath();
         File initialDir = new File(registeredDraftsPath);
 
-        // Проверяем существование директории и при необходимости создаем
         if (!initialDir.exists()) {
             boolean created = initialDir.mkdirs();
             if (created) {
@@ -269,11 +232,8 @@ public class PassportListFileManager {
         }
 
         File selectedFile = fileChooser.showSaveDialog(null);
-
-        // Сохраняем выбранную директорию в настройки (если файл выбран)
         saveSelectedDirToProperties(selectedFile);
 
-        // Добавляем расширение .txt если его нет
         if (selectedFile != null && !selectedFile.getName().toLowerCase().endsWith(".txt")) {
             selectedFile = new File(selectedFile.getAbsolutePath() + ".txt");
         }
@@ -281,9 +241,6 @@ public class PassportListFileManager {
         return selectedFile;
     }
 
-    /**
-     * Открывает диалог выбора файла для загрузки.
-     */
     private File chooseFileToLoad() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Загрузить список номеров");
@@ -294,16 +251,13 @@ public class PassportListFileManager {
                 new FileChooser.ExtensionFilter("Все файлы (*.*)", "*.*");
         fileChooser.getExtensionFilters().addAll(txtFilter, allFilesFilter);
 
-        // Получаем директорию из настроек (как и для сохранения)
         String registeredDraftsPath = AppPropsSettings.getInstance().getRegisteredDraftsPath();
         File initialDir = new File(registeredDraftsPath);
 
-        // Проверяем существование директории
         if (initialDir.exists() && initialDir.isDirectory()) {
             fileChooser.setInitialDirectory(initialDir);
             log.debug("Начальная директория для загрузки: {}", registeredDraftsPath);
         } else {
-            // Если директория из настроек недоступна, используем дефолтную
             log.warn("Директория из настроек недоступна: {}, используется домашняя", registeredDraftsPath);
             File defaultDir = new File(System.getProperty("user.home"));
             if (defaultDir.exists()) {
@@ -312,18 +266,11 @@ public class PassportListFileManager {
         }
 
         File selectedFile = fileChooser.showOpenDialog(null);
-
-        // Сохраняем выбранную директорию в настройки (если файл выбран)
         saveSelectedDirToProperties(selectedFile);
 
         return selectedFile;
     }
 
-    /**
-     * Сохраняет директорию выбранного файла в настройки приложения.
-     *
-     * @param selectedFile выбранный файл (может быть null, если пользователь отменил выбор)
-     */
     private void saveSelectedDirToProperties(File selectedFile) {
         if (selectedFile == null) {
             log.debug("Файл не выбран, директория не сохраняется");
@@ -331,16 +278,12 @@ public class PassportListFileManager {
         }
 
         AppPropsSettings settings = AppPropsSettings.getInstance();
-
-        // Получаем директорию выбранного файла
         String selectedDirectory = selectedFile.getParent();
         String currentSettingsPath = settings.getRegisteredDraftsPath();
 
-        // Проверяем, что директория существует и отличается от текущей
         if (selectedDirectory != null && !selectedDirectory.isEmpty()) {
             File selectedDir = new File(selectedDirectory);
 
-            // Если директория не существует, пробуем создать
             if (!selectedDir.exists()) {
                 boolean created = selectedDir.mkdirs();
                 if (created) {
@@ -351,7 +294,6 @@ public class PassportListFileManager {
                 }
             }
 
-            // Если пользователь выбрал другую директорию, обновляем настройку
             if (!selectedDirectory.equals(currentSettingsPath)) {
                 settings.setRegisteredDraftsPath(selectedDirectory);
                 settings.saveParams();
@@ -365,239 +307,99 @@ public class PassportListFileManager {
         }
     }
 
-    /**
-     * Форматирует список паспортов для экспорта в текстовый файл.
-     * Сохраняет в формате "номер" для простоты последующей загрузки.
-     */
-    private String formatPassportsForExport(List<Passport> passports) {
-        StringBuilder content = new StringBuilder();
-        content.append("Список зарегистрированных номеров\n");
-        content.append("=================================\n");
-        content.append("Дата экспорта: ").append(new java.util.Date()).append("\n\n");
-
-        for (int i = 0; i < passports.size(); i++) {
-            Passport p = passports.get(i);
-            content.append(String.format("%d. %s\n", i + 1, p.getNumber()));
-        }
-
-        content.append("\n").append("Всего номеров: ").append(passports.size());
-        return content.toString();
-    }
-
-    /**
-     * Загружает информацию о паспортах из текстового файла.
-     *
-     * @param file файл для загрузки
-     * @return список объектов PassportInfo (префикс и номер)
-     */
-    private List<PassportInfo> loadPassportInfosFromFile(File file) {
-        List<PassportInfo> passportInfos = new ArrayList<>();
-
+    private List<String> loadPassportNumbersFromFile(File file) {
+        List<String> numbers = new ArrayList<>();
         try {
-            if (!file.exists()) {
-                log.error("Файл не существует: {}", file.getAbsolutePath());
-                return passportInfos;
-            }
-
-            List<String> lines = Files.readAllLines(file.toPath());
+            List<String> lines = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
 
             for (String line : lines) {
-                line = line.trim();
+                if (line == null) continue;
 
-                // Пропускаем пустые строки и заголовки
-                if (line.isEmpty() || line.startsWith("Список зарегистрированных номеров") ||
-                        line.startsWith("===") || line.startsWith("Дата экспорта:") ||
-                        line.startsWith("Всего номеров:")) {
+                String trimmed = line.trim();
+                if (trimmed.isEmpty()) continue;
+
+                // Пропускаем строки-заголовки
+                if (trimmed.contains("===") ||
+                        trimmed.contains("Дата экспорта") ||
+                        trimmed.contains("Всего номеров") ||
+                        trimmed.contains("Список зарегистрированных") ||
+                        trimmed.contains("=================================")) {
                     continue;
                 }
 
-                String content = line;
-
-                // Удаляем нумерацию в начале строки "1. "
-                if (line.matches("^\\d+\\..*")) {
-                    int dotIndex = line.indexOf('.');
-                    if (dotIndex > 0 && dotIndex + 1 < line.length()) {
-                        content = line.substring(dotIndex + 1).trim();
+                // Формат "1. 400000.001"
+                if (trimmed.matches("^\\d+\\.\\s+(.+)$")) {
+                    String number = trimmed.replaceFirst("^\\d+\\.\\s+", "");
+                    if (!number.isEmpty()) {
+                        numbers.add(number);
                     }
                 }
-
-                if (content.isEmpty()) {
-                    continue;
-                }
-
-                // Извлекаем префикс и номер
-                PassportInfo passportInfo = extractPassportInfo(content);
-                if (passportInfo != null) {
-                    passportInfos.add(passportInfo);
-                    log.debug("Извлечен паспорт: prefix='{}', number='{}' из строки: '{}'",
-                            passportInfo.getPrefixName(), passportInfo.getNumber(), line);
+                // Просто номер без нумерации
+                else if (!trimmed.isEmpty() && !trimmed.matches("^\\d+$")) {
+                    numbers.add(trimmed);
                 }
             }
 
-            log.info("Загружено {} паспортов из файла {}", passportInfos.size(), file.getAbsolutePath());
+            log.info("Загружено {} номеров из файла {}", numbers.size(), file.getName());
+            return numbers;
 
         } catch (IOException e) {
-            log.error("Ошибка при загрузке номеров из файла", e);
+            log.error("Ошибка при загрузке номеров из файла {}", file.getName(), e);
+            Warning1.create("ОШИБКА!", "Не удалось прочитать файл",
+                    "Файл имеет неверный формат или кодировку.\nИспользуйте UTF-8.");
+            return new ArrayList<>();
         }
-
-        return passportInfos;
     }
 
-    /**
-     * Извлекает информацию о паспорте из строки.
-     *
-     * Примеры:
-     * "700000.001" -> prefix=null, number="700000.001"
-     * "ПИК.700000.001 Деталь 01" -> prefix="ПИК", number="700000.001"
-     * "Э12345" -> prefix="Э", number="12345"
-     *
-     * @param rawString исходная строка
-     * @return объект PassportInfo или null
-     */
-    private PassportInfo extractPassportInfo(String rawString) {
-        if (rawString == null || rawString.isEmpty()) {
-            return null;
-        }
-
-        // Эскизный номер (начинается с буквы Э)
-        if (rawString.startsWith("Э")) {
-            String numbers = rawString.substring(1).replaceAll("[^0-9]", "");
-            if (!numbers.isEmpty()) {
-                return new PassportInfo("Э", numbers);
-            }
-            return null;
-        }
-
-        // ПИК номер
-        String prefixName = null;
-        String number = null;
-
-        // Удаляем префикс "ПИК." если есть
-        if (rawString.startsWith(ChogoriSettings.CH_DEFAULT_PREFIX.getName() + ".")) {
-            prefixName = ChogoriSettings.CH_DEFAULT_PREFIX.getName();
-            String afterPrefix = rawString.substring(4);
-            // Извлекаем номер (цифры.цифры)
-            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\d+\\.\\d+)");
-            java.util.regex.Matcher matcher = pattern.matcher(afterPrefix);
-            if (matcher.find()) {
-                number = matcher.group(1);
-            }
-        } else {
-            // Пробуем извлечь номер напрямую (формат "700000.001")
-            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile("(\\d+\\.\\d+)");
-            java.util.regex.Matcher matcher = pattern.matcher(rawString);
-            if (matcher.find()) {
-                number = matcher.group(1);
-            }
-        }
-
-        if (number != null && !number.isEmpty()) {
-            return new PassportInfo(prefixName, number);
-        }
-
-        log.warn("Не удалось извлечь информацию о паспорте из строки: {}", rawString);
-        return null;
-    }
-
-    /**
-     * Загружает полные объекты Passport из базы данных по информации о префиксе и номере.
-     */
-    private List<Passport> loadPassportsFromDatabase(List<PassportInfo> passportInfos) {
+    private List<Passport> loadPassportsByNumbers(List<String> numbers) {
         List<Passport> passports = new ArrayList<>();
 
-        for (PassportInfo info : passportInfos) {
+        for (String number : numbers) {
             try {
-                Passport passport = null;
-
-                // Если указан префикс, используем findByPrefixIdAndNumber
-                if (info.getPrefixName() != null && !info.getPrefixName().isEmpty()) {
-                    Prefix prefix = prefixCache.get(info.getPrefixName());
-                    if (prefix != null) {
-                        passport = CH_PASSPORTS.findByPrefixIdAndNumber(prefix, info.getNumber());
-                    } else {
-                        log.warn("Префикс {} не найден в кэше", info.getPrefixName());
-                    }
-                }
-
-                // Если префикс не указан или не найден, пробуем найти по номеру
-                if (passport == null) {
-                    // Ищем по номеру через findAllByName или другой метод
-                    // Это зависит от реализации API
-                    passport = findPassportByNumber(info.getNumber());
-                }
-
+                Passport passport = registrationService.findPassportByNumberFast(number);
                 if (passport != null) {
                     passports.add(passport);
                     log.debug("Загружен паспорт: {}", passport.getNumber());
                 } else {
-                    log.warn("Паспорт с номером {} не найден в базе данных", info.getNumber());
+                    log.warn("Паспорт с номером {} не найден в базе данных", number);
                 }
             } catch (Exception e) {
-                log.error("Ошибка при загрузке паспорта {}", info.getNumber(), e);
+                log.error("Ошибка при загрузке паспорта {}", number, e);
             }
         }
 
         return passports;
     }
 
-    /**
-     * Поиск паспорта по номеру (без указания префикса).
-     * Пробует найти среди всех префиксов.
-     */
-    private Passport findPassportByNumber(String number) {
-        for (Prefix prefix : prefixCache.values()) {
-            try {
-                Passport passport = CH_PASSPORTS.findByPrefixIdAndNumber(prefix, number);
-                if (passport != null) {
-                    return passport;
-                }
-            } catch (Exception e) {
-                log.debug("Не найден паспорт с префиксом {} и номером {}", prefix.getName(), number);
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Применяет загруженные паспорта к текущему списку.
-     */
     private void applyLoadedPassports(List<Passport> passports, LoadAction action) {
         if (action == LoadAction.REPLACE) {
             clearListRunnable.run();
         }
 
-        int added = 0;
         for (Passport passport : passports) {
             addPassportConsumer.accept(passport);
-            added++;
         }
 
-        log.info("Загружено {} паспортов (действие: {})", added, action);
+        log.info("Загружено {} паспортов (действие: {})", passports.size(), action);
     }
 
     private LoadAction showLoadActionDialog(int count) {
-        // Создаем панель для диалога
         VBox dialogPane = new VBox(15);
         dialogPane.setPadding(new Insets(20));
         dialogPane.setStyle("-fx-background-color: #2d2d2d; -fx-border-color: #555; -fx-border-radius: 5; -fx-background-radius: 5;");
 
-        // Заголовок
         Label headerLabel = new Label("Загрузка списка паспортов");
         headerLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
 
-        // Разделитель
         Separator separator = new Separator();
         separator.setStyle("-fx-background-color: #555;");
 
-        // Текст содержания
         Label contentLabel = new Label("Найдено " + count + " номеров.\n\nВыберите действие:");
         contentLabel.setStyle("-fx-text-fill: #ddd; -fx-font-size: 14px;");
         contentLabel.setWrapText(true);
 
-        // Контейнер для результата
         final LoadAction[] result = {null};
 
-        // Кнопки
         Button replaceButton = new Button("Заменить текущий список");
         replaceButton.setStyle("-fx-background-color: #4a4a4a; -fx-text-fill: white; -fx-font-size: 13px; -fx-padding: 8 15;");
         replaceButton.setOnMouseEntered(e -> replaceButton.setStyle("-fx-background-color: #5a5a5a; -fx-text-fill: white; -fx-font-size: 13px; -fx-padding: 8 15;"));
@@ -625,58 +427,17 @@ public class PassportListFileManager {
             dialogPane.getScene().getWindow().hide();
         });
 
-        // Панель кнопок
         HBox buttonBar = new HBox(10);
         buttonBar.setAlignment(Pos.CENTER);
         buttonBar.getChildren().addAll(replaceButton, appendButton, cancelButton);
 
-        // Собираем основную панель
         dialogPane.getChildren().addAll(headerLabel, separator, contentLabel, buttonBar);
 
-        // Создаем окно с модальным режимом
-        WindowDecoration windowDecoration = new WindowDecoration("Подтверждение загрузки", dialogPane, false, null, true);
-        Stage dialogStage = windowDecoration.getWindow();
-
-        // Ссылка на окно для закрытия
-        Runnable closeWindow = () -> dialogStage.close();
-
-        // Закрываем окно при клике на крестик
-        dialogStage.setOnCloseRequest(e -> {
-            result[0] = null;
-        });
+        new WindowDecoration("Подтверждение загрузки", dialogPane, false, null, true);
 
         return result[0];
     }
 
-    /**
-     * Внутренний класс для хранения информации о паспорте.
-     */
-    private static class PassportInfo {
-        private final String prefixName;
-        private final String number;
-
-        public PassportInfo(String prefixName, String number) {
-            this.prefixName = prefixName;
-            this.number = number;
-        }
-
-        public String getPrefixName() {
-            return prefixName;
-        }
-
-        public String getNumber() {
-            return number;
-        }
-
-        @Override
-        public String toString() {
-            return (prefixName != null ? prefixName + "." : "") + number;
-        }
-    }
-
-    /**
-     * Типы действий при загрузке.
-     */
     private enum LoadAction {
         REPLACE,
         APPEND
