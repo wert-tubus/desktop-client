@@ -1100,6 +1100,13 @@ public class RegistrationBookController {
             Parent parent = loader.load();
 
             RegistrationFormController controller = loader.getController();
+
+            // Передаем callback для управления индикацией
+            controller.setLoadingCallbacks(
+                    this::showLoadingCursorAndDisableControls,
+                    this::hideLoadingCursorAndEnableControls
+            );
+
             controller.setData(passportType, number, decimal);
 
             new WindowDecoration(windowTitle, parent, false, WF_MAIN_STAGE, true);
@@ -1153,6 +1160,13 @@ public class RegistrationBookController {
             Parent parent = loader.load();
 
             RegistrationFormController controller = loader.getController();
+
+            // Передаем callback для управления индикацией
+            controller.setLoadingCallbacks(
+                    this::showLoadingCursorAndDisableControls,
+                    this::hideLoadingCursorAndEnableControls
+            );
+
             controller.setDataForEdit(freshPassport);
 
             new WindowDecoration("Редактирование номера", parent, false, WF_MAIN_STAGE, true);

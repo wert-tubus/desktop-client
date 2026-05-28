@@ -79,7 +79,7 @@
 
                 <HBox alignment="CENTER_RIGHT" spacing="10.0">
                     <children>
-                  <StackPane fx:id="spIndicator" maxHeight="39.0" maxWidth="39.0" minHeight="39.0" minWidth="39.0" prefHeight="39.0" prefWidth="39.0" />
+                  <StackPane fx:id="spIndicator" maxHeight="39.0" maxWidth="39.0" minHeight="39.0" minWidth="39.0" prefHeight="39.0" prefWidth="39.0" visible="false" />
                   <Button fx:id="btnCancel" cancelButton="true" minWidth="-Infinity" mnemonicParsing="false" prefHeight="39.0" prefWidth="102.0" text="ОТМЕНА">
                      <font>
                         <Font name="System Bold" size="18.0" />

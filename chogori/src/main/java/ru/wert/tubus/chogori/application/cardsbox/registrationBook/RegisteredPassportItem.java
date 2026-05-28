@@ -49,10 +49,6 @@ public class RegisteredPassportItem {
         this.hasDrafts.set(hasDrafts);
     }
 
-    public BooleanProperty hasDraftsProperty() {
-        return hasDrafts;
-    }
-
     public String getNote() {
         return note.get();
     }

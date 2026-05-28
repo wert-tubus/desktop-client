@@ -64,9 +64,10 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
     private Button btnCancel;            // Кнопка отмены
 
     @FXML
-    private StackPane spIndicator;       // Индикатор загрузки
+    private StackPane spIndicator;       // Индикатор загрузки не используется
 
     // ======================== ПОЛЯ СОСТОЯНИЯ ========================
+
 
     private Passport newPassport;        // Новый паспорт до сохранения
     private Passport savedPassport;      // Сохраненный паспорт (после сохранения в БД)
@@ -83,6 +84,16 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
     private Passport editingPassport;    // Редактируемый паспорт
 
     // ======================== ИНИЦИАЛИЗАЦИЯ ========================
+
+    private Runnable showLoadingCallback;
+    private Runnable hideLoadingCallback;
+    /**
+     * Установка callback для управления индикацией загрузки
+     */
+    public void setLoadingCallbacks(Runnable showCallback, Runnable hideCallback) {
+        this.showLoadingCallback = showCallback;
+        this.hideLoadingCallback = hideCallback;
+    }
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
@@ -468,77 +479,57 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
         if (enteredDataCorrect()) {
             Passport updatedPassport = getNewItem();
             updatedPassport.setId(editingPassport.getId());
-
-            // Запуск задачи обновления
-            updateTask(event, spIndicator, btnOk, updatedPassport);
+            updatePassportTask(event, updatedPassport);
         }
     }
 
-    /**
-     * Задача обновления паспорта в отдельном потоке.
-     */
-    private void updateTask(javafx.event.Event event, StackPane spIndicator, Button btnOk, Passport passportToUpdate) {
-        if (spIndicator != null) {
-            spIndicator.setVisible(true);
-        }
-        if (btnOk != null) {
-            btnOk.setDisable(true);
+    private void updatePassportTask(javafx.event.Event event, Passport passportToUpdate) {
+        if (showLoadingCallback != null) {
+            showLoadingCallback.run();
         }
 
-        Task<Void> update = new Task<Void>() {
+        Task<Boolean> updateTask = new Task<Boolean>() {
             @Override
-            protected Void call() throws Exception {
-                log.info("Обновляем паспорт: ID={}, номер={}, наименование={}",
-                        passportToUpdate.getId(), passportToUpdate.getNumber(), passportToUpdate.getName());
-
-                try {
-                    boolean updated = CH_QUICK_PASSPORTS.update(passportToUpdate);
-
-                    if (updated) {
-                        log.info("Паспорт успешно обновлен с ID: {}", passportToUpdate.getId());
-                        savedPassport = passportToUpdate;
-                        accepted = true;
-
-                        Platform.runLater(() -> {
-                            if (event != null) {
-                                closeWindow(event);
-                            }
-                        });
-                    } else {
-                        Platform.runLater(() -> {
-                            Warning1.create($ATTENTION,
-                                    format("Не удалось обновить паспорт \n%s", passportToUpdate.toUsefulString()),
-                                    $SERVER_IS_NOT_AVAILABLE_MAYBE);
-                        });
-                        throw new RuntimeException("Не удалось обновить паспорт в базе данных");
-                    }
-                } catch (Exception e) {
-                    log.error("Ошибка при обновлении паспорта", e);
-                    throw e;
-                }
-                return null;
+            protected Boolean call() throws Exception {
+                return CH_QUICK_PASSPORTS.update(passportToUpdate);
             }
 
             @Override
             protected void succeeded() {
                 super.succeeded();
-                finishUpdate(spIndicator, btnOk);
-            }
-
-            @Override
-            protected void cancelled() {
-                super.cancelled();
-                finishUpdate(spIndicator, btnOk);
+                if (getValue()) {
+                    savedPassport = passportToUpdate;
+                    accepted = true;
+                }
+                if (hideLoadingCallback != null) {
+                    hideLoadingCallback.run();
+                }
+                Platform.runLater(() -> closeWindow(event));
             }
 
             @Override
             protected void failed() {
                 super.failed();
-                finishUpdate(spIndicator, btnOk);
+                if (hideLoadingCallback != null) {
+                    hideLoadingCallback.run();
+                }
+                Platform.runLater(() -> {
+                    Warning1.create($ATTENTION,
+                            format("Не удалось обновить паспорт \n%s", passportToUpdate.toUsefulString()),
+                            $SERVER_IS_NOT_AVAILABLE_MAYBE);
+                });
+            }
+
+            @Override
+            protected void cancelled() {
+                super.cancelled();
+                if (hideLoadingCallback != null) {
+                    hideLoadingCallback.run();
+                }
             }
         };
 
-        new Thread(update).start();
+        new Thread(updateTask).start();
     }
 
     // ======================== ОБРАБОТКА СОЗДАНИЯ ========================
@@ -556,7 +547,6 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
         if (enteredDataCorrect()) {
             Passport passportToSave = getNewItem();
 
-            // Проверка наличия паспорта в базе данных
             Passport foundPassport = CH_QUICK_PASSPORTS.findByPrefixIdAndNumber(
                     passportToSave.getPrefix(),
                     passportToSave.getNumber()
@@ -571,80 +561,76 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
                 return;
             }
 
-            // Запуск задачи сохранения
-            savePassportTask(event, spIndicator, btnOk, passportToSave);
+            savePassportTask(event, passportToSave);
         }
     }
 
     /**
      * Задача сохранения паспорта в отдельном потоке.
      */
-    private void savePassportTask(javafx.event.Event event, StackPane spIndicator, Button btnOk, Passport passportToSave) {
-        if (spIndicator != null) {
-            spIndicator.setVisible(true);
-        }
-        if (btnOk != null) {
-            btnOk.setDisable(true);
+    private void savePassportTask(javafx.event.Event event, Passport passportToSave) {
+        if (showLoadingCallback != null) {
+            showLoadingCallback.run();
         }
 
-        Task<Void> savePassport = new Task<Void>() {
+        Task<Passport> savePassport = new Task<Passport>() {
             @Override
-            protected Void call() throws Exception {
+            protected Passport call() throws Exception {
                 log.info("Сохраняем паспорт: тип={}, номер={}, наименование={}",
                         passportType, passportToSave.getNumber(), passportToSave.getName());
 
                 try {
-                    savedPassport = CH_QUICK_PASSPORTS.save(passportToSave);
-
-                    if (savedPassport != null && savedPassport.getId() != null) {
-                        log.info("Паспорт успешно сохранен с ID: {}", savedPassport.getId());
-                        accepted = true;
-                        numberReserved = false; // Номер успешно использован, откат не нужен
-
-                        Platform.runLater(() -> {
-                            if (event != null) {
-                                closeWindow(event);
-                            }
-                        });
+                    Passport result = CH_QUICK_PASSPORTS.save(passportToSave);
+                    if (result != null && result.getId() != null) {
+                        log.info("Паспорт успешно сохранен с ID: {}", result.getId());
+                        return result;
                     } else {
-                        Platform.runLater(() -> {
-                            Warning1.create($ATTENTION,
-                                    format("Не удалось создать паспорт \n%s", passportToSave.toUsefulString()),
-                                    $SERVER_IS_NOT_AVAILABLE_MAYBE);
-                        });
-                        throw new RuntimeException("Не удалось сохранить паспорт в базе данных");
+                        throw new RuntimeException("Не удалось сохранить паспорт");
                     }
                 } catch (Exception e) {
-                    log.error("Ошибка при сохранении паспорта", e);
-
-                    // При ошибке сохранения выполняем откат номера
                     if (numberReserved) {
                         rollbackNumber();
                     }
                     throw e;
                 }
-                return null;
             }
 
             @Override
             protected void succeeded() {
                 super.succeeded();
-                finishUpdate(spIndicator, btnOk);
-            }
+                savedPassport = getValue();
+                accepted = true;
+                numberReserved = false;
 
-            @Override
-            protected void cancelled() {
-                super.cancelled();
-                if (numberReserved) {
-                    rollbackNumber();
+                if (hideLoadingCallback != null) {
+                    hideLoadingCallback.run();
                 }
-                finishUpdate(spIndicator, btnOk);
+
+                Platform.runLater(() -> closeWindow(event));
             }
 
             @Override
             protected void failed() {
                 super.failed();
-                finishUpdate(spIndicator, btnOk);
+                if (hideLoadingCallback != null) {
+                    hideLoadingCallback.run();
+                }
+                Platform.runLater(() -> {
+                    Warning1.create($ATTENTION,
+                            format("Не удалось создать паспорт \n%s", passportToSave.toUsefulString()),
+                            $SERVER_IS_NOT_AVAILABLE_MAYBE);
+                });
+            }
+
+            @Override
+            protected void cancelled() {
+                super.cancelled();
+                if (hideLoadingCallback != null) {
+                    hideLoadingCallback.run();
+                }
+                if (numberReserved) {
+                    rollbackNumber();
+                }
             }
         };
 

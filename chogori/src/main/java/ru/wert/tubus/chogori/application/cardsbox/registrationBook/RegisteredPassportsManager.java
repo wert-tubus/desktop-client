@@ -153,16 +153,23 @@ public class RegisteredPassportsManager {
             return;
         }
 
-        for (RegisteredPassportItem item : registeredItems) {
+        for (int i = 0; i < registeredItems.size(); i++) {
+            RegisteredPassportItem item = registeredItems.get(i);
             Passport p = item.getPassport();
             if (p != null && p.getNumber() != null && p.getNumber().equals(oldPassport.getNumber())) {
+                // Обновляем паспорт
                 item.setPassport(updatedPassport);
-                item.setNote(updatedPassport.getNote());  // Явно обновляем note
+                item.setNote(updatedPassport.getNote());
+
+                // Принудительно обновляем строку таблицы
+                registeredItems.set(i, item);
+
                 // Проверяем наличие чертежей для обновленного паспорта
                 CompletableFuture.runAsync(() -> {
                     boolean hasDrafts = checkDraftsExist(updatedPassport);
                     javafx.application.Platform.runLater(() -> item.setHasDrafts(hasDrafts));
                 });
+
                 saveState();
                 log.info("Паспорт {} обновлен на {}", oldPassport.getNumber(), updatedPassport.getNumber());
                 return;
