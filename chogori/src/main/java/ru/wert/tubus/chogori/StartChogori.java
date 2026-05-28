@@ -48,6 +48,10 @@ public class StartChogori extends Application {
     public void init(){
 
         try {
+            // 1. Инициализация настроек приложения
+            AppPropsSettings appSettings = AppPropsSettings.getInstance();
+            log.info("AppPropsSettings инициализирован. Файл настроек: {}", appSettings.getConfigFilePath());
+            // 2. Инициализация сервисов
             initServices();
             initQuickServicesWithCache();
 
