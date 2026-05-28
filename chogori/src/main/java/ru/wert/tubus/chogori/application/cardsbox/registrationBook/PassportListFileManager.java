@@ -9,6 +9,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
+import ru.wert.tubus.chogori.AppPropsSettings;
 import ru.wert.tubus.chogori.setteings.ChogoriSettings;
 import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.client.entity.models.Prefix;
@@ -248,16 +249,36 @@ public class PassportListFileManager {
         fileChooser.getExtensionFilters().addAll(txtFilter, allFilesFilter);
         fileChooser.setSelectedExtensionFilter(txtFilter);
 
-        File initialDir = new File(System.getProperty("user.home"));
-        if (initialDir.exists()) {
+        // Получаем директорию из настроек
+        String registeredDraftsPath = AppPropsSettings.getInstance().getRegisteredDraftsPath();
+        File initialDir = new File(registeredDraftsPath);
+
+        // Проверяем существование директории и при необходимости создаем
+        if (!initialDir.exists()) {
+            boolean created = initialDir.mkdirs();
+            if (created) {
+                log.info("Создана директория для сохранения: {}", registeredDraftsPath);
+            } else {
+                log.warn("Не удалось создать директорию: {}, используется домашняя", registeredDraftsPath);
+                initialDir = new File(System.getProperty("user.home"));
+            }
+        }
+
+        if (initialDir.exists() && initialDir.isDirectory()) {
             fileChooser.setInitialDirectory(initialDir);
         }
 
-        File file = fileChooser.showSaveDialog(null);
-        if (file != null && !file.getName().toLowerCase().endsWith(".txt")) {
-            file = new File(file.getAbsolutePath() + ".txt");
+        File selectedFile = fileChooser.showSaveDialog(null);
+
+        // Сохраняем выбранную директорию в настройки (если файл выбран)
+        saveSelectedDirToProperties(selectedFile);
+
+        // Добавляем расширение .txt если его нет
+        if (selectedFile != null && !selectedFile.getName().toLowerCase().endsWith(".txt")) {
+            selectedFile = new File(selectedFile.getAbsolutePath() + ".txt");
         }
-        return file;
+
+        return selectedFile;
     }
 
     /**
@@ -273,12 +294,75 @@ public class PassportListFileManager {
                 new FileChooser.ExtensionFilter("Все файлы (*.*)", "*.*");
         fileChooser.getExtensionFilters().addAll(txtFilter, allFilesFilter);
 
-        File initialDir = new File(System.getProperty("user.home"));
-        if (initialDir.exists()) {
+        // Получаем директорию из настроек (как и для сохранения)
+        String registeredDraftsPath = AppPropsSettings.getInstance().getRegisteredDraftsPath();
+        File initialDir = new File(registeredDraftsPath);
+
+        // Проверяем существование директории
+        if (initialDir.exists() && initialDir.isDirectory()) {
             fileChooser.setInitialDirectory(initialDir);
+            log.debug("Начальная директория для загрузки: {}", registeredDraftsPath);
+        } else {
+            // Если директория из настроек недоступна, используем дефолтную
+            log.warn("Директория из настроек недоступна: {}, используется домашняя", registeredDraftsPath);
+            File defaultDir = new File(System.getProperty("user.home"));
+            if (defaultDir.exists()) {
+                fileChooser.setInitialDirectory(defaultDir);
+            }
         }
 
-        return fileChooser.showOpenDialog(null);
+        File selectedFile = fileChooser.showOpenDialog(null);
+
+        // Сохраняем выбранную директорию в настройки (если файл выбран)
+        saveSelectedDirToProperties(selectedFile);
+
+        return selectedFile;
+    }
+
+    /**
+     * Сохраняет директорию выбранного файла в настройки приложения.
+     *
+     * @param selectedFile выбранный файл (может быть null, если пользователь отменил выбор)
+     */
+    private void saveSelectedDirToProperties(File selectedFile) {
+        if (selectedFile == null) {
+            log.debug("Файл не выбран, директория не сохраняется");
+            return;
+        }
+
+        AppPropsSettings settings = AppPropsSettings.getInstance();
+
+        // Получаем директорию выбранного файла
+        String selectedDirectory = selectedFile.getParent();
+        String currentSettingsPath = settings.getRegisteredDraftsPath();
+
+        // Проверяем, что директория существует и отличается от текущей
+        if (selectedDirectory != null && !selectedDirectory.isEmpty()) {
+            File selectedDir = new File(selectedDirectory);
+
+            // Если директория не существует, пробуем создать
+            if (!selectedDir.exists()) {
+                boolean created = selectedDir.mkdirs();
+                if (created) {
+                    log.info("Создана выбранная пользователем директория: {}", selectedDirectory);
+                } else {
+                    log.error("Не удалось создать директорию: {}", selectedDirectory);
+                    return;
+                }
+            }
+
+            // Если пользователь выбрал другую директорию, обновляем настройку
+            if (!selectedDirectory.equals(currentSettingsPath)) {
+                settings.setRegisteredDraftsPath(selectedDirectory);
+                settings.saveParams();
+                log.info("Директория обновлена в настройках: {} -> {}",
+                        currentSettingsPath, selectedDirectory);
+            } else {
+                log.debug("Директория не изменилась: {}", currentSettingsPath);
+            }
+        } else {
+            log.warn("Не удалось определить директорию для выбранного файла: {}", selectedFile.getAbsolutePath());
+        }
     }
 
     /**
