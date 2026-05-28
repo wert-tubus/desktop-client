@@ -122,11 +122,10 @@ public class RegisteredPassportsManager {
                 continue;
             }
 
-            // Используем быстрый поиск вместо загрузки всех паспортов
             Passport freshPassport = registrationService.findPassportByNumberFast(passport.getNumber());
             if (freshPassport != null) {
-                // Обновляем паспорт и проверяем наличие чертежей
                 item.setPassport(freshPassport);
+                item.setNote(freshPassport.getNote());  // Обновляем note
                 CompletableFuture.runAsync(() -> {
                     boolean hasDrafts = checkDraftsExist(freshPassport);
                     javafx.application.Platform.runLater(() -> item.setHasDrafts(hasDrafts));
@@ -158,6 +157,7 @@ public class RegisteredPassportsManager {
             Passport p = item.getPassport();
             if (p != null && p.getNumber() != null && p.getNumber().equals(oldPassport.getNumber())) {
                 item.setPassport(updatedPassport);
+                item.setNote(updatedPassport.getNote());  // Явно обновляем note
                 // Проверяем наличие чертежей для обновленного паспорта
                 CompletableFuture.runAsync(() -> {
                     boolean hasDrafts = checkDraftsExist(updatedPassport);
@@ -185,7 +185,6 @@ public class RegisteredPassportsManager {
 
         log.debug("Начинаем восстановление {} сохраненных номеров", savedNumbers.size());
 
-        // Используем оптимизированную массовую загрузку
         Map<String, Passport> passportMap = registrationService.loadPassportsByNumbersMap(savedNumbers);
 
         List<RegisteredPassportItem> restored = new ArrayList<>();
@@ -194,9 +193,10 @@ public class RegisteredPassportsManager {
         for (String number : savedNumbers) {
             Passport passport = passportMap.get(number);
             if (passport != null) {
-                // Проверяем наличие чертежей для каждого паспорта
                 boolean hasDrafts = checkDraftsExist(passport);
-                restored.add(new RegisteredPassportItem(passport, hasDrafts));
+                RegisteredPassportItem item = new RegisteredPassportItem(passport, hasDrafts);
+                item.setNote(passport.getNote());  // Устанавливаем note
+                restored.add(item);
             } else {
                 notFoundNumbers.add(number);
                 log.warn("Паспорт с номером {} не найден в БД", number);
@@ -207,10 +207,9 @@ public class RegisteredPassportsManager {
             registeredItems.setAll(restored);
             log.info("Восстановлено {} выбранных паспортов", restored.size());
 
-            // Если какие-то номера не найдены, сохраняем только валидные
             if (!notFoundNumbers.isEmpty()) {
                 log.info("{} номеров не найдено, обновляем сохраненное состояние", notFoundNumbers.size());
-                saveState(); // Сохраняем только валидные номера
+                saveState();
             }
         } else {
             log.warn("Не найдены паспорта для сохраненных номеров: {}", savedNumbers);
