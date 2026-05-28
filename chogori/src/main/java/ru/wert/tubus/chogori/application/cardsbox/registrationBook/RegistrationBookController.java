@@ -402,22 +402,8 @@ public class RegistrationBookController {
      * Проверяет наличие связанных паспортов перед удалением.
      */
     private void deleteDecimalGroup() {
-        // Ищем выбранный Decimal во всех списках
-        Decimal selected = null;
-        ListView<Decimal> sourceListView = null;
-
-        List<ListView<Decimal>> listViews = Arrays.asList(
-                lvSketches, lvDetails700, lvDetails745, lvAssm300, lvAssm400, lvMedicine, lvOther
-        );
-
-        for (ListView<Decimal> listView : listViews) {
-            Decimal candidate = listView.getSelectionModel().getSelectedItem();
-            if (candidate != null) {
-                selected = candidate;
-                sourceListView = listView;
-                break;
-            }
-        }
+        // Получаем выбранный Decimal из открытой панели аккордеона
+        Decimal selected = getSelectedDecimal();
 
         // Проверяем, выбран ли элемент
         if (selected == null) {
@@ -467,26 +453,21 @@ public class RegistrationBookController {
             }
         });
 
-        Decimal finalSelected1 = selected;
-        ListView<Decimal> finalSourceListView = sourceListView;
         future.thenAcceptAsync(success -> {
             Platform.runLater(() -> {
                 hideLoadingCursorAndEnableControls();
 
                 if (success) {
-                    // Удаляем из списка
-                    if (finalSourceListView != null) {
-                        finalSourceListView.getItems().remove(finalSelected1);
-                        log.debug("Децимальная группа {} удалена из списка", finalSelected1.getName());
-                    }
+                    // Перезагружаем все списки, чтобы обновить их состояние
+                    loadAndDistributeDecimalGroups();
 
                     // Очищаем описание, если удалена выбранная группа
-                    if (taDescriptionESKD != null && getCurrentlySelectedDecimal() == null) {
+                    if (taDescriptionESKD != null && getSelectedDecimal() == null) {
                         taDescriptionESKD.clear();
                     }
 
                     Warning1.create("УСПЕШНО!", "Децимальная группа удалена",
-                            String.format("Группа '%s' успешно удалена", finalSelected1.getName()));
+                            String.format("Группа '%s' успешно удалена", finalSelected.getName()));
                 } else {
                     Warning1.create("ОШИБКА!", "Не удалось удалить децимальную группу",
                             "Проверьте подключение к базе данных и повторите попытку");
