@@ -339,8 +339,10 @@ public class AppMenuController {
 //        draftsMenu.getItems().add(draftsCabinetItem);
         draftsMenu.getItems().add(draftsItem);
         draftsMenu.getItems().add(changeHistoryItem);
-        draftsMenu.getItems().add(new SeparatorMenuItem());
-        draftsMenu.getItems().add(registrarItem);
+        if(CH_CURRENT_USER_GROUP.isAdministrate() || CH_CURRENT_USER_GROUP.isEditDrafts()) {
+            draftsMenu.getItems().add(new SeparatorMenuItem());
+            draftsMenu.getItems().add(registrarItem);
+        }
 
         return draftsMenu;
     }

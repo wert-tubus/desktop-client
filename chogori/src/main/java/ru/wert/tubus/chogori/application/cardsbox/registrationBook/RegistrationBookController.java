@@ -1165,8 +1165,6 @@ public class RegistrationBookController {
                         if (success) {
                             addDecimalToAppropriateList(savedDecimal);
                             log.info("Децимальная группа успешно добавлена: {}", savedDecimal.toUsefulString());
-                            Warning1.create("УСПЕШНО!", "Децимальная группа добавлена",
-                                    savedDecimal.getName() + " успешно добавлена");
                         } else {
                             Warning1.create("ОШИБКА!", "Не удалось сохранить децимальную группу",
                                     "Проверьте подключение к базе данных");
