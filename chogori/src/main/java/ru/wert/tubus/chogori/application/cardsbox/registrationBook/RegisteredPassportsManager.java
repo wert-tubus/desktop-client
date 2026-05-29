@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_DRAFTS;
+import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_PASSPORTS;
 
 /**
  * Менеджер для управления списком недавно зарегистрированных номеров
@@ -44,9 +45,19 @@ public class RegisteredPassportsManager {
     /**
      * Добавление паспорта в список с сохранением состояния
      */
+    /**
+     * Добавление паспорта в список с сохранением состояния
+     */
     public void addPassport(Passport passport) {
         if (passport == null || passport.getNumber() == null) {
             log.warn("Попытка добавить null паспорт или паспорт без номера");
+            return;
+        }
+
+        // Проверяем, существует ли паспорт в БД (не удален ли он)
+        if (!isPassportExists(passport)) {
+            log.warn("Паспорт {} не существует в базе данных (возможно, удален), пропускаем добавление",
+                    passport.getNumber());
             return;
         }
 
@@ -56,6 +67,7 @@ public class RegisteredPassportsManager {
                     RegisteredPassportItem newItem = new RegisteredPassportItem(passport, hasDrafts);
 
                     javafx.application.Platform.runLater(() -> {
+                        // Проверяем, нет ли уже такого паспорта в списке
                         boolean exists = registeredItems.stream()
                                 .anyMatch(item -> {
                                     Passport p = item.getPassport();
@@ -76,6 +88,7 @@ public class RegisteredPassportsManager {
                 .exceptionally(ex -> {
                     log.error("Ошибка при проверке чертежей для паспорта {}", passport.getNumber(), ex);
                     javafx.application.Platform.runLater(() -> {
+                        // При ошибке добавляем с hasDrafts = false
                         RegisteredPassportItem newItem = new RegisteredPassportItem(passport, false);
                         boolean exists = registeredItems.stream()
                                 .anyMatch(item -> {
@@ -86,10 +99,31 @@ public class RegisteredPassportsManager {
                         if (!exists) {
                             registeredItems.add(newItem);
                             saveState();
+                            log.info("Паспорт {} добавлен в список выбранных (чертежи: неизвестно)",
+                                    passport.getNumber());
                         }
                     });
                     return null;
                 });
+    }
+
+    /**
+     * Проверяет, существует ли паспорт в базе данных
+     */
+    private boolean isPassportExists(Passport passport) {
+        if (passport == null || passport.getId() == null) {
+            return false;
+        }
+
+        try {
+            // Прямой запрос к БД по ID - самый надежный способ
+            Passport found = CH_PASSPORTS.findById(passport.getId());
+            return found != null;
+        } catch (Exception e) {
+            log.error("Ошибка проверки существования паспорта {} (ID: {})",
+                    passport.getNumber(), passport.getId());
+            return false;
+        }
     }
 
     /**

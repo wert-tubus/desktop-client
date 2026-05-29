@@ -1,19 +1,18 @@
 package ru.wert.tubus.chogori.application.cardsbox.registrationBook;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.Separator;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
-import javafx.stage.Stage;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.AppPropsSettings;
-import ru.wert.tubus.chogori.setteings.ChogoriSettings;
 import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.client.entity.models.Prefix;
 import ru.wert.tubus.client.entity.serviceREST.PrefixService;
@@ -27,9 +26,7 @@ import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
-import static ru.wert.tubus.chogori.application.services.ChogoriServices.CH_PASSPORTS;
 import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
 
 @Slf4j
@@ -143,63 +140,20 @@ public class PassportListFileManager {
                             hideLoadingRunnable.run();
                         }
 
-                        if (passports == null || passports.isEmpty()) {
+                        if (passports == null) {
                             Warning1.create("ОШИБКА!", "Не удалось загрузить паспорта",
                                     "Проверьте подключение к базе данных");
                             return;
                         }
 
-                        applyLoadedPassports(passports, action);
+                        // Передаем оригинальные номера для подсчета не найденных
+                        applyLoadedPassports(passports, numbers, action);
 
                         if (refreshTablesRunnable != null) {
                             refreshTablesRunnable.run();
                         }
-
-                        String actionText = action == LoadAction.REPLACE ? "заменой" : "добавлением";
-                        Warning1.create("УСПЕШНО!", "Загрузка завершена",
-                                String.format("Загружено паспортов: %d (с %s)", passports.size(), actionText));
                     });
-                })
-                .exceptionally(ex -> {
-                    log.error("Ошибка при асинхронной загрузке паспортов", ex);
-                    Platform.runLater(() -> {
-                        if (hideLoadingRunnable != null) {
-                            hideLoadingRunnable.run();
-                        }
-                        Warning1.create("ОШИБКА!", "Не удалось загрузить паспорта",
-                                ex.getMessage() != null ? ex.getMessage() : "Неизвестная ошибка");
-                    });
-                    return null;
                 });
-    }
-
-    public static void autoSave(List<Passport> passports, File storageFile) {
-        if (storageFile == null) return;
-
-        try {
-            List<String> passportNumbers = passports.stream()
-                    .map(Passport::getNumber)
-                    .filter(number -> number != null && !number.isEmpty())
-                    .collect(Collectors.toList());
-
-            objectMapper.writeValue(storageFile, passportNumbers);
-            log.info("Автосохранение: сохранено {} номеров", passportNumbers.size());
-        } catch (IOException e) {
-            log.error("Не удалось выполнить автосохранение", e);
-        }
-    }
-
-    public static List<String> autoLoad(File storageFile) {
-        if (storageFile == null || !storageFile.exists()) {
-            return new ArrayList<>();
-        }
-
-        try {
-            return objectMapper.readValue(storageFile, new TypeReference<List<String>>() {});
-        } catch (IOException e) {
-            log.error("Не удалось загрузить автосохранение", e);
-            return new ArrayList<>();
-        }
     }
 
     private File chooseFileToSave(String initialFileName) {
@@ -364,14 +318,17 @@ public class PassportListFileManager {
                     log.warn("Паспорт с номером {} не найден в базе данных", number);
                 }
             } catch (Exception e) {
-                log.error("Ошибка при загрузке паспорта {}", number, e);
+                log.error("Ошибка при загрузке паспорта {}", number);
             }
         }
 
         return passports;
     }
 
-    private void applyLoadedPassports(List<Passport> passports, LoadAction action) {
+    private void applyLoadedPassports(List<Passport> passports, List<String> originalNumbers, LoadAction action) {
+        int loadedCount = passports.size();
+        int notFoundCount = originalNumbers.size() - loadedCount;
+
         if (action == LoadAction.REPLACE) {
             clearListRunnable.run();
         }
@@ -380,7 +337,28 @@ public class PassportListFileManager {
             addPassportConsumer.accept(passport);
         }
 
-        log.info("Загружено {} паспортов (действие: {})", passports.size(), action);
+        // Формируем информативное сообщение
+        String message;
+        if (notFoundCount > 0) {
+            message = String.format(
+                    "Загружено: %d паспортов\n" +
+                            "Не найдено в БД: %d паспортов\n" +
+                            "Действие: %s",
+                    loadedCount, notFoundCount,
+                    action == LoadAction.REPLACE ? "список заменен" : "добавлено к списку"
+            );
+        } else {
+            message = String.format(
+                    "Загружено: %d паспортов\n" +
+                            "Действие: %s",
+                    loadedCount,
+                    action == LoadAction.REPLACE ? "список заменен" : "добавлено к списку"
+            );
+        }
+
+        Warning1.create("ЗАГРУЗКА ЗАВЕРШЕНА", "Результат загрузки", message);
+        log.info("Загружено {} паспортов ({} не найдено), действие: {}",
+                loadedCount, notFoundCount, action);
     }
 
     private LoadAction showLoadActionDialog(int count) {
