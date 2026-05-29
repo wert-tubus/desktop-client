@@ -81,6 +81,13 @@ public class Passport_DeleteCommand implements ICommand {
                     if (finalAnyDeleted) {
                         tableView.refreshPreservingType();
                         restoreSelection(finalItemToSelect);
+
+                        // Уведомление об удалении
+                        if (tableView.getCardsBoxController() != null) {
+                            for (Passport deleted : items) {
+                                tableView.getCardsBoxController().notifyPassportDeleted(deleted);
+                            }
+                        }
                     } else {
                         restoreOriginalSelection(originalSelectedItem, originalSelectedIndex);
                     }

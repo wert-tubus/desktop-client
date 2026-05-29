@@ -36,6 +36,11 @@ public class Passport_ChangeCommand implements ICommand {
                     tableView.scrollTo(updatedIndex);
                     tableView.getSelectionModel().select(updatedIndex);
                     log.info("Обновлен паспорт {}", item.toUsefulString());
+
+                    // Уведомление об обновлении
+                    if (tableView.getCardsBoxController() != null) {
+                        tableView.getCardsBoxController().notifyPassportUpdated(item);
+                    }
                 } else {
                     log.debug("Паспорт {} больше не соответствует типу таблицы", item.toUsefulString());
                 }

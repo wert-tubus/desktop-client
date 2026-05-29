@@ -83,6 +83,24 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
         tabPane.getSelectionModel().select(tabPIK);
     }
 
+    public void notifyPassportDeleted(Passport deletedPassport) {
+        if (registrationBookPatch != null) {
+            RegistrationBookController controller = registrationBookPatch.getRegistrationBookController();
+            if (controller != null) {
+                controller.handlePassportDeleted(deletedPassport);
+            }
+        }
+    }
+
+    public void notifyPassportUpdated(Passport updatedPassport) {
+        if (registrationBookPatch != null) {
+            RegistrationBookController controller = registrationBookPatch.getRegistrationBookController();
+            if (controller != null) {
+                controller.handlePassportUpdated(updatedPassport);
+            }
+        }
+    }
+
     /**
      * Создаем таблицу ИДЕНТИФИКАТОРОВ
      */
@@ -131,9 +149,6 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
 
     }
 
-    /**
-     * Создаем каталог ИЗДЕЛИЙ
-     */
     /**
      * Создаем журнал регистрации
      */

@@ -1432,4 +1432,73 @@ public class RegistrationBookController {
 
         log.info("Вкладка журнала регистрации обновлена (фильтры сохранены)");
     }
+
+    /**
+     * Обработка удаления паспорта.
+     * Удаляет паспорт из таблицы зарегистрированных паспортов, если он там присутствует.
+     *
+     * @param deletedPassport удаленный паспорт
+     */
+    public void handlePassportDeleted(Passport deletedPassport) {
+        if (deletedPassport == null || deletedPassport.getNumber() == null) {
+            log.warn("Попытка обработать удаление null паспорта или паспорта без номера");
+            return;
+        }
+
+        // Ищем и удаляем паспорт из списка зарегистрированных
+        RegisteredPassportItem toRemove = registeredPassportsManager.getList().stream()
+                .filter(item -> {
+                    Passport p = item.getPassport();
+                    return p != null && p.getNumber() != null &&
+                            p.getNumber().equals(deletedPassport.getNumber());
+                })
+                .findFirst()
+                .orElse(null);
+
+        if (toRemove != null) {
+            registeredPassportsManager.getList().remove(toRemove);
+            registeredPassportsManager.saveState();
+            log.info("Паспорт {} удален из журнала регистрации", deletedPassport.getNumber());
+        } else {
+            log.debug("Паспорт {} не найден в журнале регистрации для удаления", deletedPassport.getNumber());
+        }
+    }
+
+    /**
+     * Обработка обновления паспорта.
+     * Обновляет информацию о паспорте в таблице зарегистрированных паспортов.
+     *
+     * @param updatedPassport обновленный паспорт
+     */
+    public void handlePassportUpdated(Passport updatedPassport) {
+        if (updatedPassport == null || updatedPassport.getNumber() == null) {
+            log.warn("Попытка обработать обновление null паспорта или паспорта без номера");
+            return;
+        }
+
+        // Ищем паспорт в списке зарегистрированных
+        for (RegisteredPassportItem item : registeredPassportsManager.getList()) {
+            Passport p = item.getPassport();
+            if (p != null && p.getNumber() != null && p.getNumber().equals(updatedPassport.getNumber())) {
+                // Обновляем данные паспорта
+                item.setPassport(updatedPassport);
+                item.setNote(updatedPassport.getNote());
+
+                // Обновляем статус наличия чертежей
+                registeredPassportsManager.updateDraftsStatusForPassport(updatedPassport);
+
+                // Принудительно обновляем строку таблицы
+                int index = registeredPassportsManager.getList().indexOf(item);
+                if (index >= 0) {
+                    registeredPassportsManager.getList().set(index, item);
+                }
+
+                registeredPassportsManager.saveState();
+                log.info("Паспорт {} обновлен в журнале регистрации", updatedPassport.getNumber());
+                return;
+            }
+        }
+
+        log.debug("Паспорт {} не найден в журнале регистрации для обновления", updatedPassport.getNumber());
+    }
 }

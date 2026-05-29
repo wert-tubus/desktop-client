@@ -10,6 +10,7 @@ import ru.wert.tubus.chogori.common.commands.ItemCommands;
 import ru.wert.tubus.chogori.common.interfaces.IFormView;
 import ru.wert.tubus.winform.enums.EOperation;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public abstract class FormView_ContextMenu<P extends Item> extends ContextMenu {
@@ -95,7 +96,7 @@ public abstract class FormView_ContextMenu<P extends Item> extends ContextMenu {
 
     private void delete(Event event){
         if(isShowing()) hide();
-        List<P> items = formView.getAllSelectedItems();
+        List<P> items = new ArrayList<>(formView.getAllSelectedItems());
         commands.delete(event, items);
     }
 
@@ -106,7 +107,5 @@ public abstract class FormView_ContextMenu<P extends Item> extends ContextMenu {
     public void setAccWindow(FormViewACCWindow<P> accWindow){
         this.accWindow = accWindow;
     }
-
-
 
 }
