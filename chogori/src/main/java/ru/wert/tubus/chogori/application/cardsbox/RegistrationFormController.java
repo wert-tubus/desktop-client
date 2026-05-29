@@ -1,4 +1,3 @@
-
 package ru.wert.tubus.chogori.application.cardsbox;
 
 import javafx.application.Platform;
@@ -68,7 +67,6 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
 
     // ======================== ПОЛЯ СОСТОЯНИЯ ========================
 
-
     private Passport newPassport;        // Новый паспорт до сохранения
     private Passport savedPassport;      // Сохраненный паспорт (после сохранения в БД)
     private boolean accepted = false;    // Флаг подтверждения создания
@@ -83,10 +81,13 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
     private boolean editMode = false;    // Режим редактирования
     private Passport editingPassport;    // Редактируемый паспорт
 
-    // ======================== ИНИЦИАЛИЗАЦИЯ ========================
+    private boolean operationInProgress = false; // Флаг выполнения операции (защита от повторных нажатий)
+
+    // ======================== CALLBACK ДЛЯ ИНДИКАЦИИ ЗАГРУЗКИ ========================
 
     private Runnable showLoadingCallback;
     private Runnable hideLoadingCallback;
+
     /**
      * Установка callback для управления индикацией загрузки
      */
@@ -151,7 +152,7 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
      */
     private void setupValidation() {
         tfName.textProperty().addListener((observable, oldValue, newValue) -> {
-            btnAccept.setDisable(newValue == null || newValue.trim().isEmpty());
+            btnAccept.setDisable(newValue == null || newValue.trim().isEmpty() || operationInProgress);
         });
     }
 
@@ -471,6 +472,12 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
      * Обработка нажатия кнопки OK в режиме редактирования.
      */
     protected void okPressedForEdit(javafx.event.Event event, StackPane spIndicator, Button btnOk) {
+        // Защита от повторного нажатия
+        if (operationInProgress) {
+            log.warn("Операция уже выполняется, повторное нажатие заблокировано");
+            return;
+        }
+
         if (notNullFieldEmpty()) {
             Warning1.create($ATTENTION, "Некоторые поля не заполнены!", "Заполните все поля");
             return;
@@ -479,11 +486,20 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
         if (enteredDataCorrect()) {
             Passport updatedPassport = getNewItem();
             updatedPassport.setId(editingPassport.getId());
-            updatePassportTask(event, updatedPassport);
+            updatePassportTask(event, updatedPassport, btnOk);
         }
     }
 
-    private void updatePassportTask(javafx.event.Event event, Passport passportToUpdate) {
+    /**
+     * Задача обновления паспорта в отдельном потоке.
+     */
+    private void updatePassportTask(javafx.event.Event event, Passport passportToUpdate, Button btnOk) {
+        // Блокируем кнопку и устанавливаем флаг
+        operationInProgress = true;
+        if (btnOk != null) {
+            btnOk.setDisable(true);
+        }
+
         if (showLoadingCallback != null) {
             showLoadingCallback.run();
         }
@@ -501,18 +517,13 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
                     savedPassport = passportToUpdate;
                     accepted = true;
                 }
-                if (hideLoadingCallback != null) {
-                    hideLoadingCallback.run();
-                }
-                Platform.runLater(() -> closeWindow(event));
+                finishOperation(event, btnOk);
             }
 
             @Override
             protected void failed() {
                 super.failed();
-                if (hideLoadingCallback != null) {
-                    hideLoadingCallback.run();
-                }
+                finishOperation(event, btnOk);
                 Platform.runLater(() -> {
                     Warning1.create($ATTENTION,
                             format("Не удалось обновить паспорт \n%s", passportToUpdate.toUsefulString()),
@@ -523,9 +534,7 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
             @Override
             protected void cancelled() {
                 super.cancelled();
-                if (hideLoadingCallback != null) {
-                    hideLoadingCallback.run();
-                }
+                finishOperation(event, btnOk);
             }
         };
 
@@ -539,6 +548,12 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
      */
     @Override
     protected void okPressed(javafx.event.Event event, StackPane spIndicator, Button btnOk) {
+        // Защита от повторного нажатия
+        if (operationInProgress) {
+            log.warn("Операция уже выполняется, повторное нажатие заблокировано");
+            return;
+        }
+
         if (notNullFieldEmpty()) {
             Warning1.create($ATTENTION, "Некоторые поля не заполнены!", "Заполните все поля");
             return;
@@ -561,14 +576,20 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
                 return;
             }
 
-            savePassportTask(event, passportToSave);
+            savePassportTask(event, passportToSave, btnOk);
         }
     }
 
     /**
      * Задача сохранения паспорта в отдельном потоке.
      */
-    private void savePassportTask(javafx.event.Event event, Passport passportToSave) {
+    private void savePassportTask(javafx.event.Event event, Passport passportToSave, Button btnOk) {
+        // Блокируем кнопку и устанавливаем флаг
+        operationInProgress = true;
+        if (btnOk != null) {
+            btnOk.setDisable(true);
+        }
+
         if (showLoadingCallback != null) {
             showLoadingCallback.run();
         }
@@ -601,20 +622,13 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
                 savedPassport = getValue();
                 accepted = true;
                 numberReserved = false;
-
-                if (hideLoadingCallback != null) {
-                    hideLoadingCallback.run();
-                }
-
-                Platform.runLater(() -> closeWindow(event));
+                finishOperation(event, btnOk);
             }
 
             @Override
             protected void failed() {
                 super.failed();
-                if (hideLoadingCallback != null) {
-                    hideLoadingCallback.run();
-                }
+                finishOperation(event, btnOk);
                 Platform.runLater(() -> {
                     Warning1.create($ATTENTION,
                             format("Не удалось создать паспорт \n%s", passportToSave.toUsefulString()),
@@ -625,9 +639,7 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
             @Override
             protected void cancelled() {
                 super.cancelled();
-                if (hideLoadingCallback != null) {
-                    hideLoadingCallback.run();
-                }
+                finishOperation(event, btnOk);
                 if (numberReserved) {
                     rollbackNumber();
                 }
@@ -635,6 +647,24 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
         };
 
         new Thread(savePassport).start();
+    }
+
+    /**
+     * Завершение операции: разблокировка кнопки, скрытие индикатора и закрытие окна.
+     */
+    private void finishOperation(javafx.event.Event event, Button btnOk) {
+        operationInProgress = false;
+
+        if (hideLoadingCallback != null) {
+            hideLoadingCallback.run();
+        }
+
+        Platform.runLater(() -> {
+            if (btnOk != null) {
+                btnOk.setDisable(false);
+            }
+            closeWindow(event);
+        });
     }
 
     /**
@@ -669,6 +699,18 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
         } catch (Exception e) {
             log.error("Ошибка при откате номера", e);
         }
+    }
+
+    /**
+     * Обработка нажатия кнопки Cancel.
+     */
+    public void cancelPressed(javafx.event.Event event) {
+        if (operationInProgress) {
+            log.warn("Операция выполняется, отмена заблокирована");
+            return;
+        }
+        cancelled = true;
+        closeWindow(event);
     }
 
     // ======================== ГЕТТЕРЫ ========================
