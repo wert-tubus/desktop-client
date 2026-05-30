@@ -9,10 +9,7 @@ import javafx.scene.layout.StackPane;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import ru.wert.tubus.chogori.application.cardsbox.registrationBook.RegistrationBookController;
-import ru.wert.tubus.chogori.entities.passports.PassportType;
-import ru.wert.tubus.chogori.entities.passports.Passport_Patch;
-import ru.wert.tubus.chogori.entities.passports.Passport_PatchController;
-import ru.wert.tubus.chogori.entities.passports.Passport_TableView;
+import ru.wert.tubus.chogori.entities.passports.*;
 import ru.wert.tubus.chogori.tabs.AppTab;
 import ru.wert.tubus.client.entity.models.Passport;
 import ru.wert.tubus.client.interfaces.ITabController;
@@ -73,6 +70,8 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
 
         loadRegistrationBook(); //Журнал регистрации
 
+        restoreColumnStates();
+
         tabPane.getSelectionModel().selectedItemProperty().addListener((observable, oldTab, newTab) -> {
             if (newTab.equals(tabPIK))
                 CH_SEARCH_FIELD.changeSearchedTableView(tvPIK, CH_DEFAULT_PREFIX.getName());
@@ -81,6 +80,33 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
         });
 
         tabPane.getSelectionModel().select(tabPIK);
+    }
+
+    /**
+     * Восстанавливает состояние колонок для обеих таблиц
+     */
+    private void restoreColumnStates() {
+        if (tvPIK != null) {
+            Passport_ColumnsManager.restorePIKColumnState(tvPIK);
+            Passport_ColumnsManager.setupPIKColumnStateListener(tvPIK);
+        }
+        if (tvSketch != null) {
+            Passport_ColumnsManager.restoreSketchColumnState(tvSketch);
+            Passport_ColumnsManager.setupSketchColumnStateListener(tvSketch);
+        }
+    }
+
+    /**
+     * Сохраняет состояние колонок для обеих таблиц
+     * (можно вызвать при закрытии приложения)
+     */
+    public void saveColumnStates() {
+        if (tvPIK != null) {
+            Passport_ColumnsManager.savePIKColumnState(tvPIK);
+        }
+        if (tvSketch != null) {
+            Passport_ColumnsManager.saveSketchColumnState(tvSketch);
+        }
     }
 
     public void notifyPassportDeleted(Passport deletedPassport) {

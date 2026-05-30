@@ -19,6 +19,8 @@ public class AppPropsSettings {
 
     // -- Сохраняемые параметры --
     private String registeredDraftsPath; // Путь до хранилища зарегистрированных чертежей
+    private String passportsPIKVisibleColumns; // Состояние колонок таблицы Passports PIK
+    private String passportsSketchVisibleColumns; // Состояние колонок таблицы Passports SKETCH
 
     // -- Добавляйте новые настройки здесь --
     // private String windowPosition;
@@ -35,9 +37,12 @@ public class AppPropsSettings {
 
     // Ключи свойств
     private static final String KEY_REGISTERED_DRAFTS_PATH = "REGISTERED_DRAFTS_PATH";
+    private static final String KEY_PASSPORTS_PIK_VISIBLE_COLUMNS = "PASSPORTS_PIK_VISIBLE_COLUMNS";
+    private static final String KEY_PASSPORTS_SKETCH_VISIBLE_COLUMNS = "PASSPORTS_SKETCH_VISIBLE_COLUMNS";
 
     // Значения по умолчанию
     private static final String DEFAULT_REGISTERED_DRAFTS_PATH = "C:/";
+    private static final String DEFAULT_PASSPORTS_VISIBLE_COLUMNS = "10000"; // 5 колонок по умолчанию
 
     private AppPropsSettings() {
         init();
@@ -105,12 +110,17 @@ public class AppPropsSettings {
      */
     private void setDefaultValues() {
         this.registeredDraftsPath = DEFAULT_REGISTERED_DRAFTS_PATH;
+        this.passportsPIKVisibleColumns = DEFAULT_PASSPORTS_VISIBLE_COLUMNS;
+        this.passportsSketchVisibleColumns = DEFAULT_PASSPORTS_VISIBLE_COLUMNS;
+
         // При добавлении новых настроек - инициализируйте их значениями по умолчанию здесь
         // this.windowPosition = "0,0";
         // this.rememberLogin = false;
 
         // Записываем в Properties
         props.setProperty(KEY_REGISTERED_DRAFTS_PATH, registeredDraftsPath);
+        props.setProperty(KEY_PASSPORTS_PIK_VISIBLE_COLUMNS, passportsPIKVisibleColumns);
+        props.setProperty(KEY_PASSPORTS_SKETCH_VISIBLE_COLUMNS, passportsSketchVisibleColumns);
     }
 
     /**
@@ -122,6 +132,8 @@ public class AppPropsSettings {
 
             // Загрузка текущих параметров
             this.registeredDraftsPath = props.getProperty(KEY_REGISTERED_DRAFTS_PATH, DEFAULT_REGISTERED_DRAFTS_PATH);
+            this.passportsPIKVisibleColumns = props.getProperty(KEY_PASSPORTS_PIK_VISIBLE_COLUMNS, DEFAULT_PASSPORTS_VISIBLE_COLUMNS);
+            this.passportsSketchVisibleColumns = props.getProperty(KEY_PASSPORTS_SKETCH_VISIBLE_COLUMNS, DEFAULT_PASSPORTS_VISIBLE_COLUMNS);
 
             // При добавлении новых настроек - добавляйте загрузку здесь
             // this.windowPosition = props.getProperty(KEY_WINDOW_POSITION, DEFAULT_WINDOW_POSITION);
@@ -147,6 +159,10 @@ public class AppPropsSettings {
             // Записываем текущие значения в Properties
             props.setProperty(KEY_REGISTERED_DRAFTS_PATH,
                     registeredDraftsPath != null ? registeredDraftsPath : DEFAULT_REGISTERED_DRAFTS_PATH);
+            props.setProperty(KEY_PASSPORTS_PIK_VISIBLE_COLUMNS,
+                    passportsPIKVisibleColumns != null ? passportsPIKVisibleColumns : DEFAULT_PASSPORTS_VISIBLE_COLUMNS);
+            props.setProperty(KEY_PASSPORTS_SKETCH_VISIBLE_COLUMNS,
+                    passportsSketchVisibleColumns != null ? passportsSketchVisibleColumns : DEFAULT_PASSPORTS_VISIBLE_COLUMNS);
 
             // При добавлении новых настроек - добавляйте сохранение здесь
             // props.setProperty(KEY_WINDOW_POSITION, windowPosition != null ? windowPosition : "");
