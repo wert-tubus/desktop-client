@@ -215,7 +215,7 @@ public class RegisteredPassportsManager {
 
     /**
      * Восстановление состояния из хранилища
-     * Оптимизированная версия с массовой загрузкой
+     * Оптимизированная версия с массовой загрузкой и СОХРАНЕНИЕМ ПОРЯДКА из файла
      */
     public void restoreState() {
         List<String> savedNumbers = RegisteredPassportsStorage.loadRegisteredPassportNumbers();
@@ -226,17 +226,19 @@ public class RegisteredPassportsManager {
 
         log.debug("Начинаем восстановление {} сохраненных номеров", savedNumbers.size());
 
+        // Загружаем все паспорта в Map для быстрого доступа
         Map<String, Passport> passportMap = registrationService.loadPassportsByNumbersMap(savedNumbers);
 
+        // ВАЖНО: Сохраняем порядок из savedNumbers, а не из Map
         List<RegisteredPassportItem> restored = new ArrayList<>();
         List<String> notFoundNumbers = new ArrayList<>();
 
-        for (String number : savedNumbers) {
+        for (String number : savedNumbers) {  // Итерируемся в порядке из файла
             Passport passport = passportMap.get(number);
             if (passport != null) {
                 boolean hasDrafts = checkDraftsExist(passport);
                 RegisteredPassportItem item = new RegisteredPassportItem(passport, hasDrafts);
-                item.setNote(passport.getNote());  // Устанавливаем note
+                item.setNote(passport.getNote());
                 restored.add(item);
             } else {
                 notFoundNumbers.add(number);
@@ -245,7 +247,7 @@ public class RegisteredPassportsManager {
         }
 
         if (!restored.isEmpty()) {
-            registeredItems.setAll(restored);
+            registeredItems.setAll(restored);  // Порядок сохранен
             log.info("Восстановлено {} выбранных паспортов", restored.size());
 
             if (!notFoundNumbers.isEmpty()) {

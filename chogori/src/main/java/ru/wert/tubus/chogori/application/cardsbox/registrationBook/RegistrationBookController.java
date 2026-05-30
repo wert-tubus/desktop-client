@@ -161,7 +161,7 @@ public class RegistrationBookController {
         // Инициализация менеджера файлов
         fileManager = new PassportListFileManager(
                 registrationService,
-                passport -> registeredPassportsManager.addPassport(passport),
+                passport -> registeredPassportsManager.addPassport(passport),  // для одиночных добавлений
                 () -> registeredPassportsManager.clear(),
                 () -> refreshTablesPreservingState(),
                 this::showLoadingCursorAndDisableControls,

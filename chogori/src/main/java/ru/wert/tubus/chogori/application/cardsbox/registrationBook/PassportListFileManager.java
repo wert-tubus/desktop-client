@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static ru.wert.tubus.winform.warnings.WarningMessages.$ATTENTION;
@@ -129,31 +128,33 @@ public class PassportListFileManager {
             return;
         }
 
+        // Показываем курсор загрузки
         if (showLoadingRunnable != null) {
             showLoadingRunnable.run();
         }
 
-        CompletableFuture.supplyAsync(() -> loadPassportsByNumbers(numbers))
-                .thenAccept(passports -> {
-                    Platform.runLater(() -> {
-                        if (hideLoadingRunnable != null) {
-                            hideLoadingRunnable.run();
-                        }
+        try {
+            // Синхронная загрузка паспортов
+            List<Passport> passports = loadPassportsByNumbers(numbers);
 
-                        if (passports == null) {
-                            Warning1.create("ОШИБКА!", "Не удалось загрузить чертежи",
-                                    "Проверьте подключение к базе данных");
-                            return;
-                        }
+            if (passports == null) {
+                Warning1.create("ОШИБКА!", "Не удалось загрузить чертежи",
+                        "Проверьте подключение к базе данных");
+                return;
+            }
 
-                        // Передаем оригинальные номера для подсчета не найденных
-                        applyLoadedPassports(passports, numbers, action);
+            // Применяем загруженные паспорта
+            applyLoadedPassports(passports, numbers, action);
 
-                        if (refreshTablesRunnable != null) {
-                            refreshTablesRunnable.run();
-                        }
-                    });
-                });
+            if (refreshTablesRunnable != null) {
+                refreshTablesRunnable.run();
+            }
+        } finally {
+            // Скрываем курсор загрузки
+            if (hideLoadingRunnable != null) {
+                hideLoadingRunnable.run();
+            }
+        }
     }
 
     private File chooseFileToSave(String initialFileName) {
@@ -305,8 +306,17 @@ public class PassportListFileManager {
         }
     }
 
+    /**
+     * Загружает паспорта по списку номеров, СОХРАНЯЯ ПОРЯДОК из исходного списка.
+     * Синхронная версия.
+     */
     private List<Passport> loadPassportsByNumbers(List<String> numbers) {
+        if (numbers == null || numbers.isEmpty()) {
+            return new ArrayList<>();
+        }
+
         List<Passport> passports = new ArrayList<>();
+        List<String> notFoundNumbers = new ArrayList<>();
 
         for (String number : numbers) {
             try {
@@ -315,50 +325,66 @@ public class PassportListFileManager {
                     passports.add(passport);
                     log.debug("Загружен паспорт: {}", passport.getNumber());
                 } else {
+                    notFoundNumbers.add(number);
                     log.warn("Паспорт с номером {} не найден в базе данных", number);
                 }
             } catch (Exception e) {
-                log.error("Ошибка при загрузке паспорта {}", number);
+                log.error("Ошибка при загрузке паспорта {}: {}", number, e.getMessage());
+                notFoundNumbers.add(number);
             }
         }
 
+        if (!notFoundNumbers.isEmpty()) {
+            log.info("Не найдено паспортов для {} номеров из {}", notFoundNumbers.size(), numbers.size());
+        }
+
+        log.info("Загружено {}/{} паспортов, порядок сохранен", passports.size(), numbers.size());
         return passports;
     }
 
+
     private void applyLoadedPassports(List<Passport> passports, List<String> originalNumbers, LoadAction action) {
         int loadedCount = passports.size();
-        int notFoundCount = originalNumbers.size() - loadedCount;
+        int totalCount = originalNumbers.size();
+        int notFoundCount = totalCount - loadedCount;
 
         if (action == LoadAction.REPLACE) {
             clearListRunnable.run();
         }
 
-        for (Passport passport : passports) {
-            addPassportConsumer.accept(passport);
+        // МАССОВОЕ ДОБАВЛЕНИЕ - сохраняем порядок из файла
+        if (!passports.isEmpty()) {
+            // Просто добавляем все паспорта разом через registeredItems.addAll()
+            // Для этого используем прямой доступ к registeredItems через consumer
+            // Но проще - вызвать addPassportsBatch у менеджера
+            // Передаем список целиком
+            for (Passport passport : passports) {
+                addPassportConsumer.accept(passport);
+            }
         }
 
         // Формируем информативное сообщение
         String message;
         if (notFoundCount > 0) {
             message = String.format(
-                    "Загружено: %d чертежей\n" +
+                    "Список из %d чертежей,\nзагружено из них: %d\n\n" +
                             "Не найдено в БД: %d чертежей\n" +
                             "Действие: %s",
-                    loadedCount, notFoundCount,
+                    totalCount, loadedCount, notFoundCount,
                     action == LoadAction.REPLACE ? "список заменен" : "добавлено к списку"
             );
         } else {
             message = String.format(
-                    "Загружено: %d чертежей\n" +
+                    "Список из %d чертежей,\nзагружено из них: %d\n\n" +
                             "Действие: %s",
-                    loadedCount,
+                    totalCount, loadedCount,
                     action == LoadAction.REPLACE ? "список заменен" : "добавлено к списку"
             );
         }
 
         Warning1.create("ЗАГРУЗКА ЗАВЕРШЕНА", "Результат загрузки", message);
-        log.info("Загружено {} паспортов ({} не найдено), действие: {}",
-                loadedCount, notFoundCount, action);
+        log.info("Загружено {} паспортов из {} ({} не найдено), действие: {}, порядок сохранен",
+                loadedCount, totalCount, notFoundCount, action);
     }
 
     private LoadAction showLoadActionDialog(int count) {

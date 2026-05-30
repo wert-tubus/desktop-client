@@ -142,14 +142,15 @@ public class RegistrationService {
 
     /**
      * Массовая загрузка паспортов по списку номеров (оптимизированная версия)
-     * Для восстановления состояния
+     * Для восстановления состояния. Сохраняет порядок из исходного списка.
      */
     public Map<String, Passport> loadPassportsByNumbersMap(List<String> numbers) {
         if (numbers == null || numbers.isEmpty()) {
-            return new HashMap<>();
+            return new LinkedHashMap<>();
         }
 
-        Map<String, Passport> result = new HashMap<>();
+        // Используем LinkedHashMap для сохранения порядка вставки
+        Map<String, Passport> result = new LinkedHashMap<>();
 
         // Загружаем каждый паспорт через быстрый метод (с кэшированием)
         for (String number : numbers) {
@@ -174,7 +175,6 @@ public class RegistrationService {
      * Получение следующего доступного номера для паспорта ПИК
      */
     public String getNextPIKNumber(Decimal decimal) {
-        // ... остальной код без изменений ...
         Decimal freshDecimal = CH_DECIMALS.findById(decimal.getId());
         if (freshDecimal == null) {
             throw new RuntimeException("Децимальная группа не найдена");
@@ -204,7 +204,6 @@ public class RegistrationService {
      * Получение следующего доступного номера для эскизного паспорта
      */
     public String getNextSketchNumber(Decimal decimal) {
-        // ... остальной код без изменений ...
         Decimal freshDecimal = CH_DECIMALS.findById(decimal.getId());
         if (freshDecimal == null) {
             throw new RuntimeException("Децимальная группа не найдена");
@@ -234,7 +233,6 @@ public class RegistrationService {
      * Поиск свободного номера ПИК в диапазоне
      */
     private Integer findFreePIKNumber(String decimalName, List<Passport> allPassports, int start, int end) {
-        // ... остальной код без изменений ...
         Set<Integer> usedNumbers = allPassports.stream()
                 .filter(p -> p.getPrefix() != null && PIK_PREFIX.equals(p.getPrefix().getName()))
                 .filter(p -> p.getNumber() != null && p.getNumber().startsWith(decimalName + "."))
@@ -264,7 +262,6 @@ public class RegistrationService {
      * Поиск свободного номера эскиза в диапазоне
      */
     private Integer findFreeSketchNumber(List<Passport> allPassports, int start, int end) {
-        // ... остальной код без изменений ...
         Set<Integer> usedNumbers = allPassports.stream()
                 .filter(p -> (p.getPrefix() == null || p.getPrefix().getName() == null || "-".equals(p.getPrefix().getName())))
                 .filter(p -> p.getNumber() != null && p.getNumber().startsWith("Э"))

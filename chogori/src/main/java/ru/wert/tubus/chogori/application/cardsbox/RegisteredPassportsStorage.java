@@ -63,40 +63,6 @@ public class RegisteredPassportsStorage {
         }
     }
 
-    public static boolean exportRegisteredPassportsToFile(List<Passport> passports, String initialFileName) {
-        if (passports == null || passports.isEmpty()) {
-            Warning1.create("Внимание", "Список пуст", "Нечего экспортировать");
-            return false;
-        }
-
-        FileChooser fileChooser = new FileChooser();
-        fileChooser.setTitle("Сохранить список");
-        fileChooser.setInitialFileName(initialFileName);
-        fileChooser.getExtensionFilters().add(
-                new FileChooser.ExtensionFilter("Текстовые файлы", "*.txt")
-        );
-
-        File file = fileChooser.showSaveDialog(WF_MAIN_STAGE);
-        if (file == null) {
-            return false;
-        }
-
-        try {
-            List<String> numbers = passports.stream()
-                    .map(Passport::getNumber)
-                    .filter(n -> n != null && !n.isEmpty())
-                    .collect(Collectors.toList());
-
-            Files.write(file.toPath(), numbers, StandardCharsets.UTF_8);
-            Warning1.create("Успешно", "Экспорт выполнен", "Список сохранен в файл: " + file.getName());
-            return true;
-        } catch (IOException e) {
-            log.error("Ошибка экспорта", e);
-            Warning1.create("Ошибка", "Не удалось сохранить файл", e.getMessage());
-            return false;
-        }
-    }
-
     public static void clearSavedState() {
         if (STORAGE_FILE_OBJ.exists()) {
             boolean deleted = STORAGE_FILE_OBJ.delete();
