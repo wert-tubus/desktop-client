@@ -141,7 +141,26 @@ public class Draft_TableView extends RoutineTableView<Draft> implements Sorting<
                 CH_SEARCH_FIELD.changeSearchedTableView(this, "ЧЕРТЕЖ");
         });
 
+        // Ждем, пока колонки будут добавлены, и восстанавливаем состояние
+        Platform.runLater(() -> {
+            restoreColumnState();
+            setupColumnStateListener();
+        });
 
+    }
+
+    /**
+     * Восстанавливает состояние колонок из сохраненных настроек
+     */
+    private void restoreColumnState() {
+        Draft_ColumnsManager.restoreColumnState(this);
+    }
+
+    /**
+     * Настраивает автосохранение состояния колонок
+     */
+    private void setupColumnStateListener() {
+        Draft_ColumnsManager.setupColumnStateListener(this);
     }
 
 
