@@ -13,7 +13,7 @@
          <children>
             <HBox fx:id="patchHeader" alignment="CENTER_LEFT">
                <children>
-                  <Label text="КАРТОТЕКА">
+                  <Label text="ЗАРЕГИСТРИРОВАННЫЕ ЧЕРТЕЖИ">
                      <HBox.margin>
                         <Insets left="10.0" />
                      </HBox.margin>
@@ -21,7 +21,7 @@
                         <Insets bottom="10.0" top="5.0" />
                      </VBox.margin>
                   </Label>
-                  <Label fx:id="lblSourceOfPassports" text="  ...">
+                  <Label fx:id="lblSourceOfPassports" text="">
                      <padding>
                         <Insets left="10.0" />
                      </padding>

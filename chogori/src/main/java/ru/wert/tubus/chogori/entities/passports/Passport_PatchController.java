@@ -75,7 +75,7 @@ public class Passport_PatchController {
 
     private void createPassportTableView() {
         //запуск новой версии
-        passportsTable = new Passport_TableView("ИДЕНТИФИКАТОР", previewerController, useContextMenu, true);
+        passportsTable = new Passport_TableView("НОМЕР ЧЕРТЕЖА", previewerController, useContextMenu, true);
         passportsTable.setModifyingClass(modifyingClass);
         passportsTable.getSelectionModel().setSelectionMode(mode);
         VBox.setVgrow(passportsTable, Priority.ALWAYS);
@@ -93,7 +93,7 @@ public class Passport_PatchController {
         btnPassportsGlobe.setGraphic(new ImageView(BtnImages.BTN_GLOBE_IMG));
         btnPassportsGlobe.setTooltip(new Tooltip("Показать все"));
         btnPassportsGlobe.setOnAction((e) -> {
-            lblSourceOfPassports.setText("...");
+            lblSourceOfPassports.setText("");
             CH_SEARCH_FIELD.setText("");
             passportsTable.setSearchedText("");
             passportsTable.setModifyingItem(null);

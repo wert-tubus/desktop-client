@@ -101,7 +101,7 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
         //Здесь происходит включение поиска по чертежам
         focusedProperty().addListener((observable, oldValue, newValue) -> {
             if(switchSearch && newValue)
-                CH_SEARCH_FIELD.changeSearchedTableView(this, "КАРТОЧКА");
+                CH_SEARCH_FIELD.changeSearchedTableView(this, "НОМЕР ЧЕРТЕЖА");
         });
 
         setupDoubleClickHandler();
