@@ -101,11 +101,11 @@ public class PassportListFileManager {
             lines.add("Всего номеров: " + passports.size());
 
             Files.write(exportFile.toPath(), lines, StandardCharsets.UTF_8);
-            log.info("Экспортировано {} паспортов в файл {}", passports.size(), exportFile.getAbsolutePath());
+            log.info("Экспортировано {} чертежей в файл {}", passports.size(), exportFile.getAbsolutePath());
             Warning1.create("ОТЛИЧНО!", "Экспорт выполнен", "Список успешно сохранен в файл!");
             return true;
         } catch (IOException e) {
-            log.error("Не удалось экспортировать паспорта", e);
+            log.error("Не удалось экспортировать чертежи", e);
             Warning1.create("ОШИБКА!", "Не удалось сохранить файл", e.getMessage());
             return false;
         }
@@ -141,7 +141,7 @@ public class PassportListFileManager {
                         }
 
                         if (passports == null) {
-                            Warning1.create("ОШИБКА!", "Не удалось загрузить паспорта",
+                            Warning1.create("ОШИБКА!", "Не удалось загрузить чертежи",
                                     "Проверьте подключение к базе данных");
                             return;
                         }
@@ -277,7 +277,7 @@ public class PassportListFileManager {
                         trimmed.contains("Дата экспорта") ||
                         trimmed.contains("Всего номеров") ||
                         trimmed.contains("Список зарегистрированных") ||
-                        trimmed.contains("=================================")) {
+                        trimmed.contains("=======================================")) {
                     continue;
                 }
 
@@ -341,15 +341,15 @@ public class PassportListFileManager {
         String message;
         if (notFoundCount > 0) {
             message = String.format(
-                    "Загружено: %d паспортов\n" +
-                            "Не найдено в БД: %d паспортов\n" +
+                    "Загружено: %d чертежей\n" +
+                            "Не найдено в БД: %d чертежей\n" +
                             "Действие: %s",
                     loadedCount, notFoundCount,
                     action == LoadAction.REPLACE ? "список заменен" : "добавлено к списку"
             );
         } else {
             message = String.format(
-                    "Загружено: %d паспортов\n" +
+                    "Загружено: %d чертежей\n" +
                             "Действие: %s",
                     loadedCount,
                     action == LoadAction.REPLACE ? "список заменен" : "добавлено к списку"
@@ -366,7 +366,7 @@ public class PassportListFileManager {
         dialogPane.setPadding(new Insets(20));
         dialogPane.setStyle("-fx-background-color: #2d2d2d; -fx-border-color: #555; -fx-border-radius: 5; -fx-background-radius: 5;");
 
-        Label headerLabel = new Label("Загрузка списка паспортов");
+        Label headerLabel = new Label("Загрузка списка чертежей");
         headerLabel.setStyle("-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold;");
 
         Separator separator = new Separator();

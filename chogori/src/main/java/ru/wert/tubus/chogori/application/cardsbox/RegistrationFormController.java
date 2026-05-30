@@ -631,7 +631,7 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
                 finishOperation(event, btnOk);
                 Platform.runLater(() -> {
                     Warning1.create($ATTENTION,
-                            format("Не удалось создать паспорт \n%s", passportToSave.toUsefulString()),
+                            format("Не удалось создать чертеж \n%s", passportToSave.toUsefulString()),
                             $SERVER_IS_NOT_AVAILABLE_MAYBE);
                 });
             }
@@ -665,18 +665,6 @@ public class RegistrationFormController extends FormView_ACCController<Passport>
             }
             closeWindow(event);
         });
-    }
-
-    /**
-     * Завершение операции обновления (скрытие индикатора и разблокировка кнопки).
-     */
-    private void finishUpdate(StackPane spIndicator, Button btnOk) {
-        if (spIndicator != null) {
-            spIndicator.setVisible(false);
-        }
-        if (btnOk != null) {
-            btnOk.setDisable(false);
-        }
     }
 
     /**

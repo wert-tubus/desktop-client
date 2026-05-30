@@ -208,7 +208,7 @@ public class RegistrationBookContextMenu {
                         finalPassport.toUsefulString());
             } else {
                 Warning1.create($ATTENTION,
-                        "Не удалось удалить паспорт",
+                        "Не удалось удалить чертеж",
                         "Попробуйте позже или обратитесь к администратору");
             }
         }), Platform::runLater);
