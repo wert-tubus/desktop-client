@@ -1,4 +1,5 @@
 // Passport_ColumnsManager.java
+
 package ru.wert.tubus.chogori.entities.passports;
 
 import javafx.application.Platform;
@@ -19,6 +20,11 @@ public class Passport_ColumnsManager {
     public static void restorePIKColumnState(TableView<Passport> tableView) {
         String visibleColumns = AppPropsSettings.getInstance().getPassportsPIKVisibleColumns();
         restoreColumnState(tableView, visibleColumns);
+
+        // Синхронизируем поля showXxx в Passport_TableView
+        if (tableView instanceof Passport_TableView) {
+            ((Passport_TableView) tableView).syncShowFieldsFromColumns();
+        }
     }
 
     /**
@@ -38,6 +44,11 @@ public class Passport_ColumnsManager {
     public static void restoreSketchColumnState(TableView<Passport> tableView) {
         String visibleColumns = AppPropsSettings.getInstance().getPassportsSketchVisibleColumns();
         restoreColumnState(tableView, visibleColumns);
+
+        // Синхронизируем поля showXxx в Passport_TableView
+        if (tableView instanceof Passport_TableView) {
+            ((Passport_TableView) tableView).syncShowFieldsFromColumns();
+        }
     }
 
     /**
@@ -85,9 +96,13 @@ public class Passport_ColumnsManager {
      */
     public static void setupPIKColumnStateListener(TableView<Passport> tableView) {
         tableView.getColumns().forEach(column -> {
-            column.visibleProperty().addListener((obs, oldVal, newVal) ->
-                    savePIKColumnState(tableView)
-            );
+            column.visibleProperty().addListener((obs, oldVal, newVal) -> {
+                savePIKColumnState(tableView);
+                // Синхронизируем поля showXxx при любом изменении
+                if (tableView instanceof Passport_TableView) {
+                    ((Passport_TableView) tableView).syncShowFieldsFromColumns();
+                }
+            });
         });
     }
 
@@ -97,9 +112,13 @@ public class Passport_ColumnsManager {
      */
     public static void setupSketchColumnStateListener(TableView<Passport> tableView) {
         tableView.getColumns().forEach(column -> {
-            column.visibleProperty().addListener((obs, oldVal, newVal) ->
-                    saveSketchColumnState(tableView)
-            );
+            column.visibleProperty().addListener((obs, oldVal, newVal) -> {
+                saveSketchColumnState(tableView);
+                // При изменении видимости через UI (меню) обновляем поля showXxx
+                if (tableView instanceof Passport_TableView) {
+                    ((Passport_TableView) tableView).syncShowFieldsFromColumns();
+                }
+            });
         });
     }
 }

@@ -70,6 +70,8 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
 
         loadRegistrationBook(); //Журнал регистрации
 
+        // Восстанавливаем состояние колонок ПОСЛЕ того, как таблицы полностью загружены
+        // и showTableColumns() уже вызван с параметрами по умолчанию
         restoreColumnStates();
 
         tabPane.getSelectionModel().selectedItemProperty().addListener((observable, oldTab, newTab) -> {
@@ -93,19 +95,6 @@ public class CardsBoxController implements SearchableTab, UpdatableTabController
         if (tvSketch != null) {
             Passport_ColumnsManager.restoreSketchColumnState(tvSketch);
             Passport_ColumnsManager.setupSketchColumnStateListener(tvSketch);
-        }
-    }
-
-    /**
-     * Сохраняет состояние колонок для обеих таблиц
-     * (можно вызвать при закрытии приложения)
-     */
-    public void saveColumnStates() {
-        if (tvPIK != null) {
-            Passport_ColumnsManager.savePIKColumnState(tvPIK);
-        }
-        if (tvSketch != null) {
-            Passport_ColumnsManager.saveSketchColumnState(tvSketch);
         }
     }
 

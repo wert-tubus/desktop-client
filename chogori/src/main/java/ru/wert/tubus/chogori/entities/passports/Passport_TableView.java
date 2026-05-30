@@ -123,6 +123,32 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
     }
 
     /**
+     * Синхронизирует поля showXxx с фактической видимостью колонок
+     */
+    public void syncShowFieldsFromColumns() {
+        if (getColumns().size() >= 5) {
+            showId = getColumns().get(0).isVisible();
+            showIdentity = getColumns().get(1).isVisible();
+            showNote = getColumns().get(2).isVisible();
+            showUser = getColumns().get(3).isVisible();
+            showDate = getColumns().get(4).isVisible();
+        }
+    }
+
+    /**
+     * Обновляет видимость колонок в соответствии с полями showXxx
+     */
+    public void syncColumnsFromShowFields() {
+        if (getColumns().size() >= 5) {
+            getColumns().get(0).setVisible(showId);
+            getColumns().get(1).setVisible(showIdentity);
+            getColumns().get(2).setVisible(showNote);
+            getColumns().get(3).setVisible(showUser);
+            getColumns().get(4).setVisible(showDate);
+        }
+    }
+
+    /**
      * Настройка обработчика двойного клика по строке таблицы
      */
     private void setupDoubleClickHandler() {
@@ -151,41 +177,51 @@ public class Passport_TableView extends RoutineTableView<Passport> implements So
 
     @Override
     public void setTableColumns() {
-        tcId = Passport_Columns.createTcId();
-        tcPassport = Passport_Columns.createTcPassport(showPrefix);
-        tcPassportNumber = Passport_Columns.createTcPassportNumber();
-        tcPassportName = Passport_Columns.createTcPassportName();
-        tcPassportNote = Passport_Columns.createTcNote();
-        tcPassportUser = Passport_Columns.createTcUserName();
-        tcPassportDate = Passport_Columns.createTcDate();
+        // Порядок ДОЛЖЕН быть строго:
+        // 0 - ID
+        // 1 - Идентификатор
+        // 2 - Изделие
+        // 3 - Пользователь
+        // 4 - Дата
 
-        getColumns().addAll(tcId, tcPassport, tcPassportNumber, tcPassportName, tcPassportNote, tcPassportUser, tcPassportDate);
+        TableColumn<Passport, String> tcId = Passport_Columns.createTcId();           // колонка 0
+        TableColumn<Passport, HBox> tcIdentity = Passport_Columns.createTcPassport(showPrefix); // колонка 1
+        TableColumn<Passport, Label> tcNote = Passport_Columns.createTcNote();       // колонка 2
+        TableColumn<Passport, Label> tcUser = Passport_Columns.createTcUserName();       // колонка 3
+        TableColumn<Passport, Label> tcDate = Passport_Columns.createTcDate();       // колонка 4
+
+        getColumns().addAll(tcId, tcIdentity, tcNote, tcUser, tcDate);
     }
 
     /**
      * Метод выключает ненужные столбцы
      */
-    public void showTableColumns(boolean showTcId, boolean showPassportInOneColumn, boolean showNote, boolean showUser, boolean showDate){
-        tcId.setVisible(showTcId);
-        this.showId = showTcId;
+    public void showTableColumns(boolean useId, boolean useIdentity, boolean useNote, boolean useUser, boolean useDate) {
+        this.showId = useId;
+        this.showIdentity = useIdentity;
+        this.showNote = useNote;
+        this.showUser = useUser;
+        this.showDate = useDate;
 
-        tcPassport.setVisible(showPassportInOneColumn); //Показывает дец номер и наименование в одном столбце
-        this.showIdentity = showPassportInOneColumn;
-
-        tcPassportNumber.setVisible(!showPassportInOneColumn);
-        this.showNumber = !showPassportInOneColumn;
-
-        tcPassportName.setVisible(!showPassportInOneColumn);
-        this.showName = !showPassportInOneColumn;
-
-        tcPassportNote.setVisible(showNote);
-        this.showNote = showNote;
-
-        tcPassportUser.setVisible(showUser);
-        this.showUser = showUser;
-
-        tcPassportDate.setVisible(showDate);
-        this.showDate = showDate;
+        // Проверяем, что колонки уже добавлены
+        if (getColumns() != null && getColumns().size() >= 5) {
+            getColumns().get(0).setVisible(useId);
+            getColumns().get(1).setVisible(useIdentity);
+            getColumns().get(2).setVisible(useNote);
+            getColumns().get(3).setVisible(useUser);
+            getColumns().get(4).setVisible(useDate);
+        } else {
+            // Если колонки еще не добавлены, откладываем применение
+            Platform.runLater(() -> {
+                if (getColumns() != null && getColumns().size() >= 5) {
+                    getColumns().get(0).setVisible(showId);
+                    getColumns().get(1).setVisible(showIdentity);
+                    getColumns().get(2).setVisible(showNote);
+                    getColumns().get(3).setVisible(showUser);
+                    getColumns().get(4).setVisible(showDate);
+                }
+            });
+        }
     }
 
     @Override
