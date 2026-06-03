@@ -2,7 +2,7 @@
 
 **Tubus** — это кроссплатформенное приложение для работы с конструкторской документацией предприятия. Входит в состав программного пакета Tubus. Обеспечивает постоянный доступ к актуальным чертежам и документам в зависимости от должностных прав сотрудника.
 
-🔗 **Репозиторий проекта:** [wert-dbpik/desktop-client](https://github.com/wert-dbpik/desktop-client)
+🔗 **Репозиторий проекта:** [wert-dbpik/desktop-client](https://github.com/wert-tubus/desktop-client)
 
 ---
 
@@ -40,7 +40,7 @@
 ## Установка и запуск
 
 1. Убедитесь, что установлена **Java 8**.
-2. Скачайте последнюю версию клиента из раздела [Releases](https://github.com/wert-dbpik/desktop-client/releases).
+2. Скачайте последнюю версию клиента из раздела [Releases](https://github.com/wert-tubus/desktop-client/releases).
 3. Запустите `.jar` файл:
    ```bash
    java -jar Tubus.jar
